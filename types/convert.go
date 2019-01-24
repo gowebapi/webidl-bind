@@ -4,16 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/dennwc/webidl/ast"
 	"github.com/dennwc/webidl/parser"
 )
 
 var (
-	StopErr                  = errors.New("stopping for previous error")
-	UnsupportedAnnotationErr = errors.New("unsupported annotations")
-	UnsupportedLiteralErr    = errors.New("unsupported literal type")
+	StopErr = errors.New("stopping for previous error")
 )
 
 type Name struct {
@@ -21,20 +18,8 @@ type Name struct {
 	Idl, Public, Local string
 }
 
-func fromIdlName(pkg string, name string) Name {
-	if strings.HasPrefix(name, "_") && len(name) > 1 {
-		name = name[1:]
-	}
-	return Name{
-		Package: pkg,
-		Idl:     name,
-		Public:  toCamelCase(name, true),
-		Local:   toCamelCase(name, false),
-	}
-}
-
 type Type interface {
-	Base() *ast.Base
+	ast.Node
 	Name() Name
 
 	GetAllTypeRefs(list []TypeRef) []TypeRef
@@ -50,10 +35,12 @@ type Type interface {
 }
 
 type Convert struct {
-	Types     map[string]Type
-	All       []Type
-	Enums     []*Enum
-	Callbacks []*Callback
+	Types       map[string]Type
+	All         []Type
+	Enums       []*Enum
+	Callbacks   []*Callback
+	Dictionary  []*Dictionary
+	partialDict []*Dictionary
 
 	HaveError bool
 	setup     *Setup
@@ -95,6 +82,16 @@ func (t *Convert) Process(file *ast.File, setup *Setup) error {
 // EvaluateInput is doing verification on input IDL according
 // to WebIDL specification
 func (conv *Convert) EvaluateInput() error {
+	if conv.evaluateDictonary(); conv.HaveError {
+		return StopErr
+	}
+	if conv.evaluateTypeRef(); conv.HaveError {
+		return StopErr
+	}
+	return nil
+}
+
+func (conv *Convert) evaluateTypeRef() {
 	typerefs := make([]TypeRef, 0)
 	for _, t := range conv.All {
 		typerefs = t.GetAllTypeRefs(typerefs)
@@ -102,10 +99,13 @@ func (conv *Convert) EvaluateInput() error {
 	for _, t := range typerefs {
 		t.link(conv)
 	}
-	if conv.HaveError {
-		return StopErr
-	}
-	return nil
+}
+
+func (conv *Convert) evaluateDictonary() {
+	// exapand partial
+	// sort members
+	// evaluate inherits?
+
 }
 
 // EvaluateOutput is doing evaluation of output that might be needed
@@ -118,22 +118,31 @@ func (t *Convert) EvaluateOutput() error {
 }
 
 func (t *Convert) add(v Type) {
+	if v == nil {
+		return
+	}
 	name := v.Name().Idl
 	if _, f := t.Types[name]; f {
-		t.failing(v.Base(), "type '%s' already exist", name, 1)
+		t.failing(v, "type '%s' already exist", name)
 		return
 	}
 	t.Types[name] = v
 	t.All = append(t.All, v)
 }
 
-func (t *Convert) failing(base *ast.Base, format string, args ...interface{}) {
-	t.setup.Error(base, format, args)
+func (t *Convert) failing(base ast.Node, format string, args ...interface{}) {
+	t.setup.Error(base.NodeBase(), format, args...)
 	t.HaveError = true
 }
 
-func (t *Convert) warning(base *ast.Base, format string, args ...interface{}) {
-	t.setup.Warning(base, format, args)
+func (t *Convert) warning(base ast.Node, format string, args ...interface{}) {
+	t.setup.Warning(base.NodeBase(), format, args...)
+}
+
+func (t *Convert) assertTrue(test bool, node ast.Node, format string, args ...interface{}) {
+	if !test {
+		t.failing(node, format, args...)
+	}
 }
 
 type extractTypes struct {
@@ -142,12 +151,8 @@ type extractTypes struct {
 }
 
 func (t *extractTypes) Enum(value *ast.Enum) bool {
-	fmt.Println("evaluate enum ")
-	next, err := ConvertEnum(value, t.main.setup)
-	if err != nil {
-		t.main.failing(value.NodeBase(), "enum trouble: %s", next)
-		return false
-	}
+	// fmt.Println("evaluate enum ")
+	next := t.convertEnum(value)
 	t.main.Enums = append(t.main.Enums, next)
 	t.main.add(next)
 	return false
@@ -155,44 +160,66 @@ func (t *extractTypes) Enum(value *ast.Enum) bool {
 
 func (t *extractTypes) Interface(value *ast.Interface) bool {
 	fmt.Println("evaluate interface")
+	parser.Dump(os.Stdout, value)
+	// panic("todo")
 	return false
 }
 
 func (t *extractTypes) Mixin(value *ast.Mixin) bool {
 	fmt.Println("evaluate mixim")
+	parser.Dump(os.Stdout, value)
 	panic("todo")
 	// return false
 }
 
 func (t *extractTypes) Dictionary(value *ast.Dictionary) bool {
 	fmt.Println("evaluate dirctionary")
+	parser.Dump(os.Stdout, value)
+	next, partial := t.convertDictionary(value)
+	if partial {
+		t.main.partialDict = append(t.main.partialDict, next)
+	} else {
+		t.main.Dictionary = append(t.main.Dictionary, next)
+		t.main.add(next)
+	}
 	return false
 }
 
 func (t *extractTypes) Implementation(value *ast.Implementation) {
 	fmt.Println("evaluate implementation")
+	parser.Dump(os.Stdout, value)
 	panic("todo")
 }
 
 func (t *extractTypes) Includes(value *ast.Includes) {
 	fmt.Println("evaluate includes")
+	parser.Dump(os.Stdout, value)
 	panic("todo")
 }
 
 func (t *extractTypes) Callback(value *ast.Callback) bool {
-	fmt.Println("evaluate callback")
-	cb, err := ConvertCallback(value, t.main.setup)
-	if err != nil {
-		t.main.failing(value.NodeBase(), "convert error: %s", err)
-		return false
-	}
+	// fmt.Println("evaluate callback")
+	cb := t.convertCallback(value)
 	t.main.Callbacks = append(t.main.Callbacks, cb)
 	t.main.add(cb)
-	parser.Dump(os.Stdout, value)
 	return false
 }
 
 func (t *extractTypes) Typedef(value *ast.Typedef) bool {
 	fmt.Println("evaluate typedef")
-	return false
+	parser.Dump(os.Stdout, value)
+	panic("todo")
+	// return false
+}
+
+func (t *extractTypes) failing(node ast.Node, format string, args ...interface{}) {
+	t.main.failing(node, format, args...)
+}
+
+func (t *extractTypes) warning(node ast.Node, format string, args ...interface{}) {
+	t.main.warning(node, format, args...)
+}
+
+func (t *extractTypes) assertTrue(test bool, node ast.Node, format string, args ...interface{}) {
+	t.main.assertTrue(test, node, format, args...)
 }

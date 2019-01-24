@@ -11,13 +11,20 @@ type TypeRef interface {
 }
 
 func convertType(in ast.Type) TypeRef {
+	var ret TypeRef
 	switch in := in.(type) {
 	case *ast.TypeName:
 		switch in.Name {
 		case "void":
-			return &VoidType{in: in}
+			ret = &VoidType{in: in}
+		case "DOMString":
+			ret = &PrimitiveType{
+				Idl:  in.Name,
+				Lang: "string",
+			}
+		default:
+			ret = &TypeNameRef{in: in}
 		}
-		return &TypeNameRef{in: in}
 	case *ast.AnyType:
 		panic("support not implemented")
 	case *ast.SequenceType:
@@ -30,17 +37,20 @@ func convertType(in ast.Type) TypeRef {
 		panic("support not implemented")
 	case *ast.NullableType:
 		panic("support not implemented")
-	default:
-		msg := fmt.Sprint("unknown type %T", in)
+	}
+	if ret == nil {
+		msg := fmt.Sprintf("unknown type %T: %#v", in, in)
 		panic(msg)
 	}
+	return ret
 }
 
-type VoidType struct {
-	in *ast.TypeName
+type PrimitiveType struct {
+	Idl  string
+	Lang string
 }
 
-func (t *VoidType) link(conv *Convert) {
+func (t *PrimitiveType) link(conv *Convert) {
 
 }
 
@@ -56,6 +66,14 @@ func (t *TypeNameRef) link(conv *Convert) {
 		t.Name = real.Name()
 		t.Underlying = real
 	} else {
-		conv.failing(t.in.NodeBase(), "reference to unknown type '%s' (%s)", candidate, t.in.Name)
+		conv.failing(t.in, "reference to unknown type '%s' (%s)", candidate, t.in.Name)
 	}
+}
+
+type VoidType struct {
+	in *ast.TypeName
+}
+
+func (t *VoidType) link(conv *Convert) {
+
 }

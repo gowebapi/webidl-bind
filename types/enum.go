@@ -6,7 +6,7 @@ import (
 
 // Enum type
 type Enum struct {
-	name   Name
+	standardType
 	source *ast.Enum
 	Values []EnumValue
 }
@@ -17,13 +17,14 @@ type EnumValue struct {
 	Go  string
 }
 
-func ConvertEnum(in *ast.Enum, setup *Setup) (*Enum, error) {
-	if len(in.Annotations) > 0 {
-		return nil, UnsupportedAnnotationErr
-	}
+func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
+	t.assertTrue(len(in.Annotations) == 0, in, "unsupported annotation")
 	ret := &Enum{
+		standardType: standardType{
+			base: in.NodeBase(),
+			name: fromIdlName(t.main.setup.Package, in.Name),
+		},
 		source: in,
-		name:   fromIdlName(setup.Package, in.Name),
 		Values: []EnumValue{},
 	}
 
@@ -36,19 +37,10 @@ func ConvertEnum(in *ast.Enum, setup *Setup) (*Enum, error) {
 				Go:  toCamelCase(v, true),
 			})
 		} else {
-			return nil, UnsupportedLiteralErr
+			t.failing(in, "unsupported literal: %T: %#V", v, v)
 		}
 	}
-
-	return ret, nil
-}
-
-func (t *Enum) Base() *ast.Base {
-	return t.source.NodeBase()
-}
-
-func (t *Enum) Name() Name {
-	return t.name
+	return ret
 }
 
 func (t *Enum) GetAllTypeRefs(list []TypeRef) []TypeRef {

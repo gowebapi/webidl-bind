@@ -10,11 +10,15 @@ import (
 )
 
 const typeTmplInput = `
-{{define "VoidType"}}
+{{define "PrimitiveType"}}
+	{{.Lang}}
 {{end}}
 
 {{define "TypeNameRef"}}
 	{{.Name.Public}}
+{{end}}
+
+{{define "VoidType"}}
 {{end}}
 
 `
