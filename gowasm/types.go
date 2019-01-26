@@ -64,20 +64,10 @@ const typeTemplateNameInput = `
 `
 
 var typeDefineTmpl = template.Must(template.New("type-define").Parse(typeDefineInput))
-var typeFromWasmTmpl = template.Must(template.New("type-from-wasm").Parse(typeFromWasmInput))
-var typeToWasmTmpl = template.Must(template.New("type-to-wasm").Parse(typeToWasmInput))
 var typeTemplateNameTmpl = template.Must(template.New("type-template-name").Parse(typeTemplateNameInput))
 
 func typeDefine(value types.TypeRef) string {
-	return convertType(value, typeDefineTmpl)
-}
-
-func typeFromWasm(value types.TypeRef) string {
-	return convertType(value, typeFromWasmTmpl)
-}
-
-func typeToWasm(value types.TypeRef) string {
-	return convertType(value, typeToWasmTmpl)
+	return convertType(value, value, typeDefineTmpl)
 }
 
 func typeTemplateName(value types.TypeRef) string {
@@ -91,10 +81,10 @@ func typeTemplateName(value types.TypeRef) string {
 			panic(fmt.Sprintf("unable to handle %T", ref.Underlying))
 		}
 	}
-	return convertType(value, typeTemplateNameTmpl)
+	return convertType(value, value, typeTemplateNameTmpl)
 }
 
-func convertType(value types.TypeRef, tmpl *template.Template) string {
+func convertType(value types.TypeRef, data interface{}, tmpl *template.Template) string {
 	info := reflect.TypeOf(value)
 	if info.Kind() == reflect.Ptr {
 		info = info.Elem()
@@ -111,11 +101,14 @@ func convertType(value types.TypeRef, tmpl *template.Template) string {
 		panic(fmt.Sprintf("unable to find type template '%s' : %T : %s : %s", name, value, tmpl.Name(), tmplName))
 	}
 	var buf bytes.Buffer
-	if err := t.Execute(&buf, value); err != nil {
+	if err := t.Execute(&buf, data); err != nil {
 		panic(err)
 	}
 	out := buf.String()
-	out = strings.Replace(out, "\n", " ", -1)
+	// out = strings.Replace(out, "\n", " ", -1)
 	out = strings.TrimSpace(out)
+	if strings.Index(out, "\n") != -1 {
+		out += "\n"
+	}
 	return out
 }

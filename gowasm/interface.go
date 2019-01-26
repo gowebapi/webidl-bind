@@ -17,8 +17,8 @@ type {{.If.Name.Public}} struct {
 {{define "get-static-attribute"}}
 func {{.Name.Public}}() {{.Type}} {
 	klass := js.Global().Get("{{.If.Name.Public}}")
-	_value := klass.Get("{{.Name.Idl}}")
-	ret := {{.From}}
+	value := klass.Get("{{.Name.Idl}}")
+	{{.From}}
 	return ret
 }
 {{end}}
@@ -62,7 +62,7 @@ type interfaceMethod struct {
 	Return       string
 	ReturnList   string
 	IsVoidReturn bool
-	To           *inoutToWasm
+	To           *inoutData
 }
 
 func writeInterface(dst io.Writer, input types.Type) error {
@@ -87,7 +87,7 @@ func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set str
 		in := &interfaceAttribute{
 			Name: a.Name(),
 			Type: typeDefine(a.Type),
-			From: typeFromWasm(a.Type),
+			From: inoutGetToFromWasm(a.Type, "ret", "value", inoutFromTmpl),
 			If:   main,
 		}
 		if err := interfaceTmpl.ExecuteTemplate(dst, get, in); err != nil {
@@ -112,7 +112,7 @@ func writeInterfaceMethods(methods []*types.IfMethod, main *types.Interface, tmp
 }
 
 func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string, dst io.Writer) error {
-	to := setupInOutToWasm(m.Params)
+	to := setupInOutWasmData(m.Params, "@name", "_p%d")
 	retLang, retList, isVoid := calculateMethodReturn(m.Return, to.ReleaseHdl)
 	in := &interfaceMethod{
 		Name:         m.Name(),

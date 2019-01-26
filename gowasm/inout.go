@@ -8,33 +8,37 @@ import (
 	"wasm/generator/types"
 )
 
-const inoutTmplInput = `
-{{define "to-wasm-start"}}
+const inoutToTmplInput = `
+{{define "start"}}
 {{if .ReleaseHdl}}	var _releaseList releasableApiResourceList {{end}}
 {{end}}
-{{define "to-wasm-end"}}
+{{define "end"}}
 {{end}}
 
-{{define "to-wasm-type-callback"}}
+{{define "type-callback"}}
 	{{.Out}} := js.NewCallback(func (_cb_args []js.Value) {
-		_cb_value := {{.Name}}
-		{{.From}}
+		{{.TypeRef.Name.Local}}FromWasm({{.In}}, _cb_args)
 	})
 	_releaseList = append(_releaseList, {{.Out}})
 {{end}}
+{{define "type-enum"}}      {{.Type.Name.Local}}ToWasm(_value) {{end}}
+`
 
-{{define "from-wasm-start"}}
+const inoutFromTmplInput = `
+{{define "start"}}
 {{end}}
-{{define "from-wasm-end"}}
+{{define "end"}}
 {{end}}
 
-{{define "from-wasm-type-enum"}}	{{.Name.Local}}FromWasm(_value) {{end}}
+{{define "type-callback"}} callbackInFrom() {{end}}
+{{define "type-enum"}}	{{.Out}} := {{.TypeRef.Name.Local}}FromWasm({{.In}}) {{end}}
 
 `
 
-var inoutTmpl = template.Must(template.New("inout").Parse(inoutTmplInput))
+var inoutToTmpl = template.Must(template.New("inout-to").Parse(inoutToTmplInput))
+var inoutFromTmpl = template.Must(template.New("inout-from").Parse(inoutFromTmplInput))
 
-type inoutToWasm struct {
+type inoutData struct {
 	Params    string
 	ParamList []inoutParam
 	AllOut    string
@@ -44,16 +48,19 @@ type inoutToWasm struct {
 	ReleaseHdl bool
 }
 
-type inoutFromWasm struct {
-}
-
 type inoutParam struct {
-	Name  string
-	Type  string
-	From  string
-	To    string
-	Tmpl  string
-	Out   string
+	// IDl variable name
+	Name string
+	// Type in text
+	Type string
+	// template name
+	Tmpl string
+	// input variable during convert to/from wasm
+	In string
+	// output variable during convert to/from wasm
+	Out string
+
+	// RealP references input parameter
 	RealP *types.Parameter
 	RealT types.TypeRef
 }
@@ -71,7 +78,7 @@ func parameterArgumentLine(input []*types.Parameter) (all string, list []string)
 	return
 }
 
-func setupInOutToWasm(params []*types.Parameter) *inoutToWasm {
+func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 	paramTextList := []string{}
 	paramList := []inoutParam{}
 	allout := []string{}
@@ -80,19 +87,18 @@ func setupInOutToWasm(params []*types.Parameter) *inoutToWasm {
 		po := inoutParam{
 			Name:  pi.Name,
 			Type:  typeDefine(pi.Type),
-			From:  typeFromWasm(pi.Type),
-			To:    typeToWasm(pi.Type),
 			Tmpl:  typeTemplateName(pi.Type),
-			Out:   fmt.Sprint("_p", idx),
 			RealP: pi,
 			RealT: pi.Type,
+			In:    setupVarName(in, idx, pi.Name),
+			Out:   setupVarName(out, idx, pi.Name),
 		}
 		releaseHdl = releaseHdl || pi.Type.NeedRelease()
 		paramList = append(paramList, po)
 		paramTextList = append(paramTextList, fmt.Sprint(pi.Name, " ", po.Type))
 		allout = append(allout, po.Out)
 	}
-	return &inoutToWasm{
+	return &inoutData{
 		ParamList:  paramList,
 		Params:     strings.Join(paramTextList, ", "),
 		ReleaseHdl: releaseHdl,
@@ -100,25 +106,51 @@ func setupInOutToWasm(params []*types.Parameter) *inoutToWasm {
 	}
 }
 
-func writeInOutToWasm(data *inoutToWasm, dst io.Writer) error {
-	return writeInOutLoop(data, "to-wasm", dst)
+func setupVarName(value string, idx int, name string) string {
+	if value == "@name" {
+		return name
+	} else if strings.Index(value, "%") != -1 {
+		return fmt.Sprintf(value, idx)
+	}
+	return value
 }
 
-func writeInOutFromWasm(data *inoutToWasm, dst io.Writer) error {
-	return writeInOutLoop(data, "from-wasm", dst)
+func writeInOutToWasm(data *inoutData, dst io.Writer) error {
+	return writeInOutLoop(data, inoutToTmpl, dst)
 }
 
-func writeInOutLoop(data *inoutToWasm, name string, dst io.Writer) error {
-	if err := inoutTmpl.ExecuteTemplate(dst, name+"-start", data); err != nil {
+func writeInOutFromWasm(data *inoutData, dst io.Writer) error {
+	return writeInOutLoop(data, inoutFromTmpl, dst)
+}
+
+func writeInOutLoop(data *inoutData, tmpl *template.Template, dst io.Writer) error {
+	if err := tmpl.ExecuteTemplate(dst, "start", data); err != nil {
 		return err
 	}
 	for _, p := range data.ParamList {
-		if err := inoutTmpl.ExecuteTemplate(dst, name+"-type-"+p.Tmpl, p); err != nil {
+		code := inoutGetToFromWasm(p.RealT, p.Out, p.In, tmpl)
+		if _, err := io.WriteString(dst, code); err != nil {
 			return err
 		}
 	}
-	if err := inoutTmpl.ExecuteTemplate(dst, name+"-end", data); err != nil {
+	if err := tmpl.ExecuteTemplate(dst, "end", data); err != nil {
 		return err
 	}
 	return nil
+}
+
+func inoutGetToFromWasm(t types.TypeRef, out, in string, tmpl *template.Template) string {
+	data := struct {
+		In, Out string
+		Type    types.TypeRef
+		TypeRef *types.TypeNameRef
+	}{
+		In:   in,
+		Out:  out,
+		Type: t,
+	}
+	if ref, ok := t.(*types.TypeNameRef); ok {
+		data.TypeRef = ref
+	}
+	return convertType(t, data, tmpl)
 }

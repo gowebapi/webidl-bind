@@ -14,12 +14,10 @@ func {{.CB.Name.Local}}FromWasm(callback {{.CB.Name.Public}}, args []js.Value) {
 	if len(args) != 1 {
 		panic("unexpected parameter count")
 	}
-	in0 := args[0]
-	_p0 := notificationPermissionFromWasm(args[0], 1)
 {{end}}
 	
 {{define "end"}}
-	callback(_p0)
+	callback({{.InOut.AllOut}})
 }
 {{end}}
 `
@@ -31,7 +29,7 @@ type callbackData struct {
 	Return    string
 	Params    []string
 	ParamLine string
-	InOut     *inoutToWasm
+	InOut     *inoutData
 }
 
 func writeCallback(dst io.Writer, value types.Type) error {
@@ -39,15 +37,15 @@ func writeCallback(dst io.Writer, value types.Type) error {
 	data := &callbackData{
 		CB:     cb,
 		Return: typeDefine(cb.Return),
-		InOut:  setupInOutToWasm(cb.Parameters),
+		InOut:  setupInOutWasmData(cb.Parameters, "args[%d]", "_p%d"),
 	}
 	data.ParamLine, data.Params = parameterArgumentLine(cb.Parameters)
 	if err := callbackTempl.ExecuteTemplate(dst, "start", data); err != nil {
 		return err
 	}
-	// if err := writeInOutFromWasm(data.InOut, dst); err != nil {
-	// 	return err
-	// }
+	if err := writeInOutFromWasm(data.InOut, dst); err != nil {
+		return err
+	}
 	if err := callbackTempl.ExecuteTemplate(dst, "end", data); err != nil {
 		return err
 	}
