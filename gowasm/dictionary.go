@@ -42,7 +42,7 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 	for _, mi := range dict.Members {
 		mo := dictionaryMember{
 			Name: mi.Name(),
-			Type: convertType(mi.Type),
+			Type: typeDefine(mi.Type),
 		}
 		data.Members = append(data.Members, mo)
 		if mi.Required {

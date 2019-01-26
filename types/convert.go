@@ -32,6 +32,8 @@ type Type interface {
 	// 	ExtractSubTypes() []Type
 	// 	Phase3()
 	// 	WriteTo() error
+
+	NeedRelease() bool
 }
 
 type Convert struct {
@@ -41,6 +43,8 @@ type Convert struct {
 	Callbacks   []*Callback
 	Dictionary  []*Dictionary
 	partialDict []*Dictionary
+	Interface   []*Interface
+	partialIf   []*Interface
 
 	HaveError bool
 	setup     *Setup
@@ -102,6 +106,12 @@ func (conv *Convert) evaluateTypeRef() {
 }
 
 func (conv *Convert) evaluateDictonary() {
+	for _, pd := range conv.partialDict {
+		conv.failing(pd, "partial dictonaries is not supported")
+	}
+	for _, pd := range conv.partialIf {
+		conv.failing(pd, "partial interface is not supported")
+	}
 	// exapand partial
 	// sort members
 	// evaluate inherits?
@@ -159,9 +169,14 @@ func (t *extractTypes) Enum(value *ast.Enum) bool {
 }
 
 func (t *extractTypes) Interface(value *ast.Interface) bool {
-	fmt.Println("evaluate interface")
-	parser.Dump(os.Stdout, value)
-	// panic("todo")
+	// fmt.Println("evaluate interface")
+	next, partial := t.convertInterface(value)
+	if partial {
+		t.main.partialIf = append(t.main.partialIf, next)
+	} else {
+		t.main.Interface = append(t.main.Interface, next)
+		t.main.add(next)
+	}
 	return false
 }
 
@@ -173,8 +188,7 @@ func (t *extractTypes) Mixin(value *ast.Mixin) bool {
 }
 
 func (t *extractTypes) Dictionary(value *ast.Dictionary) bool {
-	fmt.Println("evaluate dirctionary")
-	parser.Dump(os.Stdout, value)
+	// fmt.Println("evaluate dirctionary")
 	next, partial := t.convertDictionary(value)
 	if partial {
 		t.main.partialDict = append(t.main.partialDict, next)

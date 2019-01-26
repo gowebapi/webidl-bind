@@ -1,5 +1,7 @@
 package gowasm
 
+// TODO what to return if the value doesn't exist?
+
 import (
 	"io"
 	"text/template"
@@ -19,12 +21,25 @@ var {{.Name.Local}}ToWasmTable = []string{
 	{{range .Values}}"{{.Idl}}", {{end}}
 }
 
+var {{.Name.Local}}FromWasmTable = map[string]{{.Name.Public}} {
+	{{range .Values}}"{{.Idl}}": {{.Go}},{{end}}
+}
+
 func {{.Name.Local}}ToWasm(in {{.Name.Public}}) string {
 	idx := int(in)
 	if idx >= 0 && idx < len({{.Name.Local}}ToWasmTable) {
 		return {{.Name.Local}}ToWasmTable[idx]
 	}
 	panic("unknown input value")
+}
+
+func {{.Name.Local}}FromWasm(value js.Value) {{.Name.Public}} {
+	key := value.String()
+	conv, ok := {{.Name.Local}}FromWasmTable[key]
+	if !ok {
+		panic("unable to convert '" + key + "'")
+	}
+	return conv
 }
 {{end}}
 `

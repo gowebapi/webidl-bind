@@ -11,16 +11,16 @@ type Callback struct {
 	source     *ast.Callback
 }
 
+// Callback need to implement Type
+var _ Type = &Callback{}
+
 func (t *extractTypes) convertCallback(in *ast.Callback) *Callback {
-	params := []*Parameter{}
-	for _, pi := range in.Parameters {
-		po := t.convertParam(pi)
-		params = append(params, po)
-	}
+	params := t.convertParams(in.Parameters)
 	ret := &Callback{
 		standardType: standardType{
-			base: in.NodeBase(),
-			name: fromIdlName(t.main.setup.Package, in.Name),
+			base:        in.NodeBase(),
+			name:        fromIdlName(t.main.setup.Package, in.Name),
+			needRelease: true,
 		},
 		source:     in,
 		Return:     convertType(in.Return),

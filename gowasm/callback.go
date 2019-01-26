@@ -2,15 +2,25 @@ package gowasm
 
 import (
 	"io"
-	"strings"
 	"text/template"
 	"wasm/generator/types"
 )
 
 const callbackTmplInput = `
-{{define "header"}}
+{{define "start"}}
 type {{.CB.Name.Public}} func ({{.ParamLine}})
 
+func {{.CB.Name.Local}}FromWasm(callback {{.CB.Name.Public}}, args []js.Value) {
+	if len(args) != 1 {
+		panic("unexpected parameter count")
+	}
+	in0 := args[0]
+	_p0 := notificationPermissionFromWasm(args[0], 1)
+{{end}}
+	
+{{define "end"}}
+	callback(_p0)
+}
 {{end}}
 `
 
@@ -21,19 +31,25 @@ type callbackData struct {
 	Return    string
 	Params    []string
 	ParamLine string
+	InOut     *inoutToWasm
 }
 
 func writeCallback(dst io.Writer, value types.Type) error {
 	cb := value.(*types.Callback)
 	data := &callbackData{
 		CB:     cb,
-		Return: convertType(cb.Return),
+		Return: typeDefine(cb.Return),
+		InOut:  setupInOutToWasm(cb.Parameters),
 	}
-	for _, pi := range cb.Parameters {
-		po := convertParameter(pi)
-		data.Params = append(data.Params, po)
+	data.ParamLine, data.Params = parameterArgumentLine(cb.Parameters)
+	if err := callbackTempl.ExecuteTemplate(dst, "start", data); err != nil {
+		return err
 	}
-	data.ParamLine = strings.Join(data.Params, ", ")
-
-	return callbackTempl.ExecuteTemplate(dst, "header", data)
+	// if err := writeInOutFromWasm(data.InOut, dst); err != nil {
+	// 	return err
+	// }
+	if err := callbackTempl.ExecuteTemplate(dst, "end", data); err != nil {
+		return err
+	}
+	return nil
 }

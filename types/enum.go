@@ -11,6 +11,9 @@ type Enum struct {
 	Values []EnumValue
 }
 
+// Enum need to implement Type
+var _ Type = &Enum{}
+
 // EnumValue is a single enum value
 type EnumValue struct {
 	Idl string
@@ -21,8 +24,9 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 	t.assertTrue(len(in.Annotations) == 0, in, "unsupported annotation")
 	ret := &Enum{
 		standardType: standardType{
-			base: in.NodeBase(),
-			name: fromIdlName(t.main.setup.Package, in.Name),
+			base:        in.NodeBase(),
+			name:        fromIdlName(t.main.setup.Package, in.Name),
+			needRelease: false,
 		},
 		source: in,
 		Values: []EnumValue{},

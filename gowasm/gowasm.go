@@ -16,6 +16,23 @@ import (
 const fileTemplInput = `
 {{define "header"}}
 package {{.Package}}
+
+import "syscall/js"
+
+// ReleasableApiResource is used to release underlaying
+// allocated resources.
+type ReleasableApiResource interface {
+	Release()
+}
+
+type releasableApiResourceList []ReleasableApiResource
+
+func (a releasableApiResourceList) Release() {
+	for _, v := range a {
+		v.Release()
+	}
+}
+
 {{end}}
 `
 
@@ -41,6 +58,9 @@ func WriteSource(conv *types.Convert) (map[string][]byte, error) {
 	for _, v := range conv.Dictionary {
 		err = writeType(v, target, writeDictionary, err)
 	}
+	for _, v := range conv.Interface {
+		err = writeType(v, target, writeInterface, err)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +82,9 @@ func WriteSource(conv *types.Convert) (map[string][]byte, error) {
 }
 
 func writeType(value types.Type, target map[string]*bytes.Buffer, conv writeFn, err error) error {
+	if err != nil {
+		return err
+	}
 	dst, err := getTarget(value, target)
 	if err != nil {
 		return err

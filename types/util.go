@@ -9,6 +9,12 @@ import (
 )
 
 type standardType struct {
+	base        *ast.Base
+	name        Name
+	needRelease bool
+}
+
+type nameAndLink struct {
 	base *ast.Base
 	name Name
 }
@@ -66,10 +72,22 @@ func toCamelCase(in string, upper bool) string {
 	return out
 }
 
+func (t *standardType) Name() Name {
+	return t.name
+}
+
+func (t *standardType) NeedRelease() bool {
+	return t.needRelease
+}
+
 func (t *standardType) NodeBase() *ast.Base {
 	return t.base
 }
 
-func (t *standardType) Name() Name {
+func (t *nameAndLink) Name() Name {
 	return t.name
+}
+
+func (t *nameAndLink) NodeBase() *ast.Base {
+	return t.base
 }

@@ -9,7 +9,7 @@ import (
 	"wasm/generator/types"
 )
 
-const typeTmplInput = `
+const typeDefineInput = `
 {{define "PrimitiveType"}}
 	{{.Lang}}
 {{end}}
@@ -23,17 +23,92 @@ const typeTmplInput = `
 
 `
 
-var typeTmpl = template.Must(template.New("type").Parse(typeTmplInput))
+const typeFromWasmInput = `
+{{define "PrimitveType"}}
+	_value . what?
+{{end}}
 
-func convertType(value types.TypeRef) string {
+{{define "type-callback"}}	{{.Name.Local}}FromWasm(_cb_value, _cb_args) {{end}}
+{{define "type-enum"}}		{{.Name.Local}}FromWasm(_value) {{end}}
+
+{{define "VoidType"}}
+     aVoidReturnTypeShallNotBeConvertedButNeedSomeSpecialHandling()
+{{end}}
+`
+
+const typeToWasmInput = `
+{{define "PrimitveType"}}
+	_value . what?
+{{end}}
+
+{{define "type-callback"}}	unableToConvertCallback_{{.Name.Local}}ToWasm(_cb_value, _cb_args) {{end}}
+{{define "type-enum"}}      {{.Name.Local}}ToWasm(_value) {{end}}
+
+{{define "VoidType"}}
+     aVoidReturnTypeShallNotBeConvertedButNeedSomeSpecialHandling()
+{{end}}
+`
+
+const typeTemplateNameInput = `
+{{define "PrimitveType"}}
+	primitive
+{{end}}
+
+{{define "TypeNameRef"}}
+	typenameref
+{{end}}
+
+{{define "VoidType"}}
+     void
+{{end}}
+`
+
+var typeDefineTmpl = template.Must(template.New("type-define").Parse(typeDefineInput))
+var typeFromWasmTmpl = template.Must(template.New("type-from-wasm").Parse(typeFromWasmInput))
+var typeToWasmTmpl = template.Must(template.New("type-to-wasm").Parse(typeToWasmInput))
+var typeTemplateNameTmpl = template.Must(template.New("type-template-name").Parse(typeTemplateNameInput))
+
+func typeDefine(value types.TypeRef) string {
+	return convertType(value, typeDefineTmpl)
+}
+
+func typeFromWasm(value types.TypeRef) string {
+	return convertType(value, typeFromWasmTmpl)
+}
+
+func typeToWasm(value types.TypeRef) string {
+	return convertType(value, typeToWasmTmpl)
+}
+
+func typeTemplateName(value types.TypeRef) string {
+	if ref, ok := value.(*types.TypeNameRef); ok {
+		switch ref.Underlying.(type) {
+		case *types.Callback:
+			return "callback"
+		case *types.Enum:
+			return "enum"
+		default:
+			panic(fmt.Sprintf("unable to handle %T", ref.Underlying))
+		}
+	}
+	return convertType(value, typeTemplateNameTmpl)
+}
+
+func convertType(value types.TypeRef, tmpl *template.Template) string {
 	info := reflect.TypeOf(value)
 	if info.Kind() == reflect.Ptr {
 		info = info.Elem()
 	}
 	name := info.Name()
-	t := typeTmpl.Lookup(name)
+	t := tmpl.Lookup(name)
+	var tmplName string
 	if t == nil {
-		panic(fmt.Sprintf("unable to find type template '%s' : %T", name, value))
+		// unable to find for tag, trying extract other way
+		tmplName = "type-" + typeTemplateName(value)
+		t = tmpl.Lookup(tmplName)
+	}
+	if t == nil {
+		panic(fmt.Sprintf("unable to find type template '%s' : %T : %s : %s", name, value, tmpl.Name(), tmplName))
 	}
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, value); err != nil {
@@ -41,13 +116,6 @@ func convertType(value types.TypeRef) string {
 	}
 	out := buf.String()
 	out = strings.Replace(out, "\n", " ", -1)
+	out = strings.TrimSpace(out)
 	return out
-}
-
-func convertParameter(value *types.Parameter) string {
-	if value.Optional || value.Variadic {
-		panic("todo")
-	}
-	t := convertType(value.Type)
-	return value.Name + " " + t
 }

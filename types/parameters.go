@@ -12,6 +12,15 @@ type Parameter struct {
 	Name     string
 }
 
+func (t *extractTypes) convertParams(list []*ast.Parameter) []*Parameter {
+	params := []*Parameter{}
+	for _, pi := range list {
+		po := t.convertParam(pi)
+		params = append(params, po)
+	}
+	return params
+}
+
 func (t *extractTypes) convertParam(in *ast.Parameter) *Parameter {
 	t.assertTrue(len(in.Annotations) == 0, in, "unsupported annotation")
 	return &Parameter{

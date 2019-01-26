@@ -9,11 +9,14 @@ type Dictionary struct {
 	source   *ast.Dictionary
 	Inherits *Dictionary
 
-	Members []*Member
+	Members []*DictMember
 }
 
-type Member struct {
-	standardType
+// Dictionary need to implement Type
+var _ Type = &Dictionary{}
+
+type DictMember struct {
+	nameAndLink
 	Src      *ast.Member
 	Type     TypeRef
 	Required bool
@@ -23,8 +26,9 @@ func (t *extractTypes) convertDictionary(in *ast.Dictionary) (*Dictionary, bool)
 	t.assertTrue(len(in.Annotations) == 0, in, "unsupported annotations")
 	ret := &Dictionary{
 		standardType: standardType{
-			base: in.NodeBase(),
-			name: fromIdlName(t.main.setup.Package, in.Name),
+			base:        in.NodeBase(),
+			name:        fromIdlName(t.main.setup.Package, in.Name),
+			needRelease: false,
 		},
 		source: in,
 	}
@@ -35,7 +39,7 @@ func (t *extractTypes) convertDictionary(in *ast.Dictionary) (*Dictionary, bool)
 	return ret, in.Partial
 }
 
-func (conv *extractTypes) convertDictMember(in *ast.Member) *Member {
+func (conv *extractTypes) convertDictMember(in *ast.Member) *DictMember {
 	conv.assertTrue(!in.Readonly, in, "read only not allowed")
 	conv.assertTrue(in.Attribute, in, "must be an attribute")
 	conv.assertTrue(!in.Static, in, "static is not allowed")
@@ -47,8 +51,8 @@ func (conv *extractTypes) convertDictMember(in *ast.Member) *Member {
 	if in.Init != nil {
 		conv.warning(in, "default value for dictionary not implemented yet")
 	}
-	return &Member{
-		standardType: standardType{
+	return &DictMember{
+		nameAndLink: nameAndLink{
 			base: in.NodeBase(),
 			name: fromMethodName(in.Name),
 		},
@@ -63,4 +67,12 @@ func (t *Dictionary) GetAllTypeRefs(list []TypeRef) []TypeRef {
 		list = append(list, m.Type)
 	}
 	return list
+}
+
+func (t *Dictionary) NeedRelease() bool {
+	need := false
+	for _, v := range t.Members {
+		need = need || v.Type.NeedRelease()
+	}
+	return need
 }
