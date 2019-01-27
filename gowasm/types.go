@@ -21,31 +21,8 @@ const typeDefineInput = `
 {{define "VoidType"}}
 {{end}}
 
-`
-
-const typeFromWasmInput = `
-{{define "PrimitveType"}}
-	_value . what?
-{{end}}
-
-{{define "type-callback"}}	{{.Name.Local}}FromWasm(_cb_value, _cb_args) {{end}}
-{{define "type-enum"}}		{{.Name.Local}}FromWasm(_value) {{end}}
-
-{{define "VoidType"}}
-     aVoidReturnTypeShallNotBeConvertedButNeedSomeSpecialHandling()
-{{end}}
-`
-
-const typeToWasmInput = `
-{{define "PrimitveType"}}
-	_value . what?
-{{end}}
-
-{{define "type-callback"}}	unableToConvertCallback_{{.Name.Local}}ToWasm(_cb_value, _cb_args) {{end}}
-{{define "type-enum"}}      {{.Name.Local}}ToWasm(_value) {{end}}
-
-{{define "VoidType"}}
-     aVoidReturnTypeShallNotBeConvertedButNeedSomeSpecialHandling()
+{{define "InterfaceType"}}
+	{{.If.Name.Public}}
 {{end}}
 `
 
@@ -77,29 +54,26 @@ func typeTemplateName(value types.TypeRef) string {
 			return "callback"
 		case *types.Enum:
 			return "enum"
+		case *types.Dictionary:
+			return "dictionary"
 		default:
-			panic(fmt.Sprintf("unable to handle %T", ref.Underlying))
+			panic(fmt.Sprintf("unable to handle %T: %#v", ref.Underlying, ref))
 		}
 	}
-	return convertType(value, value, typeTemplateNameTmpl)
+	switch value.(type) {
+	case *types.PrimitiveType:
+		// TODO expand primitive type?
+		return "PrimitiveType"
+	case *types.VoidType:
+		return "VoidType"
+	case *types.InterfaceType:
+		return "InterfaceType"
+	}
+	panic(fmt.Sprintf("unknown type %T", value))
 }
 
 func convertType(value types.TypeRef, data interface{}, tmpl *template.Template) string {
-	info := reflect.TypeOf(value)
-	if info.Kind() == reflect.Ptr {
-		info = info.Elem()
-	}
-	name := info.Name()
-	t := tmpl.Lookup(name)
-	var tmplName string
-	if t == nil {
-		// unable to find for tag, trying extract other way
-		tmplName = "type-" + typeTemplateName(value)
-		t = tmpl.Lookup(tmplName)
-	}
-	if t == nil {
-		panic(fmt.Sprintf("unable to find type template '%s' : %T : %s : %s", name, value, tmpl.Name(), tmplName))
-	}
+	t := findTypeTemplate(value, tmpl)
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, data); err != nil {
 		panic(err)
@@ -111,4 +85,28 @@ func convertType(value types.TypeRef, data interface{}, tmpl *template.Template)
 		out += "\n"
 	}
 	return out
+}
+
+func findTypeTemplate(value types.TypeRef, tmpl *template.Template) *template.Template {
+	// find based on type name
+	debug := fmt.Sprintf("unable to find in '%s' template: %T", tmpl.Name(), value)
+	tmplName := "type-" + typeTemplateName(value)
+	t := tmpl.Lookup(tmplName)
+	if t != nil {
+		return t
+	}
+	debug += " : " + tmplName
+
+	// try some more "global" name
+	info := reflect.TypeOf(value)
+	if info.Kind() == reflect.Ptr {
+		info = info.Elem()
+	}
+	name := info.Name()
+	t = tmpl.Lookup(name)
+	if t == nil {
+		debug += " : " + name
+		panic(debug)
+	}
+	return t
 }

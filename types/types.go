@@ -57,7 +57,7 @@ func (t *basicType) NeedRelease() bool {
 
 type InterfaceType struct {
 	basicType
-	Link *Interface
+	If *Interface
 }
 
 // InterfaceType must implement TypeRef
@@ -68,7 +68,7 @@ func newInterfaceType(link *Interface) *InterfaceType {
 		basicType: basicType{
 			needRelease: false,
 		},
-		Link: link,
+		If: link,
 	}
 }
 

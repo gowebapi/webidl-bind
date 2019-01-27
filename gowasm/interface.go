@@ -41,6 +41,20 @@ func {{.Name.Public}}({{.To.Params}}) ({{.ReturnList}}) {
 	return
 }
 {{end}}
+
+{{define "constructor-start"}}
+func {{.Name.Public}}({{.To.Params}}) ({{.ReturnList}}) {
+	_klass := js.Global().Get("{{.If.Name.Idl}}")
+{{end}}
+{{define "constructor-invoke"}}
+	_returned := _klass.New()
+{{end}}
+{{define "constructor-end"}}
+	result = _result
+	return
+}
+{{end}}
+
 `
 
 var interfaceTmpl = template.Must(template.New("interface").Parse(interfaceTmplInput))
@@ -78,6 +92,11 @@ func writeInterface(dst io.Writer, input types.Type) error {
 	}
 	if err := writeInterfaceMethods(value.StaticMethod, value, "static-method", dst); err != nil {
 		return err
+	}
+	if value.Constructor != nil {
+		if err := writeInterfaceMethod(value.Constructor, value, "constructor", dst); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -131,6 +150,12 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-invoke", in); err != nil {
 		return err
 	}
+	if !isVoid {
+		result := setupInOutWasmForType(m.Return, "_returned", "_result")
+		if err := writeInOutFromWasm(result, dst); err != nil {
+			return err
+		}
+	}
 	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-end", in); err != nil {
 		return err
 	}
@@ -139,7 +164,7 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 
 func calculateMethodReturn(t types.TypeRef, releaseHdl bool) (lang, list string, isVoid bool) {
 	lang = typeDefine(t)
-	_, isVoid = t.(*types.VoidType)
+	isVoid = types.IsVoid(t)
 
 	candidate := []string{}
 	if !isVoid {

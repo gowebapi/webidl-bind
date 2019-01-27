@@ -86,7 +86,7 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			ret.Constructor = &IfMethod{
 				nameAndLink: nameAndLink{
 					base: a.NodeBase(),
-					name: fromMethodName("NEW_" + ret.Name().Idl),
+					name: fromMethodName("New_" + ret.Name().Idl),
 				},
 				Static: true,
 				SrcA:   a,
@@ -189,6 +189,9 @@ func (conv *extractTypes) convertInterfaceMember(in *ast.Member) *Member {
 func (t *Interface) GetAllTypeRefs(list []TypeRef) []TypeRef {
 	if t.Constructor != nil {
 		list = append(list, t.Constructor.Return)
+		for _, p := range t.Constructor.Params {
+			list = append(list, p.Type)
+		}
 	}
 	for _, m := range t.Consts {
 		list = append(list, m.Type)

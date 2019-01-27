@@ -72,6 +72,11 @@ func toCamelCase(in string, upper bool) string {
 	return out
 }
 
+func IsVoid(t TypeRef) bool {
+	_, isVoid := t.(*VoidType)
+	return isVoid
+}
+
 func (t *standardType) Name() Name {
 	return t.name
 }

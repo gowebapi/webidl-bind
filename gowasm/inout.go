@@ -15,6 +15,12 @@ const inoutToTmplInput = `
 {{define "end"}}
 {{end}}
 
+{{define "type-PrimitiveType"}}	{{.Out}} := {{.In}}
+{{end}}
+
+{{define "type-dictionary"}}	{{.Out}} := {{.TypeRef.Name.Local}}ToWasm({{.In}})
+{{end}}
+
 {{define "type-callback"}}
 	{{.Out}} := js.NewCallback(func (_cb_args []js.Value) {
 		{{.TypeRef.Name.Local}}FromWasm({{.In}}, _cb_args)
@@ -31,7 +37,8 @@ const inoutFromTmplInput = `
 {{end}}
 
 {{define "type-callback"}} callbackInFrom() {{end}}
-{{define "type-enum"}}	{{.Out}} := {{.TypeRef.Name.Local}}FromWasm({{.In}}) {{end}}
+{{define "type-enum"}}	{{.Out}} := {{.Name.Local}}FromWasm({{.In}}) {{end}}
+{{define "type-InterfaceType"}}   {{.Out}} := {{.Name.Local}}FromWasm({{.In}}) {{end}}
 
 `
 
@@ -106,6 +113,35 @@ func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 	}
 }
 
+func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
+	idx := 0
+	pi := param
+	po := inoutParam{
+		Name:  pi.Name,
+		Type:  typeDefine(pi.Type),
+		Tmpl:  typeTemplateName(pi.Type),
+		RealP: pi,
+		RealT: pi.Type,
+		In:    setupVarName(in, idx, pi.Name),
+		Out:   setupVarName(out, idx, pi.Name),
+	}
+	return &inoutData{
+		ParamList:  []inoutParam{po},
+		Params:     fmt.Sprint(pi.Name, " ", po.Type),
+		ReleaseHdl: pi.Type.NeedRelease(),
+		AllOut:     po.Out,
+	}
+}
+func setupInOutWasmForType(t types.TypeRef, in, out string) *inoutData {
+	pi := types.Parameter{
+		Name:     "<only-type>",
+		Optional: false,
+		Variadic: false,
+		Type:     t,
+	}
+	return setupInOutWasmForOne(&pi, in, out)
+}
+
 func setupVarName(value string, idx int, name string) string {
 	if value == "@name" {
 		return name
@@ -144,6 +180,7 @@ func inoutGetToFromWasm(t types.TypeRef, out, in string, tmpl *template.Template
 		In, Out string
 		Type    types.TypeRef
 		TypeRef *types.TypeNameRef
+		Name    types.Name
 	}{
 		In:   in,
 		Out:  out,
@@ -151,6 +188,9 @@ func inoutGetToFromWasm(t types.TypeRef, out, in string, tmpl *template.Template
 	}
 	if ref, ok := t.(*types.TypeNameRef); ok {
 		data.TypeRef = ref
+		data.Name = ref.Name
+	} else if ref, ok := t.(*types.InterfaceType); ok {
+		data.Name = ref.If.Name()
 	}
-	return convertType(t, data, tmpl)
+	return convertType(t, data, tmpl) + "\n"
 }
