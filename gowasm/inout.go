@@ -21,6 +21,8 @@ const inoutToTmplInput = `
 {{define "type-dictionary"}}	{{.Out}} := {{.TypeRef.Name.Internal}}ToWasm({{.In}})
 {{end}}
 
+{{define "type-interface"}}	{{.Out}} := {{.TypeRef.Name.Internal}}ToWasm({{.In}}) {{end}}
+
 {{define "type-callback"}}
 	{{.Out}} := js.NewCallback(func (_cb_args []js.Value) {
 		{{.TypeRef.Name.Internal}}FromWasm({{.In}}, _cb_args)
@@ -40,6 +42,7 @@ const inoutFromTmplInput = `
 {{define "type-callback"}} callbackInFrom() {{end}}
 {{define "type-enum"}}	{{.Out}} := {{.Name.Internal}}FromWasm({{.In}}) {{end}}
 {{define "type-InterfaceType"}}   {{.Out}} := {{.Name.Internal}}FromWasm({{.In}}) {{end}}
+{{define "type-interface"}}   {{.Out}} := {{.Name.Internal}}FromWasm({{.In}}) {{end}}
 
 `
 

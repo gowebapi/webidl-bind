@@ -71,6 +71,8 @@ func typeTemplateName(value types.TypeRef) string {
 			return "enum"
 		case *types.Dictionary:
 			return "dictionary"
+		case *types.Interface:
+			return "interface"
 		default:
 			panic(fmt.Sprintf("unable to handle %T: %#v", ref.Underlying, ref))
 		}

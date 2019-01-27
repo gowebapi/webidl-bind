@@ -28,7 +28,7 @@ func {{.If.Name.Internal}}ToWasm(input {{.If.Name.InOut}}) js.Value {
 {{end}}
 
 {{define "get-static-attribute"}}
-func {{.Name.Def}}() {{.Type}} {
+func {{.Name.Def}} () {{.InOut}} {
 	klass := js.Global().Get("{{.If.Name.Idl}}")
 	value := klass.Get("{{.Name.Idl}}")
 	{{.From}}
@@ -37,14 +37,34 @@ func {{.Name.Def}}() {{.Type}} {
 {{end}}
 
 {{define "set-static-attribute"}}
-fix set-static-attribute
+func Set{{.Name.Def}} ( value {{.InOut}} ) {
+	klass := js.Global().Get("{{.If.Name.Idl}}")
+	{{.To}}
+	klass.Set("{{.Name.Idl}}", input)
+}
 {{end}}
+
+{{define "get-object-attribute"}}
+func (_this * {{.If.Name.Def}} ) {{.Name.Def}} () {{.InOut}} {
+	value := _this.value.Get("{{.Name.Idl}}")
+	{{.From}}
+	return ret
+}
+{{end}}
+
+{{define "set-object-attribute"}}
+func (_this * {{.If.Name.Def}} ) Set{{.Name.Def}} ( value {{.InOut}} )  {
+	{{.To}}
+	_this.value.Set("{{.Name.Idl}}", input)
+}
+{{end}}
+
 
 {{define "static-method-start"}}
 func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_klass := js.Global().Get("{{.If.Name.Idl}}")
 	_method := _klass.Get("{{.Name.Idl}}")
-	{{end}}
+{{end}}
 {{define "static-method-invoke"}}
 	{{if not .IsVoidReturn}}ret :={{end}} _method.Invoke({{.To.AllOut}})
 {{end}}
@@ -81,6 +101,7 @@ type interfaceAttribute struct {
 	Type  string
 	InOut string
 	From  string
+	To    string
 	If    *types.Interface
 }
 
@@ -112,6 +133,9 @@ func writeInterface(dst io.Writer, input types.Type) error {
 			return err
 		}
 	}
+	if err := writeInterfaceVars(value.Vars, value, "get-object-attribute", "set-object-attribute", dst); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -122,6 +146,7 @@ func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set str
 			Type:  typeDefine(a.Type, false),
 			InOut: typeDefine(a.Type, true),
 			From:  inoutGetToFromWasm(a.Type, "ret", "value", inoutFromTmpl),
+			To:    inoutGetToFromWasm(a.Type, "input", "value", inoutToTmpl),
 			If:    main,
 		}
 		if err := interfaceTmpl.ExecuteTemplate(dst, get, in); err != nil {
