@@ -88,6 +88,21 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 }
 {{end}}
 
+
+{{define "object-method-start"}}
+func ( _this * {{.If.Name.Def}} ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnList}} ) {
+	_method := _this.value.Get("{{.Name.Idl}}")
+{{end}}
+{{define "object-method-invoke"}}
+	{{if not .IsVoidReturn}}ret :={{end}} _method.Invoke({{.To.AllOut}})
+{{end}}
+{{define "object-method-end"}}
+	{{if not .IsVoidReturn}}result = value{{end}}
+	{{if .To.ReleaseHdl}}release = _releaseList{{end}}
+	return
+}
+{{end}}
+
 `
 
 var interfaceTmpl = template.Must(template.New("interface").Parse(interfaceTmplInput))
@@ -134,6 +149,9 @@ func writeInterface(dst io.Writer, input types.Type) error {
 		}
 	}
 	if err := writeInterfaceVars(value.Vars, value, "get-object-attribute", "set-object-attribute", dst); err != nil {
+		return err
+	}
+	if err := writeInterfaceMethods(value.Method, value, "object-method", dst); err != nil {
 		return err
 	}
 	return nil
