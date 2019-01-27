@@ -67,6 +67,7 @@ func WriteSource(conv *types.Convert) (map[string][]byte, error) {
 	ret := make(map[string][]byte)
 	for k, v := range target {
 		content := v.Bytes()
+		content = sourceCodeRemoveEmptyLines(content)
 		if source, err := format.Source(content); err == nil {
 			content = source
 		} else {
@@ -120,4 +121,39 @@ func FormatPkg(filename string) string {
 	}
 	value = strings.ToLower(value)
 	return value
+}
+
+// sourceCodeRemoveEmptyLines will remove empty lines
+func sourceCodeRemoveEmptyLines(code []byte) []byte {
+	add := []string{"//", "func", "type", "const", "var"}
+	in := bytes.NewBuffer(code)
+	var out bytes.Buffer
+	ignore := false
+	for {
+		s, err := in.ReadString('\n')
+		if err != nil && err != io.EOF {
+			panic(err)
+		}
+		if err == io.EOF {
+			break
+		}
+		if len(strings.TrimSpace(s)) == 0 {
+			continue
+		}
+		found := false
+		for _, prefix := range add {
+			if strings.HasPrefix(s, prefix) {
+				found = true
+				if !ignore {
+					out.WriteByte('\n')
+				}
+				ignore = true
+			}
+		}
+		if !found {
+			ignore = false
+		}
+		out.WriteString(s)
+	}
+	return out.Bytes()
 }
