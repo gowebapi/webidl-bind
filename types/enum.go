@@ -25,7 +25,7 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 	ret := &Enum{
 		standardType: standardType{
 			base:        in.NodeBase(),
-			name:        fromIdlName(t.main.setup.Package, in.Name),
+			name:        fromIdlName(t.main.setup.Package, in.Name, false),
 			needRelease: false,
 		},
 		source: in,

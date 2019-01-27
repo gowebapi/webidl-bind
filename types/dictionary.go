@@ -27,7 +27,7 @@ func (t *extractTypes) convertDictionary(in *ast.Dictionary) (*Dictionary, bool)
 	ret := &Dictionary{
 		standardType: standardType{
 			base:        in.NodeBase(),
-			name:        fromIdlName(t.main.setup.Package, in.Name),
+			name:        fromIdlName(t.main.setup.Package, in.Name, true),
 			needRelease: false,
 		},
 		source: in,

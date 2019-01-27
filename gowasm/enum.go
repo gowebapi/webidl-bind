@@ -10,32 +10,32 @@ import (
 
 const enumTmplInput = `
 {{define "header"}}
-type {{.Name.Public}} int
+type {{.Name.Def}} int
 
 const (
-{{range $idx, $v := .Values}}	{{$v.Go}}{{if eq $idx 0}} {{$.Name.Public}} = iota{{end}}
+{{range $idx, $v := .Values}}	{{$v.Go}}{{if eq $idx 0}} {{$.Name.Def}} = iota{{end}}
 {{end}}
 )
 
-var {{.Name.Local}}ToWasmTable = []string{
+var {{.Name.Internal}}ToWasmTable = []string{
 	{{range .Values}}"{{.Idl}}", {{end}}
 }
 
-var {{.Name.Local}}FromWasmTable = map[string]{{.Name.Public}} {
+var {{.Name.Internal}}FromWasmTable = map[string]{{.Name.Def}} {
 	{{range .Values}}"{{.Idl}}": {{.Go}},{{end}}
 }
 
-func {{.Name.Local}}ToWasm(in {{.Name.Public}}) string {
+func {{.Name.Internal}}ToWasm(in {{.Name.InOut}}) string {
 	idx := int(in)
-	if idx >= 0 && idx < len({{.Name.Local}}ToWasmTable) {
-		return {{.Name.Local}}ToWasmTable[idx]
+	if idx >= 0 && idx < len({{.Name.Internal}}ToWasmTable) {
+		return {{.Name.Internal}}ToWasmTable[idx]
 	}
 	panic("unknown input value")
 }
 
-func {{.Name.Local}}FromWasm(value js.Value) {{.Name.Public}} {
+func {{.Name.Internal}}FromWasm(value js.Value) {{.Name.InOut}} {
 	key := value.String()
-	conv, ok := {{.Name.Local}}FromWasmTable[key]
+	conv, ok := {{.Name.Internal}}FromWasmTable[key]
 	if !ok {
 		panic("unable to convert '" + key + "'")
 	}

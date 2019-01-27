@@ -51,7 +51,7 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 	ret := &Interface{
 		standardType: standardType{
 			base:        in.NodeBase(),
-			name:        fromIdlName(t.main.setup.Package, in.Name),
+			name:        fromIdlName(t.main.setup.Package, in.Name, false),
 			needRelease: false,
 		},
 		source: in,

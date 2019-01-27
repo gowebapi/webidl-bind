@@ -14,8 +14,23 @@ var (
 )
 
 type Name struct {
-	Package            string
-	Idl, Public, Local string
+	// Idl name
+	Idl string
+
+	// Package name
+	Package string
+
+	// Def is short for definition of a type, e.g. Foo
+	Def string
+
+	// InOut is method input and output variable type, e.g. *Foo
+	InOut string
+
+	// Internal name for used with methods and need to write some code
+	Internal string
+
+	// Pointer is true if InOut is a pointer type
+	Pointer bool 
 }
 
 type Type interface {

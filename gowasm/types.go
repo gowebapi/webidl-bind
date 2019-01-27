@@ -11,18 +11,26 @@ import (
 
 const typeDefineInput = `
 {{define "PrimitiveType"}}
-	{{.Lang}}
+	{{.Value.Lang}}
 {{end}}
 
 {{define "TypeNameRef"}}
-	{{.Name.Public}}
+	{{if .InOut}}	
+		{{.Value.Name.InOut}}
+	{{else}}
+		{{.Value.Name.Def}}
+	{{end}}
 {{end}}
 
 {{define "VoidType"}}
 {{end}}
 
 {{define "InterfaceType"}}
-	{{.If.Name.Public}}
+	{{if .InOut}}	
+		{{.Value.If.Name.InOut}}
+	{{else}}
+		{{.Value.If.Name.Def}}
+	{{end}}
 {{end}}
 `
 
@@ -43,8 +51,15 @@ const typeTemplateNameInput = `
 var typeDefineTmpl = template.Must(template.New("type-define").Parse(typeDefineInput))
 var typeTemplateNameTmpl = template.Must(template.New("type-template-name").Parse(typeTemplateNameInput))
 
-func typeDefine(value types.TypeRef) string {
-	return convertType(value, value, typeDefineTmpl)
+func typeDefine(value types.TypeRef, inout bool) string {
+	data := struct {
+		Value types.TypeRef
+		InOut bool
+	}{
+		Value: value,
+		InOut: inout,
+	}
+	return convertType(value, data, typeDefineTmpl)
 }
 
 func typeTemplateName(value types.TypeRef) string {

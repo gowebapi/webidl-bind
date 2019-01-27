@@ -11,21 +11,21 @@ import (
 
 const dictionaryTmplInput = `
 {{define "header"}}
-type {{.Dict.Name.Public}} struct {
-{{range .Members}}   {{.Name.Public}} {{.Type}}
+type {{.Dict.Name.Def}} struct {
+{{range .Members}}   {{.Name.Def}} {{.Type}}
 {{end}}
 }
 
-func {{.Dict.Name.Local}}ToWasm(input {{.Dict.Name.Public}}) js.Value {
+func {{.Dict.Name.Internal}}ToWasm(input {{.Dict.Name.InOut}}) js.Value {
 	out := js.Global().Get("Object").New()
 {{.To}}
 	return out
 }
 
-func {{.Dict.Name.Local}}FromWasm(input js.Value) {{.Dict.Name.Public}} {
-	var out {{.Dict.Name.Public}}
+func {{.Dict.Name.Internal}}FromWasm(input js.Value) {{.Dict.Name.InOut}} {
+	var out {{.Dict.Name.Def}}
 	{{.From}}
-	return out
+	return {{if .Dict.Name.Pointer}}&{{end}} out
 }
 
 {{end}}
@@ -44,8 +44,9 @@ type dictionaryData struct {
 }
 
 type dictionaryMember struct {
-	Name types.Name
-	Type string
+	Name  types.Name
+	Type  string
+	InOut string
 }
 
 func writeDictionary(dst io.Writer, value types.Type) error {
@@ -57,19 +58,20 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 	reqParam := []string{}
 	for idx, mi := range dict.Members {
 		mo := dictionaryMember{
-			Name: mi.Name(),
-			Type: typeDefine(mi.Type),
+			Name:  mi.Name(),
+			Type:  typeDefine(mi.Type, false),
+			InOut: typeDefine(mi.Type, true),
 		}
 		data.Members = append(data.Members, mo)
 		if mi.Required {
 			data.HaveReq = true
-			reqParam = append(reqParam, fmt.Sprint(mi.Name().Local, " ", mo.Type))
+			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.InOut))
 			data.Required = append(data.Required, mo)
 		}
-		fromIn, fromOut := setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Public)
-		toIn, toOut := setupVarName("input.@name@", idx, mo.Name.Public), setupVarName("value%d", idx, mo.Name.Public)
+		fromIn, fromOut := setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Def)
+		toIn, toOut := setupVarName("input.@name@", idx, mo.Name.Def), setupVarName("value%d", idx, mo.Name.Def)
 		from.WriteString(inoutGetToFromWasm(mi.Type, fromOut, fromIn, inoutFromTmpl))
-		from.WriteString(fmt.Sprintf("\n\tout.%s = out%d\n", mo.Name.Public, idx))
+		from.WriteString(fmt.Sprintf("\n\tout.%s = out%d\n", mo.Name.Def, idx))
 		to.WriteString(inoutGetToFromWasm(mi.Type, toOut, toIn, inoutToTmpl))
 		to.WriteString(fmt.Sprintf("\n\tout.Set(\"%s\", value%d)\n", mi.Name().Idl, idx))
 	}

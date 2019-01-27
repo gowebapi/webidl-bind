@@ -26,28 +26,37 @@ func clipString(input string) string {
 	return input
 }
 
-func fromIdlName(pkg string, name string) Name {
+func fromIdlName(pkg string, name string, pnt bool) Name {
 	if strings.HasPrefix(name, "_") && len(name) > 1 {
 		name = name[1:]
 	}
-	return Name{
-		Package: pkg,
-		Idl:     name,
-		Public:  toCamelCase(name, true),
-		Local:   toCamelCase(name, false),
+	ret := Name{
+		Package:  pkg,
+		Idl:      name,
+		Def:      toCamelCase(name, true),
+		Internal: toCamelCase(name, false),
+		Pointer:  pnt,
 	}
+	ret.InOut = ret.Def
+	if pnt {
+		ret.InOut = "*" + ret.InOut
+	}
+	return ret
 }
 
 func fromMethodName(name string) Name {
 	if strings.HasPrefix(name, "_") && len(name) > 1 {
 		name = name[1:]
 	}
-	return Name{
-		Package: "",
-		Idl:     name,
-		Public:  toCamelCase(name, true),
-		Local:   toCamelCase(name, false),
+	ret := Name{
+		Package:  "",
+		Idl:      name,
+		Def:      toCamelCase(name, true),
+		Internal: toCamelCase(name, false),
+		Pointer:  false,
 	}
+	ret.InOut = ret.Internal
+	return ret
 }
 
 func stringToConst(input string) string {

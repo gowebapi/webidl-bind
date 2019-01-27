@@ -107,7 +107,7 @@ func newTypeNameRef(in *ast.TypeName) *TypeNameRef {
 }
 
 func (t *TypeNameRef) link(conv *Convert) {
-	candidate := fromIdlName("", t.in.Name).Idl
+	candidate := fromIdlName("", t.in.Name, false).Idl
 	if real, f := conv.Types[candidate]; f {
 		t.Name = real.Name()
 		t.Underlying = real

@@ -19,7 +19,7 @@ func (t *extractTypes) convertCallback(in *ast.Callback) *Callback {
 	ret := &Callback{
 		standardType: standardType{
 			base:        in.NodeBase(),
-			name:        fromIdlName(t.main.setup.Package, in.Name),
+			name:        fromIdlName(t.main.setup.Package, in.Name, false),
 			needRelease: true,
 		},
 		source:     in,

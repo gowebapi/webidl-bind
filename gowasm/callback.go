@@ -8,9 +8,9 @@ import (
 
 const callbackTmplInput = `
 {{define "start"}}
-type {{.CB.Name.Public}} func ({{.ParamLine}})
+type {{.CB.Name.Def}} func ({{.ParamLine}})
 
-func {{.CB.Name.Local}}FromWasm(callback {{.CB.Name.Public}}, args []js.Value) {
+func {{.CB.Name.Internal}}FromWasm(callback {{.CB.Name.InOut}}, args []js.Value) {
 	if len(args) != 1 {
 		panic("unexpected parameter count")
 	}
@@ -36,7 +36,7 @@ func writeCallback(dst io.Writer, value types.Type) error {
 	cb := value.(*types.Callback)
 	data := &callbackData{
 		CB:     cb,
-		Return: typeDefine(cb.Return),
+		Return: typeDefine(cb.Return, true),
 		InOut:  setupInOutWasmData(cb.Parameters, "args[%d]", "_p%d"),
 	}
 	data.ParamLine, data.Params = parameterArgumentLine(cb.Parameters)

@@ -9,27 +9,27 @@ import (
 
 const interfaceTmplInput = `
 {{define "header"}}
-type {{.If.Name.Public}} struct {
+type {{.If.Name.Def}} struct {
 	value js.Value
 }
 
-func (t *{{.If.Name.Public}}) JSValue() js.Value {
+func (t *{{.If.Name.Def}}) JSValue() js.Value {
 	return t.value
 }
 
-func {{.If.Name.Local}}FromWasm(input js.Value) {{.If.Name.Public}} {
-	return {{.If.Name.Public}}{input}
+func {{.If.Name.Internal}}FromWasm(input js.Value) {{.If.Name.InOut}} {
+	return {{if .If.Name.Pointer}}&{{end}} {{.If.Name.Def}} {value: input}
 }
 
-func {{.If.Name.Local}}ToWasm(input {{.If.Name.Public}}) js.Value {
+func {{.If.Name.Internal}}ToWasm(input {{.If.Name.InOut}}) js.Value {
 	return input.value
 }
 
 {{end}}
 
 {{define "get-static-attribute"}}
-func {{.Name.Public}}() {{.Type}} {
-	klass := js.Global().Get("{{.If.Name.Public}}")
+func {{.Name.Def}}() {{.Type}} {
+	klass := js.Global().Get("{{.If.Name.Idl}}")
 	value := klass.Get("{{.Name.Idl}}")
 	{{.From}}
 	return ret
@@ -41,7 +41,7 @@ fix set-static-attribute
 {{end}}
 
 {{define "static-method-start"}}
-func {{.Name.Public}}({{.To.Params}}) ({{.ReturnList}}) {
+func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_klass := js.Global().Get("{{.If.Name.Idl}}")
 	_method := _klass.Get("{{.Name.Idl}}")
 	{{end}}
@@ -56,7 +56,7 @@ func {{.Name.Public}}({{.To.Params}}) ({{.ReturnList}}) {
 {{end}}
 
 {{define "constructor-start"}}
-func {{.Name.Public}}({{.To.Params}}) ({{.ReturnList}}) {
+func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_klass := js.Global().Get("{{.If.Name.Idl}}")
 {{end}}
 {{define "constructor-invoke"}}
@@ -77,10 +77,11 @@ type interfaceData struct {
 }
 
 type interfaceAttribute struct {
-	Name types.Name
-	Type string
-	From string
-	If   *types.Interface
+	Name  types.Name
+	Type  string
+	InOut string
+	From  string
+	If    *types.Interface
 }
 
 type interfaceMethod struct {
@@ -117,10 +118,11 @@ func writeInterface(dst io.Writer, input types.Type) error {
 func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set string, dst io.Writer) error {
 	for _, a := range vars {
 		in := &interfaceAttribute{
-			Name: a.Name(),
-			Type: typeDefine(a.Type),
-			From: inoutGetToFromWasm(a.Type, "ret", "value", inoutFromTmpl),
-			If:   main,
+			Name:  a.Name(),
+			Type:  typeDefine(a.Type, false),
+			InOut: typeDefine(a.Type, true),
+			From:  inoutGetToFromWasm(a.Type, "ret", "value", inoutFromTmpl),
+			If:    main,
 		}
 		if err := interfaceTmpl.ExecuteTemplate(dst, get, in); err != nil {
 			return err
@@ -176,7 +178,7 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 }
 
 func calculateMethodReturn(t types.TypeRef, releaseHdl bool) (lang, list string, isVoid bool) {
-	lang = typeDefine(t)
+	lang = typeDefine(t, true)
 	isVoid = types.IsVoid(t)
 
 	candidate := []string{}
