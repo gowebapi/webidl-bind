@@ -27,7 +27,7 @@ const inoutToTmplInput = `
 	})
 	_releaseList = append(_releaseList, {{.Out}})
 {{end}}
-{{define "type-enum"}}      {{.Type.Name.Local}}ToWasm(_value) {{end}}
+{{define "type-enum"}}      {{.Out}} := {{.Type.Name.Local}}ToWasm({{.In}}) {{end}}
 `
 
 const inoutFromTmplInput = `
@@ -36,6 +36,7 @@ const inoutFromTmplInput = `
 {{define "end"}}
 {{end}}
 
+{{define "type-PrimitiveType"}}  {{.Out}} := ({{.In}}).{{.Type.JsMethod}}() {{end}}
 {{define "type-callback"}} callbackInFrom() {{end}}
 {{define "type-enum"}}	{{.Out}} := {{.Name.Local}}FromWasm({{.In}}) {{end}}
 {{define "type-InterfaceType"}}   {{.Out}} := {{.Name.Local}}FromWasm({{.In}}) {{end}}
@@ -143,9 +144,8 @@ func setupInOutWasmForType(t types.TypeRef, in, out string) *inoutData {
 }
 
 func setupVarName(value string, idx int, name string) string {
-	if value == "@name" {
-		return name
-	} else if strings.Index(value, "%") != -1 {
+	value = strings.Replace(value, "@name@", name, -1)
+	if strings.Index(value, "%") != -1 {
 		return fmt.Sprintf(value, idx)
 	}
 	return value

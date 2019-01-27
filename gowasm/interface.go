@@ -10,6 +10,19 @@ import (
 const interfaceTmplInput = `
 {{define "header"}}
 type {{.If.Name.Public}} struct {
+	value js.Value
+}
+
+func (t *{{.If.Name.Public}}) JSValue() js.Value {
+	return t.value
+}
+
+func {{.If.Name.Local}}FromWasm(input js.Value) {{.If.Name.Public}} {
+	return {{.If.Name.Public}}{input}
+}
+
+func {{.If.Name.Local}}ToWasm(input {{.If.Name.Public}}) js.Value {
+	return input.value
 }
 
 {{end}}
@@ -47,7 +60,7 @@ func {{.Name.Public}}({{.To.Params}}) ({{.ReturnList}}) {
 	_klass := js.Global().Get("{{.If.Name.Idl}}")
 {{end}}
 {{define "constructor-invoke"}}
-	_returned := _klass.New()
+	_returned := _klass.New({{.To.AllOut}})
 {{end}}
 {{define "constructor-end"}}
 	result = _result
@@ -131,7 +144,7 @@ func writeInterfaceMethods(methods []*types.IfMethod, main *types.Interface, tmp
 }
 
 func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string, dst io.Writer) error {
-	to := setupInOutWasmData(m.Params, "@name", "_p%d")
+	to := setupInOutWasmData(m.Params, "@name@", "_p%d")
 	retLang, retList, isVoid := calculateMethodReturn(m.Return, to.ReleaseHdl)
 	in := &interfaceMethod{
 		Name:         m.Name(),

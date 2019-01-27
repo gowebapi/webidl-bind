@@ -19,7 +19,7 @@ func convertType(in ast.Type) TypeRef {
 		case "void":
 			ret = newVoidType(in)
 		case "DOMString":
-			ret = newPrimitiveType(in.Name, "string")
+			ret = newPrimitiveType(in.Name, "string", "String")
 		default:
 			ret = newTypeNameRef(in)
 		}
@@ -74,19 +74,21 @@ func newInterfaceType(link *Interface) *InterfaceType {
 
 type PrimitiveType struct {
 	basicType
-	Idl  string
-	Lang string
+	Idl      string
+	Lang     string
+	JsMethod string
 }
 
 var _ TypeRef = &PrimitiveType{}
 
-func newPrimitiveType(idl, lang string) *PrimitiveType {
+func newPrimitiveType(idl, lang, method string) *PrimitiveType {
 	return &PrimitiveType{
 		basicType: basicType{
 			needRelease: false,
 		},
-		Idl:  idl,
-		Lang: lang,
+		Idl:      idl,
+		Lang:     lang,
+		JsMethod: method,
 	}
 }
 
