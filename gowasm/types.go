@@ -34,22 +34,7 @@ const typeDefineInput = `
 {{end}}
 `
 
-const typeTemplateNameInput = `
-{{define "PrimitveType"}}
-	primitive
-{{end}}
-
-{{define "TypeNameRef"}}
-	typenameref
-{{end}}
-
-{{define "VoidType"}}
-     void
-{{end}}
-`
-
 var typeDefineTmpl = template.Must(template.New("type-define").Parse(typeDefineInput))
-var typeTemplateNameTmpl = template.Must(template.New("type-template-name").Parse(typeTemplateNameInput))
 
 func typeDefine(value types.TypeRef, inout bool) string {
 	data := struct {
@@ -60,33 +45,6 @@ func typeDefine(value types.TypeRef, inout bool) string {
 		InOut: inout,
 	}
 	return convertType(value, data, typeDefineTmpl)
-}
-
-func typeTemplateName(value types.TypeRef) string {
-	if ref, ok := value.(*types.TypeNameRef); ok {
-		switch ref.Underlying.(type) {
-		case *types.Callback:
-			return "callback"
-		case *types.Enum:
-			return "enum"
-		case *types.Dictionary:
-			return "dictionary"
-		case *types.Interface:
-			return "interface"
-		default:
-			panic(fmt.Sprintf("unable to handle %T: %#v", ref.Underlying, ref))
-		}
-	}
-	switch value.(type) {
-	case *types.PrimitiveType:
-		// TODO expand primitive type?
-		return "PrimitiveType"
-	case *types.VoidType:
-		return "VoidType"
-	case *types.InterfaceType:
-		return "InterfaceType"
-	}
-	panic(fmt.Sprintf("unknown type %T", value))
 }
 
 func convertType(value types.TypeRef, data interface{}, tmpl *template.Template) string {
@@ -107,7 +65,8 @@ func convertType(value types.TypeRef, data interface{}, tmpl *template.Template)
 func findTypeTemplate(value types.TypeRef, tmpl *template.Template) *template.Template {
 	// find based on type name
 	debug := fmt.Sprintf("unable to find in '%s' template: %T", tmpl.Name(), value)
-	tmplName := "type-" + typeTemplateName(value)
+	tmplName, _ := value.TemplateName()
+	tmplName = "type-" + tmplName
 	t := tmpl.Lookup(tmplName)
 	if t != nil {
 		return t

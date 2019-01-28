@@ -36,3 +36,7 @@ func (t *Callback) GetAllTypeRefs(list []TypeRef) []TypeRef {
 	}
 	return list
 }
+
+func (t *Callback) TemplateName() (string, TemplateNameFlags) {
+	return "callback", NoTnFlag
+}

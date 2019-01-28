@@ -50,3 +50,7 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 func (t *Enum) GetAllTypeRefs(list []TypeRef) []TypeRef {
 	return list
 }
+
+func (t *Enum) TemplateName() (string, TemplateNameFlags) {
+	return "enum", NoTnFlag
+}

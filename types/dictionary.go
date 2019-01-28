@@ -76,3 +76,7 @@ func (t *Dictionary) NeedRelease() bool {
 	}
 	return need
 }
+
+func (t *Dictionary) TemplateName() (string, TemplateNameFlags) {
+	return "dictionary", PointerTnFlag
+}

@@ -15,13 +15,9 @@ const inoutToTmplInput = `
 {{define "end"}}
 {{end}}
 
-{{define "type-PrimitiveType"}}	{{.Out}} := {{.In}}
-{{end}}
-
-{{define "type-dictionary"}}	{{.Out}} := {{.TypeRef.Name.Internal}}ToWasm({{.In}})
-{{end}}
-
-{{define "type-interface"}}	{{.Out}} := {{.TypeRef.Name.Internal}}ToWasm({{.In}}) {{end}}
+{{define "type-primitive"}}		{{.Out}} := {{.In}} {{end}}
+{{define "type-dictionary"}}	{{.Out}} := {{.TypeRef.Name.Internal}}ToWasm( {{.In}} ) {{end}}
+{{define "type-interface"}}		{{.Out}} := {{.TypeRef.Name.Internal}}ToWasm( {{.In}} ) {{end}}
 
 {{define "type-callback"}}
 	{{.Out}} := js.NewCallback(func (_cb_args []js.Value) {
@@ -38,11 +34,11 @@ const inoutFromTmplInput = `
 {{define "end"}}
 {{end}}
 
-{{define "type-PrimitiveType"}}  {{.Out}} := ({{.In}}).{{.Type.JsMethod}}() {{end}}
-{{define "type-callback"}} callbackInFrom() {{end}}
-{{define "type-enum"}}	{{.Out}} := {{.Name.Internal}}FromWasm({{.In}}) {{end}}
-{{define "type-InterfaceType"}}   {{.Out}} := {{.Name.Internal}}FromWasm({{.In}}) {{end}}
-{{define "type-interface"}}   {{.Out}} := {{.Name.Internal}}FromWasm({{.In}}) {{end}}
+{{define "type-primitive"}}	{{.Out}} := ({{.In}}).{{.Type.JsMethod}}() {{end}}
+{{define "type-callback"}}	callbackInFrom() {{end}}
+{{define "type-enum"}}		{{.Out}} := {{.Name.Internal}}FromWasm( {{.In}} ) {{end}}
+{{define "type-interface-type"}} {{.Out}} := {{.Name.Internal}}FromWasm( {{.In}} ) {{end}}
+{{define "type-interface"}}	{{.Out}} := {{.Name.Internal}}FromWasm( {{.In}} ) {{end}}
 
 `
 
@@ -101,12 +97,12 @@ func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 			Name:  pi.Name,
 			Type:  typeDefine(pi.Type, false),
 			InOut: typeDefine(pi.Type, true),
-			Tmpl:  typeTemplateName(pi.Type),
 			RealP: pi,
 			RealT: pi.Type,
 			In:    setupVarName(in, idx, pi.Name),
 			Out:   setupVarName(out, idx, pi.Name),
 		}
+		po.Tmpl, _ = pi.Type.TemplateName()
 		releaseHdl = releaseHdl || pi.Type.NeedRelease()
 		paramList = append(paramList, po)
 		paramTextList = append(paramTextList, fmt.Sprint(pi.Name, " ", po.InOut))
@@ -127,12 +123,12 @@ func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
 		Name:  pi.Name,
 		Type:  typeDefine(pi.Type, false),
 		InOut: typeDefine(pi.Type, true),
-		Tmpl:  typeTemplateName(pi.Type),
 		RealP: pi,
 		RealT: pi.Type,
 		In:    setupVarName(in, idx, pi.Name),
 		Out:   setupVarName(out, idx, pi.Name),
 	}
+	po.Tmpl, _ = pi.Type.TemplateName()
 	return &inoutData{
 		ParamList:  []inoutParam{po},
 		Params:     fmt.Sprint(pi.Name, " ", po.InOut),

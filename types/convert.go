@@ -30,7 +30,7 @@ type Name struct {
 	Internal string
 
 	// Pointer is true if InOut is a pointer type
-	Pointer bool 
+	Pointer bool
 }
 
 type Type interface {
@@ -49,6 +49,8 @@ type Type interface {
 	// 	WriteTo() error
 
 	NeedRelease() bool
+
+	TemplateName() (string, TemplateNameFlags)
 }
 
 type Convert struct {

@@ -216,3 +216,7 @@ func (t *Interface) GetAllTypeRefs(list []TypeRef) []TypeRef {
 	}
 	return list
 }
+
+func (t *Interface) TemplateName() (string, TemplateNameFlags) {
+	return "interface", NoTnFlag
+}

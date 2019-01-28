@@ -8,8 +8,23 @@ import (
 
 type TypeRef interface {
 	link(conv *Convert)
+
+	// the type is doing some allocation that needs manual release.
 	NeedRelease() bool
+
+	// what template suffix to use
+	TemplateName() (string, TemplateNameFlags)
 }
+
+// TemplateNameFlags highlight inner structure. A bitwise value.
+type TemplateNameFlags int
+
+const (
+	NoTnFlag  TemplateNameFlags = 0
+	AnyTnFlag                   = (1 << iota)
+	PointerTnFlag
+	NullableTnFlag
+)
 
 func convertType(in ast.Type) TypeRef {
 	var ret TypeRef
@@ -72,6 +87,10 @@ func newInterfaceType(link *Interface) *InterfaceType {
 	}
 }
 
+func (t *InterfaceType) TemplateName() (string, TemplateNameFlags) {
+	return "interface-type", NoTnFlag
+}
+
 type PrimitiveType struct {
 	basicType
 	Idl      string
@@ -90,6 +109,10 @@ func newPrimitiveType(idl, lang, method string) *PrimitiveType {
 		Lang:     lang,
 		JsMethod: method,
 	}
+}
+
+func (t *PrimitiveType) TemplateName() (string, TemplateNameFlags) {
+	return "primitive", NoTnFlag
 }
 
 type TypeNameRef struct {
@@ -120,6 +143,10 @@ func (t *TypeNameRef) NeedRelease() bool {
 	return t.Underlying.NeedRelease()
 }
 
+func (t *TypeNameRef) TemplateName() (string, TemplateNameFlags) {
+	return t.Underlying.TemplateName()
+}
+
 type VoidType struct {
 	basicType
 	in *ast.TypeName
@@ -134,4 +161,8 @@ func newVoidType(in *ast.TypeName) *VoidType {
 		},
 		in: in,
 	}
+}
+
+func (t VoidType) TemplateName() (string, TemplateNameFlags) {
+	return "void", NoTnFlag
 }
