@@ -22,7 +22,7 @@ func (t *extractTypes) convertParams(list []*ast.Parameter) []*Parameter {
 }
 
 func (t *extractTypes) convertParam(in *ast.Parameter) *Parameter {
-	t.assertTrue(len(in.Annotations) == 0, in, "unsupported annotation")
+	t.warningTrue(len(in.Annotations) == 0, in, "parameter: unsupported annotation")
 	return &Parameter{
 		in:       in,
 		Name:     toCamelCase(in.Name, false),

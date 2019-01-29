@@ -44,12 +44,15 @@ func (conv *extractTypes) convertDictMember(in *ast.Member) *DictMember {
 	conv.assertTrue(in.Attribute, in, "must be an attribute")
 	conv.assertTrue(!in.Static, in, "static is not allowed")
 	conv.assertTrue(!in.Const, in, "const is not allowed")
-	conv.assertTrue(len(in.Annotations) == 0, in, "annotations are not supported")
 	conv.assertTrue(len(in.Parameters) == 0, in, "parameters on member is not allowed (or not supported)")
 	conv.assertTrue(len(in.Specialization) == 0, in, "specialization on member is not allowed (or not supported)")
-	conv.assertTrue(!in.Required, in, "default value not implemented yet, report this as a bug :)")
+	conv.warningTrue(!in.Required, in, "required value not implemented yet, report this as a bug :)")
+	for _, a := range in.Annotations {
+		conv.warning (a,  "dictionary member: annotation '%s' is not supported", a.Name)
+	}
 	if in.Init != nil {
-		conv.warning(in, "default value for dictionary not implemented yet")
+		conv.warning(in, "dictionary: default value for dictionary not implemented yet")
+		// parser.Dump(os.Stdout, in)
 	}
 	return &DictMember{
 		nameAndLink: nameAndLink{

@@ -47,6 +47,23 @@ type IfMethod struct {
 	Params []*Parameter
 }
 
+var ignoredInterfaceAnnotation = map[string]bool{
+	"Exposed":                           true,
+	"LegacyUnenumerableNamedProperties": true,
+	"HTMLConstructor": true, 
+}
+
+var ignoredMethodAnnotation = map[string]bool{
+	"CEReactions": true, "NewObject": true,
+	"Unscopable": true,
+}
+
+var ignoredVarAnnotations = map[string]bool{
+	"Unforgeable": true, "Replaceable": true,
+	"SameObject": true, "CEReactions": true,
+	"PutForwards": true, "Unscopable": true,
+}
+
 func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 	ret := &Interface{
 		standardType: standardType{
@@ -93,7 +110,7 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 				Return: newInterfaceType(ret),
 				Params: params,
 			}
-		} else {
+		} else if _, f := ignoredInterfaceAnnotation[a.Name]; !f {
 			t.warning(a, "unsupported interface annotation '%s'", a.Name)
 		}
 	}
@@ -124,9 +141,23 @@ func (conv *extractTypes) convertInterfaceConst(in *ast.Member) *IfConst {
 }
 
 func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
-	conv.assertTrue(len(in.Annotations) == 0, in, "var: unsupported annotation")
+	for _, a := range in.Annotations {
+		if _, f := ignoredVarAnnotations[a.Name]; f {
+			continue
+		}
+		switch a.Name {
+		case "TreatNullAs":
+			// only for DOMString
+			if a.Value != "EmptyString" {
+				conv.failing(in, "for TreatNullAs, only TreatNullAs=EmptyString is allowed according to specification")
+			}
+			conv.warning(in, "unhandled TreatNullAs (null should be an empty string)")
+		default:
+			conv.warning(a, "unhandled variable annotation '%s'", a.Name)
+		}
+	}
 	conv.assertTrue(len(in.Parameters) == 0, in, "var: unsupported parameters")
-	conv.assertTrue(in.Specialization == "", in, "var: unsupported specialization")
+	conv.warningTrue(in.Specialization == "", in, "var: unsupported specialization")
 	conv.assertTrue(in.Init == nil, in, "var: unsupported default value")
 	conv.assertTrue(!in.Required, in, "var: unsupported required attribute")
 	// parser.Dump(os.Stdout, in)
@@ -144,11 +175,16 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 }
 
 func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
-	conv.assertTrue(in.Specialization == "", in, "method: unsupported specialization (need to be implemented)")
+	conv.warningTrue(in.Specialization == "", in, "method: unsupported specialization (need to be implemented)")
 	conv.assertTrue(in.Init == nil, in, "method: unsupported default value")
 	conv.assertTrue(!in.Required, in, "method: unsupported required tag")
 	// TODO add support for method annotations
-	conv.assertTrue(len(in.Annotations) == 0, in, "method: unsupported annotation")
+	for _, a := range in.Annotations {
+		if _, f := ignoredMethodAnnotation[a.Name]; f {
+			continue
+		}
+		conv.warning(a, "unsupported method annotation '%s'", a.Name)
+	}
 
 	return &IfMethod{
 		nameAndLink: nameAndLink{
@@ -162,30 +198,6 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 	}
 }
 
-/*
-func (conv *extractTypes) convertInterfaceMember(in *ast.Member) *Member {
-	conv.assertTrue(!in.Readonly, in, "read only not allowed")
-	conv.assertTrue(in.Attribute, in, "must be an attribute")
-	conv.assertTrue(!in.Static, in, "static is not allowed")
-	conv.assertTrue(!in.Const, in, "const is not allowed")
-	conv.assertTrue(len(in.Annotations) == 0, in, "annotations are not supported")
-	conv.assertTrue(len(in.Parameters) == 0, in, "parameters on member is not allowed (or not supported)")
-	conv.assertTrue(len(in.Specialization) == 0, in, "specialization on member is not allowed (or not supported)")
-	conv.assertTrue(!in.Required, in, "default value not implemented yet, report this as a bug :)")
-	if in.Init != nil {
-		conv.warning(in, "default value for dictionary not implemented yet")
-	}
-	return &Member{
-		standardType: standardType{
-			base: in.NodeBase(),
-			name: fromMethodName(in.Name),
-		},
-		Src:      in,
-		Type:     convertType(in.Type),
-		Required: in.Required,
-	}
-}
-*/
 func (t *Interface) GetAllTypeRefs(list []TypeRef) []TypeRef {
 	if t.Constructor != nil {
 		list = append(list, t.Constructor.Return)

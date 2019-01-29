@@ -54,14 +54,17 @@ type Type interface {
 }
 
 type Convert struct {
-	Types       map[string]Type
-	All         []Type
-	Enums       []*Enum
-	Callbacks   []*Callback
-	Dictionary  []*Dictionary
-	partialDict []*Dictionary
-	Interface   []*Interface
-	partialIf   []*Interface
+	Types        map[string]Type
+	All          []Type
+	Enums        []*Enum
+	Callbacks    []*Callback
+	Dictionary   []*Dictionary
+	partialDict  []*Dictionary
+	Interface    []*Interface
+	partialIf    []*Interface
+	Mixin        map[string]*Mixin
+	partialMixin []*Mixin
+	Includes     []*Includes
 
 	HaveError bool
 	setup     *Setup
@@ -78,6 +81,7 @@ func NewConvert() *Convert {
 	return &Convert{
 		Types: make(map[string]Type),
 		Enums: []*Enum{},
+		Mixin: make(map[string]*Mixin),
 	}
 }
 
@@ -124,10 +128,13 @@ func (conv *Convert) evaluateTypeRef() {
 
 func (conv *Convert) evaluateDictonary() {
 	for _, pd := range conv.partialDict {
-		conv.failing(pd, "partial dictonaries is not supported")
+		conv.warning(pd, "partial dictonaries is not supported")
 	}
 	for _, pd := range conv.partialIf {
-		conv.failing(pd, "partial interface is not supported")
+		conv.warning(pd, "partial interface is not supported")
+	}
+	for _, m := range conv.Mixin {
+		conv.warning(m.source, "mixin is not supported")
 	}
 	// exapand partial
 	// sort members
@@ -149,12 +156,30 @@ func (t *Convert) add(v Type) {
 		return
 	}
 	name := v.Name().Idl
-	if _, f := t.Types[name]; f {
-		t.failing(v, "type '%s' already exist", name)
-		return
-	}
+	t.registerTypeName(v, name)
 	t.Types[name] = v
 	t.All = append(t.All, v)
+}
+
+func (t *Convert) addMixin(m *Mixin) {
+	if m == nil {
+		return
+	}
+	t.registerTypeName(m.source, m.Name)
+	t.Mixin[m.Name] = m
+}
+
+func (t *Convert) registerTypeName(ref ast.Node, name string) {
+	if _, f := t.Types[name]; f {
+		t.failing(ref, "type '%s' already exist", name)
+		panic("hu?")
+		return
+	}
+	if _, f := t.Mixin[name]; f {
+		t.failing(ref, "type '%s' already exist.", name)
+		panic("hu?")
+		return
+	}
 }
 
 func (t *Convert) failing(base ast.Node, format string, args ...interface{}) {
@@ -169,6 +194,12 @@ func (t *Convert) warning(base ast.Node, format string, args ...interface{}) {
 func (t *Convert) assertTrue(test bool, node ast.Node, format string, args ...interface{}) {
 	if !test {
 		t.failing(node, format, args...)
+	}
+}
+
+func (t *Convert) warningTrue(test bool, node ast.Node, format string, args ...interface{}) {
+	if !test {
+		t.warning(node, format, args...)
 	}
 }
 
@@ -198,10 +229,14 @@ func (t *extractTypes) Interface(value *ast.Interface) bool {
 }
 
 func (t *extractTypes) Mixin(value *ast.Mixin) bool {
-	fmt.Println("evaluate mixim")
-	parser.Dump(os.Stdout, value)
-	panic("todo")
-	// return false
+	// fmt.Println("evaluate mixim")
+	next, partial := t.convertMixin(value)
+	if partial {
+		t.main.partialMixin = append(t.main.partialMixin, next)
+	} else {
+		t.main.addMixin(next)
+	}
+	return false
 }
 
 func (t *extractTypes) Dictionary(value *ast.Dictionary) bool {
@@ -223,9 +258,9 @@ func (t *extractTypes) Implementation(value *ast.Implementation) {
 }
 
 func (t *extractTypes) Includes(value *ast.Includes) {
-	fmt.Println("evaluate includes")
-	parser.Dump(os.Stdout, value)
-	panic("todo")
+	// fmt.Println("evaluate includes")
+	next := t.convertIncludes(value)
+	t.main.Includes = append(t.main.Includes, next)
 }
 
 func (t *extractTypes) Callback(value *ast.Callback) bool {
@@ -237,10 +272,10 @@ func (t *extractTypes) Callback(value *ast.Callback) bool {
 }
 
 func (t *extractTypes) Typedef(value *ast.Typedef) bool {
-	fmt.Println("evaluate typedef")
-	parser.Dump(os.Stdout, value)
-	panic("todo")
-	// return false
+	// fmt.Println("evaluate typedef")
+	next := t.convertTypeDef(value)
+	t.main.add(next)
+	return false
 }
 
 func (t *extractTypes) failing(node ast.Node, format string, args ...interface{}) {
@@ -253,4 +288,8 @@ func (t *extractTypes) warning(node ast.Node, format string, args ...interface{}
 
 func (t *extractTypes) assertTrue(test bool, node ast.Node, format string, args ...interface{}) {
 	t.main.assertTrue(test, node, format, args...)
+}
+
+func (t *extractTypes) warningTrue(test bool, node ast.Node, format string, args ...interface{}) {
+	t.main.warningTrue(test, node, format, args...)
 }

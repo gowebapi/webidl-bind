@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"wasm/generator/gowasm"
 	"wasm/generator/types"
 
@@ -73,6 +74,7 @@ func processFile(filename string, conv *types.Convert, setup *types.Setup) error
 	file := parser.Parse(string(content))
 	trouble := ast.GetAllErrorNodes(file)
 	if len(trouble) > 0 {
+		sort.SliceStable(trouble, func(i, j int) bool { return trouble[i].Line < trouble[j].Line })
 		for _, e := range trouble {
 			failing(e.NodeBase(), e.Message)
 		}

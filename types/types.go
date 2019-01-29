@@ -31,25 +31,51 @@ func convertType(in ast.Type) TypeRef {
 	switch in := in.(type) {
 	case *ast.TypeName:
 		switch in.Name {
+		case "boolean":
+			ret = newPrimitiveType(in.Name, "bool", "Bool")
+		case "short":
+			ret = newPrimitiveType(in.Name, "int", "Int")
+		case "unsigned short":
+			ret = newPrimitiveType(in.Name, "int", "Int")
+		case "long":
+			ret = newPrimitiveType(in.Name, "int", "Int")
+		case "unsigned long":
+			ret = newPrimitiveType(in.Name, "uint", "Int")
+		case "long long":
+			ret = newPrimitiveType(in.Name, "int", "Int")
+		case "unsigned long long":
+			ret = newPrimitiveType(in.Name, "int", "Int")
+		case "double":
+			ret = newPrimitiveType(in.Name, "float64", "Float")
+		case "unrestricted double":
+			ret = newPrimitiveType(in.Name, "float64", "Float")
 		case "void":
 			ret = newVoidType(in)
 		case "DOMString":
+			ret = newPrimitiveType(in.Name, "string", "String")
+		case "USVString":
 			ret = newPrimitiveType(in.Name, "string", "String")
 		default:
 			ret = newTypeNameRef(in)
 		}
 	case *ast.AnyType:
-		panic("support not implemented")
+		ret = newAnyType()
 	case *ast.SequenceType:
-		panic("support not implemented")
+		elem := convertType(in.Elem)
+		ret = newSequenceType(elem)
 	case *ast.RecordType:
-		panic("support not implemented")
+		panic(fmt.Sprintf("support not implemented: input source line %d", in.Line))
 	case *ast.ParametrizedType:
-		panic("support not implemented")
+		var elems []TypeRef
+		for _, e := range in.Elems {
+			elems = append(elems, convertType(e))
+		}
+		ret = newParametrizedType(in.Name, elems)
 	case *ast.UnionType:
-		panic("support not implemented")
+		ret = newUnionType(in.Types)
 	case *ast.NullableType:
-		panic("support not implemented")
+		inner := convertType(in.Type)
+		ret = newNullableType(inner)
 	}
 	if ret == nil {
 		msg := fmt.Sprintf("unknown type %T: %#v", in, in)
@@ -68,6 +94,26 @@ func (t *basicType) link(conv *Convert) {
 
 func (t *basicType) NeedRelease() bool {
 	return t.needRelease
+}
+
+type AnyType struct {
+	basicType
+}
+
+var _ TypeRef = &AnyType{}
+
+func newAnyType() *AnyType {
+	return &AnyType{
+		basicType: basicType{
+			// if the any type is a js.Func or js.TypeArray a
+			// release handle is needed
+			needRelease: true,
+		},
+	}
+}
+
+func (t *AnyType) TemplateName() (string, TemplateNameFlags) {
+	return "any", NoTnFlag
 }
 
 type InterfaceType struct {
@@ -89,6 +135,62 @@ func newInterfaceType(link *Interface) *InterfaceType {
 
 func (t *InterfaceType) TemplateName() (string, TemplateNameFlags) {
 	return "interface-type", NoTnFlag
+}
+
+type NullableType struct {
+	Type TypeRef
+}
+
+var _ TypeRef = &NullableType{}
+
+func newNullableType(inner TypeRef) *NullableType {
+	return &NullableType{Type: inner}
+}
+
+func (t *NullableType) link(conv *Convert) {
+	t.Type.link(conv)
+}
+
+func (t *NullableType) NeedRelease() bool {
+	return t.Type.NeedRelease()
+}
+
+func (t *NullableType) TemplateName() (string, TemplateNameFlags) {
+	name, flags := t.Type.TemplateName()
+	return name + "-null", flags | NullableTnFlag | PointerTnFlag
+}
+
+type ParametrizedType struct {
+	Name  string
+	Elems []TypeRef
+}
+
+var _ TypeRef = &ParametrizedType{}
+
+func newParametrizedType(name string, elems []TypeRef) *ParametrizedType {
+	return &ParametrizedType{
+		Name:  name,
+		Elems: elems,
+	}
+}
+
+func (t *ParametrizedType) link(conv *Convert) {
+	for _, t := range t.Elems {
+		t.link(conv)
+	}
+}
+
+func (t *ParametrizedType) NeedRelease() bool {
+	for _, t := range t.Elems {
+		if t.NeedRelease() {
+			return true
+		}
+	}
+	return false
+}
+
+func (t *ParametrizedType) TemplateName() (string, TemplateNameFlags) {
+	return "parametrized", NoTnFlag
 }
 
 type PrimitiveType struct {
@@ -113,6 +215,30 @@ func newPrimitiveType(idl, lang, method string) *PrimitiveType {
 
 func (t *PrimitiveType) TemplateName() (string, TemplateNameFlags) {
 	return "primitive", NoTnFlag
+}
+
+type SequenceType struct {
+	Elem TypeRef
+}
+
+var _ TypeRef = &SequenceType{}
+
+func newSequenceType(elem TypeRef) *SequenceType {
+	return &SequenceType{
+		Elem: elem,
+	}
+}
+
+func (t *SequenceType) link(conv *Convert) {
+	t.Elem.link(conv)
+}
+
+func (t *SequenceType) NeedRelease() bool {
+	return t.Elem.NeedRelease()
+}
+
+func (t *SequenceType) TemplateName() (string, TemplateNameFlags) {
+	return "sequence", NoTnFlag
 }
 
 type TypeNameRef struct {
@@ -145,6 +271,39 @@ func (t *TypeNameRef) NeedRelease() bool {
 
 func (t *TypeNameRef) TemplateName() (string, TemplateNameFlags) {
 	return t.Underlying.TemplateName()
+}
+
+type UnionType struct {
+	Types []TypeRef
+}
+
+var _ TypeRef = &UnionType{}
+
+func newUnionType(input []ast.Type) *UnionType {
+	ret := &UnionType{}
+	for _, t := range input {
+		ret.Types = append(ret.Types, convertType(t))
+	}
+	return ret
+}
+
+func (t *UnionType) link(conv *Convert) {
+	for _, t := range t.Types {
+		t.link(conv)
+	}
+}
+
+func (t *UnionType) NeedRelease() bool {
+	for _, t := range t.Types {
+		if t.NeedRelease() {
+			return true
+		}
+	}
+	return false
+}
+
+func (t *UnionType) TemplateName() (string, TemplateNameFlags) {
+	return "union", NoTnFlag
 }
 
 type VoidType struct {
