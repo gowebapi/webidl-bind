@@ -15,7 +15,8 @@ import (
 )
 
 var args struct {
-	output string
+	output   string
+	warnings bool
 }
 
 var stopErr = errors.New("stopping for previous error")
@@ -98,17 +99,21 @@ func failing(base *ast.Base, format string, args ...interface{}) {
 	fmt.Fprint(dst, "\n")
 }
 
-func warning(base *ast.Base, format string, args ...interface{}) {
+func warning(base *ast.Base, format string, values ...interface{}) {
+	if !args.warnings {
+		return
+	}
 	dst := os.Stderr
 	fmt.Fprint(dst, "warning:")
 	if base != nil {
 		fmt.Fprint(dst, base.Line, ":")
 	}
-	fmt.Fprintf(dst, format, args...)
+	fmt.Fprintf(dst, format, values...)
 	fmt.Fprint(dst, "\n")
 }
 
 func parseArgs() string {
+	flag.BoolVar(&args.warnings, "log-warning", true, "log warnings")
 	flag.StringVar(&args.output, "output", "", "output file")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
