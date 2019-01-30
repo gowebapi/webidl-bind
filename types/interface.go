@@ -50,7 +50,7 @@ type IfMethod struct {
 var ignoredInterfaceAnnotation = map[string]bool{
 	"Exposed":                           true,
 	"LegacyUnenumerableNamedProperties": true,
-	"HTMLConstructor": true, 
+	"HTMLConstructor":                   true,
 }
 
 var ignoredMethodAnnotation = map[string]bool{
@@ -227,6 +227,22 @@ func (t *Interface) GetAllTypeRefs(list []TypeRef) []TypeRef {
 		}
 	}
 	return list
+}
+
+func (t *Interface) merge(m *Interface, conv *Convert) {
+	t.Consts = append(t.Consts, m.Consts...)
+	t.Vars = append(t.Vars, m.Vars...)
+	t.StaticVars = append(t.StaticVars, m.StaticVars...)
+	t.Method = append(t.Method, m.Method...)
+	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
+}
+
+func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
+	t.Consts = append(t.Consts, m.Consts...)
+	t.Vars = append(t.Vars, m.Vars...)
+	t.StaticVars = append(t.StaticVars, m.StaticVars...)
+	t.Method = append(t.Method, m.Method...)
+	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
 }
 
 func (t *Interface) TemplateName() (string, TemplateNameFlags) {

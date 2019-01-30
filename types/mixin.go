@@ -6,7 +6,7 @@ import (
 	"github.com/dennwc/webidl/ast"
 )
 
-type Mixin struct {
+type mixin struct {
 	source *ast.Mixin
 	Name   string
 
@@ -19,12 +19,16 @@ type Mixin struct {
 
 // var _ Type = &Mixin{}
 
-type Includes struct {
+type includes struct {
 	source *ast.Includes
+	// Name is the target
+	Name string
+	// Source points to a mixin
+	Source string
 }
 
-func (t *extractTypes) convertMixin(in *ast.Mixin) (*Mixin, bool) {
-	ret := &Mixin{
+func (t *extractTypes) convertMixin(in *ast.Mixin) (*mixin, bool) {
+	ret := &mixin{
 		source: in,
 		Name:   in.Name,
 	}
@@ -56,9 +60,27 @@ func (t *extractTypes) convertMixin(in *ast.Mixin) (*Mixin, bool) {
 	return ret, in.Partial
 }
 
-func (t *extractTypes) convertIncludes(in *ast.Includes) *Includes {
-	ret := &Includes{
+func (t *extractTypes) convertIncludes(in *ast.Includes) *includes {
+	ret := &includes{
 		source: in,
+		Name:   in.Name,
+		Source: in.Source,
 	}
 	return ret
+}
+
+func (t *mixin) merge(m *mixin, conv *Convert) {
+	t.Consts = append(t.Consts, m.Consts...)
+	t.Vars = append(t.Vars, m.Vars...)
+	t.StaticVars = append(t.StaticVars, m.StaticVars...)
+	t.Method = append(t.Method, m.Method...)
+	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
+}
+
+func (t *mixin) NodeBase() *ast.Base {
+	return t.source.NodeBase()
+}
+
+func (t *includes) NodeBase() *ast.Base {
+	return t.source.NodeBase()
 }

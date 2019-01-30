@@ -62,9 +62,9 @@ type Convert struct {
 	partialDict  []*Dictionary
 	Interface    []*Interface
 	partialIf    []*Interface
-	Mixin        map[string]*Mixin
-	partialMixin []*Mixin
-	Includes     []*Includes
+	mixin        map[string]*mixin
+	partialMixin []*mixin
+	includes     []*includes
 
 	HaveError bool
 	setup     *Setup
@@ -81,7 +81,7 @@ func NewConvert() *Convert {
 	return &Convert{
 		Types: make(map[string]Type),
 		Enums: []*Enum{},
-		Mixin: make(map[string]*Mixin),
+		mixin: make(map[string]*mixin),
 	}
 }
 
@@ -107,7 +107,7 @@ func (t *Convert) Process(file *ast.File, setup *Setup) error {
 // EvaluateInput is doing verification on input IDL according
 // to WebIDL specification
 func (conv *Convert) EvaluateInput() error {
-	if conv.evaluateDictonary(); conv.HaveError {
+	if conv.processPartialAndMixin(); conv.HaveError {
 		return StopErr
 	}
 	if conv.evaluateTypeRef(); conv.HaveError {
@@ -126,15 +126,52 @@ func (conv *Convert) evaluateTypeRef() {
 	}
 }
 
-func (conv *Convert) evaluateDictonary() {
+func (conv *Convert) processPartialAndMixin() {
 	for _, pd := range conv.partialDict {
-		conv.warning(pd, "partial dictonaries is not supported")
+		if candidate, f := conv.Types[pd.Name().Idl]; f {
+			if parent, ok := candidate.(*Dictionary); ok {
+				parent.merge(pd, conv)
+			} else {
+				conv.failing(pd, "trying to add partial dictionary to a non-dictionary type (%T)", candidate)
+			}
+		} else {
+			conv.failing(pd, "directory '%s' doesn't exist", pd.Name)
+		}
 	}
 	for _, pd := range conv.partialIf {
-		conv.warning(pd, "partial interface is not supported")
+		if candidate, f := conv.Types[pd.Name().Idl]; f {
+			if parent, ok := candidate.(*Interface); ok {
+				parent.merge(pd, conv)
+			} else {
+				conv.failing(pd, "trying to add partial interface to a non-interface type (%T)", candidate)
+			}
+		} else {
+			conv.failing(pd, "interface '%s' doesn't exist", pd.Name)
+		}
 	}
-	for _, m := range conv.Mixin {
-		conv.warning(m.source, "mixin is not supported")
+	for _, pd := range conv.partialMixin {
+		if parent, f := conv.mixin[pd.Name]; f {
+			parent.merge(pd, conv)
+		} else {
+			conv.failing(pd, "mixin '%s' doesn't exist", pd.Name)
+		}
+	}
+	for _, inc := range conv.includes {
+		target, found := conv.Types[inc.Name]
+		if !found {
+			conv.failing(inc, "include refernce to '%s' that doesn't exist", inc.Name)
+			continue
+		}
+		src, found := conv.mixin[inc.Source]
+		if !found {
+			conv.failing(inc, "include is references to '%s' that doesn't exist (or is not an mixin)", inc.Source)
+			continue
+		}
+		if doc, ok := target.(*Interface); ok {
+			doc.mergeMixin(src, conv)
+		} else {
+			conv.failing(inc, "target include existed to be an interface, not %T", target)
+		}
 	}
 	// exapand partial
 	// sort members
@@ -161,23 +198,21 @@ func (t *Convert) add(v Type) {
 	t.All = append(t.All, v)
 }
 
-func (t *Convert) addMixin(m *Mixin) {
+func (t *Convert) addMixin(m *mixin) {
 	if m == nil {
 		return
 	}
-	t.registerTypeName(m.source, m.Name)
-	t.Mixin[m.Name] = m
+	t.registerTypeName(m, m.Name)
+	t.mixin[m.Name] = m
 }
 
 func (t *Convert) registerTypeName(ref ast.Node, name string) {
 	if _, f := t.Types[name]; f {
 		t.failing(ref, "type '%s' already exist", name)
-		panic("hu?")
 		return
 	}
-	if _, f := t.Mixin[name]; f {
+	if _, f := t.mixin[name]; f {
 		t.failing(ref, "type '%s' already exist.", name)
-		panic("hu?")
 		return
 	}
 }
@@ -260,7 +295,7 @@ func (t *extractTypes) Implementation(value *ast.Implementation) {
 func (t *extractTypes) Includes(value *ast.Includes) {
 	// fmt.Println("evaluate includes")
 	next := t.convertIncludes(value)
-	t.main.Includes = append(t.main.Includes, next)
+	t.main.includes = append(t.main.includes, next)
 }
 
 func (t *extractTypes) Callback(value *ast.Callback) bool {

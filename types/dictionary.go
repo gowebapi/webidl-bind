@@ -24,6 +24,7 @@ type DictMember struct {
 
 func (t *extractTypes) convertDictionary(in *ast.Dictionary) (*Dictionary, bool) {
 	t.assertTrue(len(in.Annotations) == 0, in, "unsupported annotations")
+	// t.assertTrue(in.Inherits == "", in, "unsupported dictionary inherites of %s", in.Inherits)
 	ret := &Dictionary{
 		standardType: standardType{
 			base:        in.NodeBase(),
@@ -48,7 +49,7 @@ func (conv *extractTypes) convertDictMember(in *ast.Member) *DictMember {
 	conv.assertTrue(len(in.Specialization) == 0, in, "specialization on member is not allowed (or not supported)")
 	conv.warningTrue(!in.Required, in, "required value not implemented yet, report this as a bug :)")
 	for _, a := range in.Annotations {
-		conv.warning (a,  "dictionary member: annotation '%s' is not supported", a.Name)
+		conv.warning(a, "dictionary member: annotation '%s' is not supported", a.Name)
 	}
 	if in.Init != nil {
 		conv.warning(in, "dictionary: default value for dictionary not implemented yet")
@@ -70,6 +71,12 @@ func (t *Dictionary) GetAllTypeRefs(list []TypeRef) []TypeRef {
 		list = append(list, m.Type)
 	}
 	return list
+}
+
+func (t *Dictionary) merge(partial *Dictionary, conv *Convert) {
+	conv.assertTrue(partial.source.Inherits == "", partial, "unsupported dictionary inherites on partial")
+	// TODO member elemination logic with duplicate is detected
+	t.Members = append(t.Members, partial.Members...)
 }
 
 func (t *Dictionary) NeedRelease() bool {
