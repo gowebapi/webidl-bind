@@ -160,7 +160,7 @@ func writeInOutLoop(data *inoutData, tmpl *template.Template, dst io.Writer) err
 		return err
 	}
 	for _, p := range data.ParamList {
-		code := inoutGetToFromWasm(p.RealT, p.Out, p.In, tmpl)
+		code := inoutGetToFromWasm(p.RealT, p.Info, p.Out, p.In, tmpl)
 		if _, err := io.WriteString(dst, code); err != nil {
 			return err
 		}
@@ -171,16 +171,19 @@ func writeInOutLoop(data *inoutData, tmpl *template.Template, dst io.Writer) err
 	return nil
 }
 
-func inoutGetToFromWasm(t types.TypeRef, out, in string, tmpl *template.Template) string {
+func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, tmpl *template.Template) string {
+	if info == nil {
+		info = t.DefaultParam()
+	}
 	data := struct {
 		In, Out string
 		Type    types.TypeRef
-		Info    types.BasicInfo
+		Info    *types.TypeInfo
 	}{
 		In:   in,
 		Out:  out,
 		Type: t,
-		Info: t.Basic(),
+		Info: info,
 	}
 	return convertType(t, data, tmpl) + "\n"
 }

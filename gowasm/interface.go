@@ -66,7 +66,7 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_method := _klass.Get("{{.Name.Idl}}")
 {{end}}
 {{define "static-method-invoke"}}
-	{{if not .IsVoidReturn}}ret :={{end}} _method.Invoke({{.To.AllOut}})
+	{{if not .IsVoidReturn}}ret :={{end}} _method.Invoke(_to_args[0:_to_count]...) //  {{.To.AllOut}})
 {{end}}
 {{define "static-method-end"}}
 	{{if not .IsVoidReturn}}result = value{{end}}
@@ -163,8 +163,8 @@ func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set str
 		in := &interfaceAttribute{
 			Name: a.Name(),
 			Type: a.Type.DefaultParam(),
-			From: inoutGetToFromWasm(a.Type, "ret", "value", inoutFromTmpl),
-			To:   inoutGetToFromWasm(a.Type, "input", "value", inoutToTmpl),
+			From: inoutGetToFromWasm(a.Type, nil, "ret", "value", inoutFromTmpl),
+			To:   inoutGetToFromWasm(a.Type, nil, "input", "value", inoutToTmpl),
 			If:   main,
 		}
 		if err := interfaceTmpl.ExecuteTemplate(dst, get, in); err != nil {
