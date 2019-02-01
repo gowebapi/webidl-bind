@@ -47,7 +47,3 @@ func (t *typeDef) key() string {
 func (t *typeDef) Param(nullable, option, vardict bool) *TypeInfo {
 	return t.Type.Param(nullable, option, vardict)
 }
-
-func (t *typeDef) TemplateName() (string, TemplateNameFlags) {
-	panic("typeDef should be expanded before generation step")
-}

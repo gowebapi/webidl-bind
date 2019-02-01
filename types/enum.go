@@ -67,7 +67,3 @@ func (t *Enum) key() string {
 func (t *Enum) Param(nullable, option, vardict bool) *TypeInfo {
 	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false)
 }
-
-func (t *Enum) TemplateName() (string, TemplateNameFlags) {
-	return "enum", NoTnFlag
-}

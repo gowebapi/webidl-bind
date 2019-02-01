@@ -27,7 +27,7 @@ func convertType(value types.TypeRef, data interface{}, tmpl *template.Template)
 func findTypeTemplate(value types.TypeRef, tmpl *template.Template) *template.Template {
 	// find based on type name
 	debug := fmt.Sprintf("unable to find in '%s' template: %T", tmpl.Name(), value)
-	tmplName, _ := value.TemplateName()
+	tmplName := value.Basic().Template
 	tmplName = "type-" + tmplName
 	t := tmpl.Lookup(tmplName)
 	if t != nil {

@@ -96,7 +96,7 @@ func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 			In:    setupVarName(in, idx, pi.Name),
 			Out:   setupVarName(out, idx, pi.Name),
 		}
-		po.Tmpl, _ = pi.Type.TemplateName()
+		po.Tmpl = po.Info.Template
 		releaseHdl = releaseHdl || pi.Type.NeedRelease()
 		paramList = append(paramList, po)
 		paramTextList = append(paramTextList, fmt.Sprint(pi.Name, " ", po.Info.InOut))
@@ -121,7 +121,7 @@ func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
 		In:    setupVarName(in, idx, pi.Name),
 		Out:   setupVarName(out, idx, pi.Name),
 	}
-	po.Tmpl, _ = pi.Type.TemplateName()
+	po.Tmpl = po.Info.Template
 	return &inoutData{
 		ParamList:  []inoutParam{po},
 		Params:     fmt.Sprint(pi.Name, " ", po.Info.InOut),

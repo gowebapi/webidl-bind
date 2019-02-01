@@ -265,10 +265,6 @@ func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
 	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
 }
 
-func (t *Interface) TemplateName() (string, TemplateNameFlags) {
-	return "interface", NoTnFlag
-}
-
 func (t *IfConst) Name() MethodName {
 	return t.name
 }

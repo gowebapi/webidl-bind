@@ -36,8 +36,6 @@ type Type interface {
 
 	NeedRelease() bool
 
-	TemplateName() (string, TemplateNameFlags)
-
 	// key to use in Convert.Types
 	key() string
 }

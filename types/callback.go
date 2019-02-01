@@ -53,7 +53,3 @@ func (t *Callback) key() string {
 func (t *Callback) Param(nullable, option, vardict bool) *TypeInfo {
 	return newTypeInfo(t.basic, nullable, option, vardict, false, true, true)
 }
-
-func (t *Callback) TemplateName() (string, TemplateNameFlags) {
-	return "callback", NoTnFlag
-}

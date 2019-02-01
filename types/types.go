@@ -18,20 +18,7 @@ type TypeRef interface {
 
 	// the type is doing some allocation that needs manual release.
 	NeedRelease() bool
-
-	// what template suffix to use
-	TemplateName() (string, TemplateNameFlags)
 }
-
-// TemplateNameFlags highlight inner structure. A bitwise value.
-type TemplateNameFlags int
-
-const (
-	NoTnFlag  TemplateNameFlags = 0
-	AnyTnFlag                   = (1 << iota)
-	PointerTnFlag
-	NullableTnFlag
-)
 
 func convertType(in ast.Type) TypeRef {
 	var ret TypeRef
@@ -152,10 +139,6 @@ func (t *AnyType) Param(nullable, option, vardict bool) *TypeInfo {
 	return ret
 }
 
-func (t *AnyType) TemplateName() (string, TemplateNameFlags) {
-	return "any", NoTnFlag
-}
-
 type InterfaceType struct {
 	basicType
 	If *Interface
@@ -183,10 +166,6 @@ func (t *InterfaceType) DefaultParam() *TypeInfo {
 
 func (t *InterfaceType) Param(nullable, option, vardict bool) *TypeInfo {
 	return t.If.Param(nullable, option, vardict)
-}
-
-func (t *InterfaceType) TemplateName() (string, TemplateNameFlags) {
-	return "interface-type", NoTnFlag
 }
 
 type NullableType struct {
@@ -217,11 +196,6 @@ func (t *NullableType) Param(nullable, option, vardict bool) *TypeInfo {
 
 func (t *NullableType) NeedRelease() bool {
 	return t.Type.NeedRelease()
-}
-
-func (t *NullableType) TemplateName() (string, TemplateNameFlags) {
-	name, flags := t.Type.TemplateName()
-	return name + "-null", flags | NullableTnFlag | PointerTnFlag
 }
 
 type ParametrizedType struct {
@@ -265,10 +239,6 @@ func (t *ParametrizedType) NeedRelease() bool {
 	return false
 }
 
-func (t *ParametrizedType) TemplateName() (string, TemplateNameFlags) {
-	return "parametrized", NoTnFlag
-}
-
 type PrimitiveType struct {
 	basicType
 	Idl      string
@@ -307,10 +277,6 @@ func (t *PrimitiveType) Param(nullable, option, vardict bool) *TypeInfo {
 	return newTypeInfo(t.Basic(), nullable, option, vardict, false, false, false)
 }
 
-func (t *PrimitiveType) TemplateName() (string, TemplateNameFlags) {
-	return "primitive", NoTnFlag
-}
-
 type SequenceType struct {
 	Elem TypeRef
 }
@@ -341,10 +307,6 @@ func (t *SequenceType) Param(nullable, option, vardict bool) *TypeInfo {
 
 func (t *SequenceType) NeedRelease() bool {
 	return t.Elem.NeedRelease()
-}
-
-func (t *SequenceType) TemplateName() (string, TemplateNameFlags) {
-	return "sequence", NoTnFlag
 }
 
 type TypeNameRef struct {
@@ -383,10 +345,6 @@ func (t *TypeNameRef) Param(nullable, option, vardict bool) *TypeInfo {
 
 func (t *TypeNameRef) NeedRelease() bool {
 	return t.Underlying.NeedRelease()
-}
-
-func (t *TypeNameRef) TemplateName() (string, TemplateNameFlags) {
-	return t.Underlying.TemplateName()
 }
 
 type UnionType struct {
@@ -430,10 +388,6 @@ func (t *UnionType) NeedRelease() bool {
 	return false
 }
 
-func (t *UnionType) TemplateName() (string, TemplateNameFlags) {
-	return "union", NoTnFlag
-}
-
 type VoidType struct {
 	basicType
 	in *ast.TypeName
@@ -473,8 +427,4 @@ func (t *VoidType) Param(nullable, option, vardict bool) *TypeInfo {
 		Option:      false,
 		Vardict:     false,
 	}
-}
-
-func (t VoidType) TemplateName() (string, TemplateNameFlags) {
-	return "void", NoTnFlag
 }

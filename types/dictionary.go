@@ -105,10 +105,6 @@ func (t *Dictionary) Param(nullable, option, vardict bool) *TypeInfo {
 	return newTypeInfo(t.basic, nullable, option, vardict, true, false, false)
 }
 
-func (t *Dictionary) TemplateName() (string, TemplateNameFlags) {
-	return "dictionary", PointerTnFlag
-}
-
 func (t *DictMember) Name() MethodName {
 	return t.name
 }
