@@ -16,16 +16,16 @@ const inoutToTmplInput = `
 {{end}}
 
 {{define "type-primitive"}}		{{.Out}} := {{.In}} {{end}}
-{{define "type-dictionary"}}	{{.Out}} := {{.TypeRef.Name.Internal}}ToWasm( {{.In}} ) {{end}}
-{{define "type-interface"}}		{{.Out}} := {{.TypeRef.Name.Internal}}ToWasm( {{.In}} ) {{end}}
+{{define "type-dictionary"}}	{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
+{{define "type-interface"}}		{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
 
 {{define "type-callback"}}
 	{{.Out}} := js.NewCallback(func (_cb_args []js.Value) {
-		{{.TypeRef.Name.Internal}}FromWasm({{.In}}, _cb_args)
+		{{.Info.Internal}}FromWasm({{.In}}, _cb_args)
 	})
 	_releaseList = append(_releaseList, {{.Out}})
 {{end}}
-{{define "type-enum"}}      {{.Out}} := {{.Type.Name.Internal}}ToWasm({{.In}}) {{end}}
+{{define "type-enum"}}      {{.Out}} := {{.Info.Internal}}ToWasm({{.In}}) {{end}}
 `
 
 const inoutFromTmplInput = `
@@ -36,9 +36,9 @@ const inoutFromTmplInput = `
 
 {{define "type-primitive"}}	{{.Out}} := ({{.In}}).{{.Type.JsMethod}}() {{end}}
 {{define "type-callback"}}	callbackInFrom() {{end}}
-{{define "type-enum"}}		{{.Out}} := {{.Name.Internal}}FromWasm( {{.In}} ) {{end}}
-{{define "type-interface-type"}} {{.Out}} := {{.Name.Internal}}FromWasm( {{.In}} ) {{end}}
-{{define "type-interface"}}	{{.Out}} := {{.Name.Internal}}FromWasm( {{.In}} ) {{end}}
+{{define "type-enum"}}		{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
+{{define "type-interface-type"}} {{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
+{{define "type-interface"}}	{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 
 `
 
@@ -58,10 +58,8 @@ type inoutData struct {
 type inoutParam struct {
 	// IDl variable name
 	Name string
-	// Type in text
-	Type string
-	// Type as a method in/out parameter
-	InOut string
+	// Info about the type
+	Info *types.TypeInfo
 	// template name
 	Tmpl string
 	// input variable during convert to/from wasm
@@ -76,11 +74,8 @@ type inoutParam struct {
 
 func parameterArgumentLine(input []*types.Parameter) (all string, list []string) {
 	for _, value := range input {
-		if value.Optional || value.Variadic {
-			panic("todo")
-		}
-		t := typeDefine(value.Type, true)
-		name := value.Name + " " + t
+		info := value.Type.Param(false, value.Optional, value.Variadic)
+		name := value.Name + " " + info.InOut
 		list = append(list, name)
 	}
 	all = strings.Join(list, ", ")
@@ -95,8 +90,7 @@ func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 	for idx, pi := range params {
 		po := inoutParam{
 			Name:  pi.Name,
-			Type:  typeDefine(pi.Type, false),
-			InOut: typeDefine(pi.Type, true),
+			Info:  pi.Type.Param(false, pi.Optional, pi.Variadic),
 			RealP: pi,
 			RealT: pi.Type,
 			In:    setupVarName(in, idx, pi.Name),
@@ -105,7 +99,7 @@ func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 		po.Tmpl, _ = pi.Type.TemplateName()
 		releaseHdl = releaseHdl || pi.Type.NeedRelease()
 		paramList = append(paramList, po)
-		paramTextList = append(paramTextList, fmt.Sprint(pi.Name, " ", po.InOut))
+		paramTextList = append(paramTextList, fmt.Sprint(pi.Name, " ", po.Info.InOut))
 		allout = append(allout, po.Out)
 	}
 	return &inoutData{
@@ -121,8 +115,7 @@ func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
 	pi := param
 	po := inoutParam{
 		Name:  pi.Name,
-		Type:  typeDefine(pi.Type, false),
-		InOut: typeDefine(pi.Type, true),
+		Info:  pi.Type.Param(false, pi.Optional, pi.Variadic),
 		RealP: pi,
 		RealT: pi.Type,
 		In:    setupVarName(in, idx, pi.Name),
@@ -131,7 +124,7 @@ func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
 	po.Tmpl, _ = pi.Type.TemplateName()
 	return &inoutData{
 		ParamList:  []inoutParam{po},
-		Params:     fmt.Sprint(pi.Name, " ", po.InOut),
+		Params:     fmt.Sprint(pi.Name, " ", po.Info.InOut),
 		ReleaseHdl: pi.Type.NeedRelease(),
 		AllOut:     po.Out,
 	}
@@ -182,18 +175,12 @@ func inoutGetToFromWasm(t types.TypeRef, out, in string, tmpl *template.Template
 	data := struct {
 		In, Out string
 		Type    types.TypeRef
-		TypeRef *types.TypeNameRef
-		Name    types.Name
+		Info    types.BasicInfo
 	}{
 		In:   in,
 		Out:  out,
 		Type: t,
-	}
-	if ref, ok := t.(*types.TypeNameRef); ok {
-		data.TypeRef = ref
-		data.Name = ref.Name
-	} else if ref, ok := t.(*types.InterfaceType); ok {
-		data.Name = ref.If.Name()
+		Info: t.Basic(),
 	}
 	return convertType(t, data, tmpl) + "\n"
 }

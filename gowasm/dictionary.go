@@ -11,21 +11,21 @@ import (
 
 const dictionaryTmplInput = `
 {{define "header"}}
-type {{.Dict.Name.Def}} struct {
-{{range .Members}}   {{.Name.Def}} {{.Type}}
+type {{.Dict.Basic.Def}} struct {
+{{range .Members}}   {{.Name.Def}} {{.Info.Def}}
 {{end}}
 }
 
-func {{.Dict.Name.Internal}}ToWasm(input {{.Dict.Name.InOut}}) js.Value {
+func {{.Dict.Basic.Internal}}ToWasm(input {{.Type.InOut}} ) js.Value {
 	out := js.Global().Get("Object").New()
 {{.To}}
 	return out
 }
 
-func {{.Dict.Name.Internal}}FromWasm(input js.Value) {{.Dict.Name.InOut}} {
-	var out {{.Dict.Name.Def}}
+func {{.Dict.Basic.Internal}}FromWasm(input js.Value) {{.Type.InOut}} {
+	var out {{.Dict.Basic.Def}}
 	{{.From}}
-	return {{if .Dict.Name.Pointer}}&{{end}} out
+	return {{if .Type.Pointer}}&{{end}} out
 }
 
 {{end}}
@@ -41,31 +41,31 @@ type dictionaryData struct {
 	ReqParamLine string
 	From         string
 	To           string
+	Type         *types.TypeInfo
 }
 
 type dictionaryMember struct {
-	Name  types.Name
-	Type  string
-	InOut string
+	Name types.MethodName
+	Info *types.TypeInfo
 }
 
 func writeDictionary(dst io.Writer, value types.Type) error {
 	dict := value.(*types.Dictionary)
 	data := &dictionaryData{
 		Dict: dict,
+		Type: dict.DefaultParam(),
 	}
 	var to, from bytes.Buffer
 	reqParam := []string{}
 	for idx, mi := range dict.Members {
 		mo := dictionaryMember{
-			Name:  mi.Name(),
-			Type:  typeDefine(mi.Type, false),
-			InOut: typeDefine(mi.Type, true),
+			Name: mi.Name(),
+			Info: mi.Type.DefaultParam(),
 		}
 		data.Members = append(data.Members, mo)
 		if mi.Required {
 			data.HaveReq = true
-			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.InOut))
+			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.Info.InOut))
 			data.Required = append(data.Required, mo)
 		}
 		fromIn, fromOut := setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Def)

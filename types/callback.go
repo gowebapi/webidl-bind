@@ -6,6 +6,7 @@ import (
 
 type Callback struct {
 	standardType
+	basic      BasicInfo
 	Return     TypeRef
 	Parameters []*Parameter
 	source     *ast.Callback
@@ -19,14 +20,22 @@ func (t *extractTypes) convertCallback(in *ast.Callback) *Callback {
 	ret := &Callback{
 		standardType: standardType{
 			base:        in.NodeBase(),
-			name:        fromIdlName(t.main.setup.Package, in.Name, false),
 			needRelease: true,
 		},
+		basic:      fromIdlToTypeName(t.main.setup.Package, in.Name, "callback"),
 		source:     in,
 		Return:     convertType(in.Return),
 		Parameters: params,
 	}
 	return ret
+}
+
+func (t *Callback) Basic() BasicInfo {
+	return t.basic
+}
+
+func (t *Callback) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
 }
 
 func (t *Callback) GetAllTypeRefs(list []TypeRef) []TypeRef {
@@ -35,6 +44,14 @@ func (t *Callback) GetAllTypeRefs(list []TypeRef) []TypeRef {
 		list = append(list, p.Type)
 	}
 	return list
+}
+
+func (t *Callback) key() string {
+	return t.basic.Idl
+}
+
+func (t *Callback) Param(nullable, option, vardict bool) *TypeInfo {
+	return newTypeInfo(t.basic, nullable, option, vardict, false, true, true)
 }
 
 func (t *Callback) TemplateName() (string, TemplateNameFlags) {

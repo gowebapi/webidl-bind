@@ -9,44 +9,6 @@ import (
 	"wasm/generator/types"
 )
 
-const typeDefineInput = `
-{{define "PrimitiveType"}}
-	{{.Value.Lang}}
-{{end}}
-
-{{define "TypeNameRef"}}
-	{{if .InOut}}	
-		{{.Value.Name.InOut}}
-	{{else}}
-		{{.Value.Name.Def}}
-	{{end}}
-{{end}}
-
-{{define "VoidType"}}
-{{end}}
-
-{{define "InterfaceType"}}
-	{{if .InOut}}	
-		{{.Value.If.Name.InOut}}
-	{{else}}
-		{{.Value.If.Name.Def}}
-	{{end}}
-{{end}}
-`
-
-var typeDefineTmpl = template.Must(template.New("type-define").Parse(typeDefineInput))
-
-func typeDefine(value types.TypeRef, inout bool) string {
-	data := struct {
-		Value types.TypeRef
-		InOut bool
-	}{
-		Value: value,
-		InOut: inout,
-	}
-	return convertType(value, data, typeDefineTmpl)
-}
-
 func convertType(value types.TypeRef, data interface{}, tmpl *template.Template) string {
 	t := findTypeTemplate(value, tmpl)
 	var buf bytes.Buffer

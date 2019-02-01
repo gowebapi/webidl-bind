@@ -6,6 +6,7 @@ import (
 
 type Dictionary struct {
 	standardType
+	basic    BasicInfo
 	source   *ast.Dictionary
 	Inherits *Dictionary
 
@@ -17,6 +18,7 @@ var _ Type = &Dictionary{}
 
 type DictMember struct {
 	nameAndLink
+	name     MethodName
 	Src      *ast.Member
 	Type     TypeRef
 	Required bool
@@ -28,9 +30,9 @@ func (t *extractTypes) convertDictionary(in *ast.Dictionary) (*Dictionary, bool)
 	ret := &Dictionary{
 		standardType: standardType{
 			base:        in.NodeBase(),
-			name:        fromIdlName(t.main.setup.Package, in.Name, true),
 			needRelease: false,
 		},
+		basic:  fromIdlToTypeName(t.main.setup.Package, in.Name, "dictionary"),
 		source: in,
 	}
 	for _, mi := range in.Members {
@@ -58,12 +60,20 @@ func (conv *extractTypes) convertDictMember(in *ast.Member) *DictMember {
 	return &DictMember{
 		nameAndLink: nameAndLink{
 			base: in.NodeBase(),
-			name: fromMethodName(in.Name),
 		},
+		name:     fromIdlToMethodName(in.Name),
 		Src:      in,
 		Type:     convertType(in.Type),
 		Required: in.Required,
 	}
+}
+
+func (t *Dictionary) Basic() BasicInfo {
+	return t.basic
+}
+
+func (t *Dictionary) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
 }
 
 func (t *Dictionary) GetAllTypeRefs(list []TypeRef) []TypeRef {
@@ -71,6 +81,10 @@ func (t *Dictionary) GetAllTypeRefs(list []TypeRef) []TypeRef {
 		list = append(list, m.Type)
 	}
 	return list
+}
+
+func (t *Dictionary) key() string {
+	return t.basic.Idl
 }
 
 func (t *Dictionary) merge(partial *Dictionary, conv *Convert) {
@@ -87,6 +101,14 @@ func (t *Dictionary) NeedRelease() bool {
 	return need
 }
 
+func (t *Dictionary) Param(nullable, option, vardict bool) *TypeInfo {
+	return newTypeInfo(t.basic, nullable, option, vardict, true, false, false)
+}
+
 func (t *Dictionary) TemplateName() (string, TemplateNameFlags) {
 	return "dictionary", PointerTnFlag
+}
+
+func (t *DictMember) Name() MethodName {
+	return t.name
 }

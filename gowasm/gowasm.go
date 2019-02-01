@@ -97,7 +97,7 @@ func writeType(value types.Type, target map[string]*bytes.Buffer, conv writeFn, 
 }
 
 func getTarget(value types.Type, target map[string]*bytes.Buffer) (*bytes.Buffer, error) {
-	pkg := value.Name().Package
+	pkg := value.Basic().Package
 	dst, ok := target[pkg]
 	if ok {
 		return dst, nil

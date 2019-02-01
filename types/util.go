@@ -8,15 +8,60 @@ import (
 	"github.com/dennwc/webidl/ast"
 )
 
+// TypeName contains usage information about a type
+type BasicInfo struct {
+	// Idl name
+	Idl string
+
+	// Package name
+	Package string
+
+	// Def is short for definition of a type, e.g. Foo
+	Def string
+
+	// Internal name for used with methods and need to write some code
+	Internal string
+
+	// Template define a template name prefix/suffix
+	Template string
+}
+
+// TypeName contains usage information about a type
+type TypeInfo struct {
+	BasicInfo
+
+	// InOut is method input and output variable type, e.g. *Foo
+	InOut string
+
+	// Pointer is true if InOut is a pointer type
+	Pointer bool
+
+	// NeedRelease define if the type need a release handle
+	NeedRelease bool
+
+	Nullable bool
+	Option   bool
+	Vardict  bool
+}
+
+type MethodName struct {
+	// Idl name
+	Idl string
+
+	// Def contains method name to use e.g. Foo
+	Def string
+
+	// Internal name for used with methods and need to write some code
+	Internal string
+}
+
 type standardType struct {
 	base        *ast.Base
-	name        Name
 	needRelease bool
 }
 
 type nameAndLink struct {
 	base *ast.Base
-	name Name
 }
 
 func clipString(input string) string {
@@ -26,37 +71,53 @@ func clipString(input string) string {
 	return input
 }
 
-func fromIdlName(pkg string, name string, pnt bool) Name {
-	if strings.HasPrefix(name, "_") && len(name) > 1 {
-		name = name[1:]
-	}
-	ret := Name{
+func fromIdlToTypeName(pkg string, name string, tmpl string) BasicInfo {
+	name = getIdlName(name)
+	ret := BasicInfo{
 		Package:  pkg,
 		Idl:      name,
 		Def:      toCamelCase(name, true),
 		Internal: toCamelCase(name, false),
-		Pointer:  pnt,
-	}
-	ret.InOut = ret.Def
-	if pnt {
-		ret.InOut = "*" + ret.InOut
+		Template: tmpl,
 	}
 	return ret
 }
 
-func fromMethodName(name string) Name {
-	if strings.HasPrefix(name, "_") && len(name) > 1 {
-		name = name[1:]
-	}
-	ret := Name{
-		Package:  "",
+func fromIdlToMethodName(name string) MethodName {
+	name = getIdlName(name)
+	ret := MethodName{
 		Idl:      name,
 		Def:      toCamelCase(name, true),
 		Internal: toCamelCase(name, false),
-		Pointer:  false,
 	}
-	ret.InOut = ret.Internal
 	return ret
+}
+
+func getIdlName(input string) string {
+	if strings.HasPrefix(input, "_") && len(input) > 1 {
+		input = input[1:]
+	}
+	return input
+}
+
+func newTypeInfo(basic BasicInfo, nullable, option, vardict, pointer, disablePtr, release bool) *TypeInfo {
+	t := &TypeInfo{
+		BasicInfo:   basic,
+		InOut:       basic.Def,
+		NeedRelease: release,
+		Pointer:     (nullable || option || pointer) && !disablePtr,
+		Nullable:    nullable,
+		Option:      option,
+		Vardict:     vardict,
+	}
+	if t.Pointer {
+		t.InOut = "*" + t.InOut
+	}
+	if vardict {
+		t.Def = "..." + t.Def
+		t.InOut = "..." + t.InOut
+	}
+	return t
 }
 
 func stringToConst(input string) string {
@@ -86,8 +147,8 @@ func IsVoid(t TypeRef) bool {
 	return isVoid
 }
 
-func (t *standardType) Name() Name {
-	return t.name
+func (t *nameAndLink) NodeBase() *ast.Base {
+	return t.base
 }
 
 func (t *standardType) NeedRelease() bool {
@@ -95,13 +156,5 @@ func (t *standardType) NeedRelease() bool {
 }
 
 func (t *standardType) NodeBase() *ast.Base {
-	return t.base
-}
-
-func (t *nameAndLink) Name() Name {
-	return t.name
-}
-
-func (t *nameAndLink) NodeBase() *ast.Base {
 	return t.base
 }

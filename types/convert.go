@@ -13,29 +13,15 @@ var (
 	StopErr = errors.New("stopping for previous error")
 )
 
-type Name struct {
-	// Idl name
-	Idl string
-
-	// Package name
-	Package string
-
-	// Def is short for definition of a type, e.g. Foo
-	Def string
-
-	// InOut is method input and output variable type, e.g. *Foo
-	InOut string
-
-	// Internal name for used with methods and need to write some code
-	Internal string
-
-	// Pointer is true if InOut is a pointer type
-	Pointer bool
-}
-
 type Type interface {
 	ast.Node
-	Name() Name
+
+	// Basic type infomation
+	Basic() BasicInfo
+	// Param type information
+	Param(nullable, option, vardic bool) *TypeInfo
+	// DefaultParam return how this parameter should be processed by default
+	DefaultParam() *TypeInfo
 
 	GetAllTypeRefs(list []TypeRef) []TypeRef
 	// 	Phase1(r *Resources)
@@ -51,6 +37,9 @@ type Type interface {
 	NeedRelease() bool
 
 	TemplateName() (string, TemplateNameFlags)
+
+	// key to use in Convert.Types
+	key() string
 }
 
 type Convert struct {
@@ -128,25 +117,25 @@ func (conv *Convert) evaluateTypeRef() {
 
 func (conv *Convert) processPartialAndMixin() {
 	for _, pd := range conv.partialDict {
-		if candidate, f := conv.Types[pd.Name().Idl]; f {
+		if candidate, f := conv.Types[pd.key()]; f {
 			if parent, ok := candidate.(*Dictionary); ok {
 				parent.merge(pd, conv)
 			} else {
 				conv.failing(pd, "trying to add partial dictionary to a non-dictionary type (%T)", candidate)
 			}
 		} else {
-			conv.failing(pd, "directory '%s' doesn't exist", pd.Name)
+			conv.failing(pd, "directory '%s' doesn't exist", pd.key())
 		}
 	}
 	for _, pd := range conv.partialIf {
-		if candidate, f := conv.Types[pd.Name().Idl]; f {
+		if candidate, f := conv.Types[pd.key()]; f {
 			if parent, ok := candidate.(*Interface); ok {
 				parent.merge(pd, conv)
 			} else {
 				conv.failing(pd, "trying to add partial interface to a non-interface type (%T)", candidate)
 			}
 		} else {
-			conv.failing(pd, "interface '%s' doesn't exist", pd.Name)
+			conv.failing(pd, "interface '%s' doesn't exist", pd.key())
 		}
 	}
 	for _, pd := range conv.partialMixin {
@@ -192,7 +181,7 @@ func (t *Convert) add(v Type) {
 	if v == nil {
 		return
 	}
-	name := v.Name().Idl
+	name := v.key()
 	t.registerTypeName(v, name)
 	t.Types[name] = v
 	t.All = append(t.All, v)

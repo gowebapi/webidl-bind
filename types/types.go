@@ -9,6 +9,13 @@ import (
 type TypeRef interface {
 	link(conv *Convert)
 
+	// Basic type infomation
+	Basic() BasicInfo
+	// Param type information
+	Param(nullable, option, vardic bool) *TypeInfo
+	// DefaultParam return how this parameter should be processed by default
+	DefaultParam() *TypeInfo
+
 	// the type is doing some allocation that needs manual release.
 	NeedRelease() bool
 
@@ -112,6 +119,39 @@ func newAnyType() *AnyType {
 	}
 }
 
+func (t *AnyType) Basic() BasicInfo {
+	ret := BasicInfo{
+		Idl:      "any",
+		Package:  "<build-in-any>",
+		Def:      "interface{}",
+		Internal: "<any>",
+		Template: "any",
+	}
+	return ret
+}
+
+func (t *AnyType) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
+}
+
+func (t *AnyType) Param(nullable, option, vardict bool) *TypeInfo {
+	// TODO shoud returned any type be js.Value ?
+	ret := &TypeInfo{
+		BasicInfo:   t.Basic(),
+		InOut:       "interface{}",
+		Pointer:     false,
+		NeedRelease: false,
+		Nullable:    false,
+		Option:      option,
+		Vardict:     vardict,
+	}
+	if vardict {
+		ret.Def = "..." + ret.Def
+		ret.InOut = "..." + ret.InOut
+	}
+	return ret
+}
+
 func (t *AnyType) TemplateName() (string, TemplateNameFlags) {
 	return "any", NoTnFlag
 }
@@ -133,6 +173,18 @@ func newInterfaceType(link *Interface) *InterfaceType {
 	}
 }
 
+func (t *InterfaceType) Basic() BasicInfo {
+	return t.If.Basic()
+}
+
+func (t *InterfaceType) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
+}
+
+func (t *InterfaceType) Param(nullable, option, vardict bool) *TypeInfo {
+	return t.If.Param(nullable, option, vardict)
+}
+
 func (t *InterfaceType) TemplateName() (string, TemplateNameFlags) {
 	return "interface-type", NoTnFlag
 }
@@ -147,8 +199,20 @@ func newNullableType(inner TypeRef) *NullableType {
 	return &NullableType{Type: inner}
 }
 
+func (t *NullableType) Basic() BasicInfo {
+	return t.Type.Basic()
+}
+
+func (t *NullableType) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
+}
+
 func (t *NullableType) link(conv *Convert) {
 	t.Type.link(conv)
+}
+
+func (t *NullableType) Param(nullable, option, vardict bool) *TypeInfo {
+	return t.Type.Param(true, option, vardict)
 }
 
 func (t *NullableType) NeedRelease() bool {
@@ -161,23 +225,35 @@ func (t *NullableType) TemplateName() (string, TemplateNameFlags) {
 }
 
 type ParametrizedType struct {
-	Name  string
-	Elems []TypeRef
+	ParamName string
+	Elems     []TypeRef
 }
 
 var _ TypeRef = &ParametrizedType{}
 
 func newParametrizedType(name string, elems []TypeRef) *ParametrizedType {
 	return &ParametrizedType{
-		Name:  name,
-		Elems: elems,
+		ParamName: name,
+		Elems:     elems,
 	}
+}
+
+func (t *ParametrizedType) Basic() BasicInfo {
+	panic("todo")
+}
+
+func (t *ParametrizedType) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
 }
 
 func (t *ParametrizedType) link(conv *Convert) {
 	for _, t := range t.Elems {
 		t.link(conv)
 	}
+}
+
+func (t *ParametrizedType) Param(nullable, option, vardict bool) *TypeInfo {
+	panic("todo")
 }
 
 func (t *ParametrizedType) NeedRelease() bool {
@@ -213,6 +289,24 @@ func newPrimitiveType(idl, lang, method string) *PrimitiveType {
 	}
 }
 
+func (t *PrimitiveType) Basic() BasicInfo {
+	return BasicInfo{
+		Idl:      t.Idl,
+		Package:  "<build-in>",
+		Def:      t.Lang,
+		Internal: "<primitive-internal-name>",
+		Template: "primitive",
+	}
+}
+
+func (t *PrimitiveType) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
+}
+
+func (t *PrimitiveType) Param(nullable, option, vardict bool) *TypeInfo {
+	return newTypeInfo(t.Basic(), nullable, option, vardict, false, false, false)
+}
+
 func (t *PrimitiveType) TemplateName() (string, TemplateNameFlags) {
 	return "primitive", NoTnFlag
 }
@@ -229,8 +323,20 @@ func newSequenceType(elem TypeRef) *SequenceType {
 	}
 }
 
+func (t *SequenceType) Basic() BasicInfo {
+	panic("todo")
+}
+
+func (t *SequenceType) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
+}
+
 func (t *SequenceType) link(conv *Convert) {
 	t.Elem.link(conv)
+}
+
+func (t *SequenceType) Param(nullable, option, vardict bool) *TypeInfo {
+	panic("todo")
 }
 
 func (t *SequenceType) NeedRelease() bool {
@@ -243,7 +349,6 @@ func (t *SequenceType) TemplateName() (string, TemplateNameFlags) {
 
 type TypeNameRef struct {
 	in         *ast.TypeName
-	Name       Name
 	Underlying Type
 }
 
@@ -255,14 +360,25 @@ func newTypeNameRef(in *ast.TypeName) *TypeNameRef {
 	}
 }
 
+func (t *TypeNameRef) Basic() BasicInfo {
+	return t.Underlying.Basic()
+}
+
+func (t *TypeNameRef) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
+}
+
 func (t *TypeNameRef) link(conv *Convert) {
-	candidate := fromIdlName("", t.in.Name, false).Idl
+	candidate := getIdlName(t.in.Name)
 	if real, f := conv.Types[candidate]; f {
-		t.Name = real.Name()
 		t.Underlying = real
 	} else {
 		conv.failing(t.in, "reference to unknown type '%s' (%s)", candidate, t.in.Name)
 	}
+}
+
+func (t *TypeNameRef) Param(nullable, option, vardict bool) *TypeInfo {
+	return t.Underlying.Param(nullable, option, vardict)
 }
 
 func (t *TypeNameRef) NeedRelease() bool {
@@ -287,10 +403,22 @@ func newUnionType(input []ast.Type) *UnionType {
 	return ret
 }
 
+func (t *UnionType) Basic() BasicInfo {
+	panic("todo")
+}
+
+func (t *UnionType) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
+}
+
 func (t *UnionType) link(conv *Convert) {
 	for _, t := range t.Types {
 		t.link(conv)
 	}
+}
+
+func (t *UnionType) Param(nullable, option, vardict bool) *TypeInfo {
+	panic("todo")
 }
 
 func (t *UnionType) NeedRelease() bool {
@@ -319,6 +447,31 @@ func newVoidType(in *ast.TypeName) *VoidType {
 			needRelease: false,
 		},
 		in: in,
+	}
+}
+
+func (t *VoidType) Basic() BasicInfo {
+	return BasicInfo{
+		Idl:      "void",
+		Package:  "<built-in-void>",
+		Def:      "",
+		Internal: "void",
+		Template: "void",
+	}
+}
+
+func (t *VoidType) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
+}
+
+func (t *VoidType) Param(nullable, option, vardict bool) *TypeInfo {
+	return &TypeInfo{
+		BasicInfo:   t.Basic(),
+		InOut:       "",
+		NeedRelease: false,
+		Nullable:    false,
+		Option:      false,
+		Vardict:     false,
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 type Interface struct {
 	standardType
 	source   *ast.Interface
+	basic    BasicInfo
 	Inherits *Interface
 
 	Constructor *IfMethod
@@ -25,6 +26,7 @@ var _ Type = &Interface{}
 
 type IfConst struct {
 	nameAndLink
+	name  MethodName
 	Src   *ast.Member
 	Type  TypeRef
 	Value string
@@ -32,6 +34,7 @@ type IfConst struct {
 
 type IfVar struct {
 	nameAndLink
+	name     MethodName
 	Src      *ast.Member
 	Type     TypeRef
 	Static   bool
@@ -40,6 +43,7 @@ type IfVar struct {
 
 type IfMethod struct {
 	nameAndLink
+	name   MethodName
 	Src    *ast.Member
 	SrcA   *ast.Annotation
 	Return TypeRef
@@ -68,9 +72,9 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 	ret := &Interface{
 		standardType: standardType{
 			base:        in.NodeBase(),
-			name:        fromIdlName(t.main.setup.Package, in.Name, false),
 			needRelease: false,
 		},
+		basic:  fromIdlToTypeName(t.main.setup.Package, in.Name, "interface"),
 		source: in,
 	}
 	for _, raw := range in.Members {
@@ -103,8 +107,8 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			ret.Constructor = &IfMethod{
 				nameAndLink: nameAndLink{
 					base: a.NodeBase(),
-					name: fromMethodName("New_" + ret.Name().Idl),
 				},
+				name:   fromIdlToMethodName("New_" + ret.basic.Idl),
 				Static: true,
 				SrcA:   a,
 				Return: newInterfaceType(ret),
@@ -132,8 +136,8 @@ func (conv *extractTypes) convertInterfaceConst(in *ast.Member) *IfConst {
 	return &IfConst{
 		nameAndLink: nameAndLink{
 			base: in.NodeBase(),
-			name: fromMethodName(in.Name),
 		},
+		name:  fromIdlToMethodName(in.Name),
 		Src:   in,
 		Type:  convertType(in.Type),
 		Value: value,
@@ -165,8 +169,8 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 	return &IfVar{
 		nameAndLink: nameAndLink{
 			base: in.NodeBase(),
-			name: fromMethodName(in.Name),
 		},
+		name:     fromIdlToMethodName(in.Name),
 		Src:      in,
 		Type:     convertType(in.Type),
 		Static:   in.Static,
@@ -189,13 +193,21 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 	return &IfMethod{
 		nameAndLink: nameAndLink{
 			base: in.NodeBase(),
-			name: fromMethodName(in.Name),
 		},
+		name:   fromIdlToMethodName(in.Name),
 		Src:    in,
 		Return: convertType(in.Type),
 		Static: in.Static,
 		Params: conv.convertParams(in.Parameters),
 	}
+}
+
+func (t *Interface) Basic() BasicInfo {
+	return t.basic
+}
+
+func (t *Interface) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
 }
 
 func (t *Interface) GetAllTypeRefs(list []TypeRef) []TypeRef {
@@ -229,6 +241,14 @@ func (t *Interface) GetAllTypeRefs(list []TypeRef) []TypeRef {
 	return list
 }
 
+func (t *Interface) key() string {
+	return t.basic.Idl
+}
+
+func (t *Interface) Param(nullable, option, vardict bool) *TypeInfo {
+	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false)
+}
+
 func (t *Interface) merge(m *Interface, conv *Convert) {
 	t.Consts = append(t.Consts, m.Consts...)
 	t.Vars = append(t.Vars, m.Vars...)
@@ -247,4 +267,16 @@ func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
 
 func (t *Interface) TemplateName() (string, TemplateNameFlags) {
 	return "interface", NoTnFlag
+}
+
+func (t *IfConst) Name() MethodName {
+	return t.name
+}
+
+func (t *IfVar) Name() MethodName {
+	return t.name
+}
+
+func (t *IfMethod) Name() MethodName {
+	return t.name
 }

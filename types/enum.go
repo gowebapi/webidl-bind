@@ -7,6 +7,7 @@ import (
 // Enum type
 type Enum struct {
 	standardType
+	basic  BasicInfo
 	source *ast.Enum
 	Values []EnumValue
 }
@@ -25,9 +26,9 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 	ret := &Enum{
 		standardType: standardType{
 			base:        in.NodeBase(),
-			name:        fromIdlName(t.main.setup.Package, in.Name, false),
 			needRelease: false,
 		},
+		basic:  fromIdlToTypeName(t.main.setup.Package, in.Name, "enum"),
 		source: in,
 		Values: []EnumValue{},
 	}
@@ -47,8 +48,24 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 	return ret
 }
 
+func (t *Enum) Basic() BasicInfo {
+	return t.basic
+}
+
+func (t *Enum) DefaultParam() *TypeInfo {
+	return t.Param(false, false, false)
+}
+
 func (t *Enum) GetAllTypeRefs(list []TypeRef) []TypeRef {
 	return list
+}
+
+func (t *Enum) key() string {
+	return t.basic.Idl
+}
+
+func (t *Enum) Param(nullable, option, vardict bool) *TypeInfo {
+	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false)
 }
 
 func (t *Enum) TemplateName() (string, TemplateNameFlags) {
