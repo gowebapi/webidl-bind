@@ -38,16 +38,21 @@ func (t *Callback) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *Callback) GetAllTypeRefs(list []TypeRef) []TypeRef {
-	list = append(list, t.Return)
-	for _, p := range t.Parameters {
-		list = append(list, p.Type)
-	}
-	return list
-}
-
 func (t *Callback) key() string {
 	return t.basic.Idl
+}
+
+func (t *Callback) link(conv *Convert, inuse inuseLogic) TypeRef {
+	if t.inuse {
+		return t
+	}
+	t.inuse = true
+
+	t.Return = t.Return.link(conv, make(inuseLogic))
+	for i := range t.Parameters {
+		t.Parameters[i].Type = t.Parameters[i].Type.link(conv, make(inuseLogic))
+	}
+	return t
 }
 
 func (t *Callback) Param(nullable, option, vardict bool) *TypeInfo {

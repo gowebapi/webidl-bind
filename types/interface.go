@@ -210,39 +210,44 @@ func (t *Interface) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *Interface) GetAllTypeRefs(list []TypeRef) []TypeRef {
+func (t *Interface) key() string {
+	return t.basic.Idl
+}
+
+func (t *Interface) link(conv *Convert, inuse inuseLogic) TypeRef {
+	if t.inuse {
+		return t
+	}
+	t.inuse = true
+
 	if t.Constructor != nil {
-		list = append(list, t.Constructor.Return)
+		t.Constructor.Return = t.Constructor.Return.link(conv, make(inuseLogic))
 		for _, p := range t.Constructor.Params {
-			list = append(list, p.Type)
+			p.Type = p.Type.link(conv, make(inuseLogic))
 		}
 	}
 	for _, m := range t.Consts {
-		list = append(list, m.Type)
+		m.Type = m.Type.link(conv, make(inuseLogic))
 	}
 	for _, m := range t.Vars {
-		list = append(list, m.Type)
+		m.Type = m.Type.link(conv, make(inuseLogic))
 	}
 	for _, m := range t.StaticVars {
-		list = append(list, m.Type)
+		m.Type = m.Type.link(conv, make(inuseLogic))
 	}
 	for _, m := range t.Method {
-		list = append(list, m.Return)
+		m.Return = m.Return.link(conv, make(inuseLogic))
 		for _, p := range m.Params {
-			list = append(list, p.Type)
+			p.Type = p.Type.link(conv, make(inuseLogic))
 		}
 	}
 	for _, m := range t.StaticMethod {
-		list = append(list, m.Return)
+		m.Return = m.Return.link(conv, make(inuseLogic))
 		for _, p := range m.Params {
-			list = append(list, p.Type)
+			p.Type = p.Type.link(conv, make(inuseLogic))
 		}
 	}
-	return list
-}
-
-func (t *Interface) key() string {
-	return t.basic.Idl
+	return t
 }
 
 func (t *Interface) Param(nullable, option, vardict bool) *TypeInfo {

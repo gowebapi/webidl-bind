@@ -9,7 +9,7 @@ import (
 )
 
 type TypeRef interface {
-	link(conv *Convert)
+	link(conv *Convert, inuse inuseLogic) TypeRef
 
 	// Basic type infomation
 	Basic() BasicInfo
@@ -84,10 +84,6 @@ type basicType struct {
 	needRelease bool
 }
 
-func (t *basicType) link(conv *Convert) {
-
-}
-
 func (t *basicType) NeedRelease() bool {
 	return t.needRelease
 }
@@ -123,6 +119,10 @@ func (t *AnyType) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
+func (t *AnyType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	return t
+}
+
 func (t *AnyType) Param(nullable, option, vardict bool) *TypeInfo {
 	// TODO shoud returned any type be js.Value ?
 	ret := &TypeInfo{
@@ -141,16 +141,16 @@ func (t *AnyType) Param(nullable, option, vardict bool) *TypeInfo {
 	return ret
 }
 
-type InterfaceType struct {
+type interfaceType struct {
 	basicType
 	If *Interface
 }
 
 // InterfaceType must implement TypeRef
-var _ TypeRef = &InterfaceType{}
+var _ TypeRef = &interfaceType{}
 
-func newInterfaceType(link *Interface) *InterfaceType {
-	return &InterfaceType{
+func newInterfaceType(link *Interface) *interfaceType {
+	return &interfaceType{
 		basicType: basicType{
 			needRelease: false,
 		},
@@ -158,15 +158,19 @@ func newInterfaceType(link *Interface) *InterfaceType {
 	}
 }
 
-func (t *InterfaceType) Basic() BasicInfo {
+func (t *interfaceType) Basic() BasicInfo {
 	return t.If.Basic()
 }
 
-func (t *InterfaceType) DefaultParam() *TypeInfo {
+func (t *interfaceType) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *InterfaceType) Param(nullable, option, vardict bool) *TypeInfo {
+func (t *interfaceType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	return t.If
+}
+
+func (t *interfaceType) Param(nullable, option, vardict bool) *TypeInfo {
 	return t.If.Param(nullable, option, vardict)
 }
 
@@ -188,8 +192,9 @@ func (t *NullableType) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *NullableType) link(conv *Convert) {
-	t.Type.link(conv)
+func (t *NullableType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	t.Type = t.Type.link(conv, inuse)
+	return t
 }
 
 func (t *NullableType) Param(nullable, option, vardict bool) *TypeInfo {
@@ -222,10 +227,12 @@ func (t *ParametrizedType) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *ParametrizedType) link(conv *Convert) {
-	for _, t := range t.Elems {
-		t.link(conv)
+func (t *ParametrizedType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	for i := range t.Elems {
+		inner := make(inuseLogic)
+		t.Elems[i] = t.Elems[i].link(conv, inner)
 	}
+	return t
 }
 
 func (t *ParametrizedType) Param(nullable, option, vardict bool) *TypeInfo {
@@ -275,6 +282,10 @@ func (t *PrimitiveType) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
+func (t *PrimitiveType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	return t
+}
+
 func (t *PrimitiveType) Param(nullable, option, vardict bool) *TypeInfo {
 	return newTypeInfo(t.Basic(), nullable, option, vardict, false, false, false)
 }
@@ -308,8 +319,10 @@ func (t *SequenceType) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *SequenceType) link(conv *Convert) {
-	t.Elem.link(conv)
+func (t *SequenceType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	inner := make(inuseLogic)
+	t.Elem = t.Elem.link(conv, inner)
+	return t
 }
 
 func (t *SequenceType) Param(nullable, option, vardict bool) *TypeInfo {
@@ -320,41 +333,43 @@ func (t *SequenceType) NeedRelease() bool {
 	return t.Elem.NeedRelease()
 }
 
-type TypeNameRef struct {
+type typeNameRef struct {
 	in         *ast.TypeName
-	Underlying Type
+	Underlying TypeRef
 }
 
-var _ TypeRef = &TypeNameRef{}
+var _ TypeRef = &typeNameRef{}
 
-func newTypeNameRef(in *ast.TypeName) *TypeNameRef {
-	return &TypeNameRef{
+func newTypeNameRef(in *ast.TypeName) *typeNameRef {
+	return &typeNameRef{
 		in: in,
 	}
 }
 
-func (t *TypeNameRef) Basic() BasicInfo {
+func (t *typeNameRef) Basic() BasicInfo {
 	return t.Underlying.Basic()
 }
 
-func (t *TypeNameRef) DefaultParam() *TypeInfo {
+func (t *typeNameRef) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *TypeNameRef) link(conv *Convert) {
+func (t *typeNameRef) link(conv *Convert, inuse inuseLogic) TypeRef {
 	candidate := getIdlName(t.in.Name)
 	if real, f := conv.Types[candidate]; f {
-		t.Underlying = real
+		t.Underlying = real.link(conv, inuse)
+		return t.Underlying
 	} else {
 		conv.failing(t.in, "reference to unknown type '%s' (%s)", candidate, t.in.Name)
+		return t
 	}
 }
 
-func (t *TypeNameRef) Param(nullable, option, vardict bool) *TypeInfo {
+func (t *typeNameRef) Param(nullable, option, vardict bool) *TypeInfo {
 	return t.Underlying.Param(nullable, option, vardict)
 }
 
-func (t *TypeNameRef) NeedRelease() bool {
+func (t *typeNameRef) NeedRelease() bool {
 	return t.Underlying.NeedRelease()
 }
 
@@ -363,6 +378,7 @@ type UnionType struct {
 	name  string
 	Types []TypeRef
 	basic BasicInfo
+	use   bool
 }
 
 var _ TypeRef = &UnionType{}
@@ -383,10 +399,16 @@ func (t *UnionType) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *UnionType) link(conv *Convert) {
+func (t *UnionType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	if t.use {
+		return t
+	}
+	t.use = true
+	conv.Unions = append(conv.Unions, t)
 	names := []string{}
-	for _, t := range t.Types {
-		t.link(conv)
+	for idx := range t.Types {
+		inner := make(inuseLogic)
+		t.Types[idx] = t.Types[idx].link(conv, inner)
 		n := toCamelCase(t.Basic().Idl, true)
 		names = append(names, n)
 	}
@@ -399,6 +421,7 @@ func (t *UnionType) link(conv *Convert) {
 		Internal: "union" + t.name,
 		Template: "union",
 	}
+	return t
 }
 
 func (t *UnionType) Param(nullable, option, vardict bool) *TypeInfo {
@@ -414,15 +437,15 @@ func (t *UnionType) NeedRelease() bool {
 	return false
 }
 
-type VoidType struct {
+type voidType struct {
 	basicType
 	in *ast.TypeName
 }
 
-var _ TypeRef = &VoidType{}
+var _ TypeRef = &voidType{}
 
-func newVoidType(in *ast.TypeName) *VoidType {
-	return &VoidType{
+func newVoidType(in *ast.TypeName) *voidType {
+	return &voidType{
 		basicType: basicType{
 			needRelease: false,
 		},
@@ -430,21 +453,25 @@ func newVoidType(in *ast.TypeName) *VoidType {
 	}
 }
 
-func (t *VoidType) Basic() BasicInfo {
+func (t *voidType) Basic() BasicInfo {
 	return BasicInfo{
 		Idl:      "void",
-		Package:  "<built-in-void>",
+		Package:  "<built-in>",
 		Def:      "",
 		Internal: "void",
 		Template: "void",
 	}
 }
 
-func (t *VoidType) DefaultParam() *TypeInfo {
+func (t *voidType) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *VoidType) Param(nullable, option, vardict bool) *TypeInfo {
+func (t *voidType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	return t
+}
+
+func (t *voidType) Param(nullable, option, vardict bool) *TypeInfo {
 	return &TypeInfo{
 		BasicInfo:   t.Basic(),
 		InOut:       "",

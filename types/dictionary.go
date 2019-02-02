@@ -76,15 +76,20 @@ func (t *Dictionary) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *Dictionary) GetAllTypeRefs(list []TypeRef) []TypeRef {
-	for _, m := range t.Members {
-		list = append(list, m.Type)
-	}
-	return list
-}
-
 func (t *Dictionary) key() string {
 	return t.basic.Idl
+}
+
+func (t *Dictionary) link(conv *Convert, inuse inuseLogic) TypeRef {
+	if t.inuse {
+		return t
+	}
+	t.inuse = true
+	inner := make(inuseLogic)
+	for _, m := range t.Members {
+		m.Type = m.Type.link(conv, inner)
+	}
+	return t
 }
 
 func (t *Dictionary) merge(partial *Dictionary, conv *Convert) {

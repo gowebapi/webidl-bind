@@ -14,16 +14,9 @@ var (
 )
 
 type Type interface {
+	TypeRef
 	ast.Node
 
-	// Basic type infomation
-	Basic() BasicInfo
-	// Param type information
-	Param(nullable, option, vardic bool) *TypeInfo
-	// DefaultParam return how this parameter should be processed by default
-	DefaultParam() *TypeInfo
-
-	GetAllTypeRefs(list []TypeRef) []TypeRef
 	// 	Phase1(r *Resources)
 	// 	Phase2()
 
@@ -34,10 +27,12 @@ type Type interface {
 	// 	Phase3()
 	// 	WriteTo() error
 
-	NeedRelease() bool
-
 	// key to use in Convert.Types
 	key() string
+
+	// Used indicate that it's a interface or a type that is used by
+	// an interface
+	InUse() bool
 }
 
 type Convert struct {
@@ -52,6 +47,7 @@ type Convert struct {
 	mixin        map[string]*mixin
 	partialMixin []*mixin
 	includes     []*includes
+	Unions       []*UnionType
 
 	HaveError bool
 	setup     *Setup
@@ -97,19 +93,17 @@ func (conv *Convert) EvaluateInput() error {
 	if conv.processPartialAndMixin(); conv.HaveError {
 		return StopErr
 	}
-	if conv.evaluateTypeRef(); conv.HaveError {
+	if conv.processTypeLinks(); conv.HaveError {
 		return StopErr
 	}
 	return nil
 }
 
-func (conv *Convert) evaluateTypeRef() {
-	typerefs := make([]TypeRef, 0)
-	for _, t := range conv.All {
-		typerefs = t.GetAllTypeRefs(typerefs)
-	}
-	for _, t := range typerefs {
-		t.link(conv)
+// processTypeLinks is evaluating all types used
+// by interfaces
+func (conv *Convert) processTypeLinks() {
+	for _, q := range conv.Interface {
+		q.link(conv, make(inuseLogic))
 	}
 }
 

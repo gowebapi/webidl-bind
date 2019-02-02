@@ -56,12 +56,13 @@ func (t *Enum) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *Enum) GetAllTypeRefs(list []TypeRef) []TypeRef {
-	return list
-}
-
 func (t *Enum) key() string {
 	return t.basic.Idl
+}
+
+func (t *Enum) link(conv *Convert, inuse inuseLogic) TypeRef {
+	t.inuse = true
+	return t
 }
 
 func (t *Enum) Param(nullable, option, vardict bool) *TypeInfo {

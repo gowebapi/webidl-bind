@@ -58,11 +58,14 @@ type MethodName struct {
 type standardType struct {
 	base        *ast.Base
 	needRelease bool
+	inuse       bool
 }
 
 type nameAndLink struct {
 	base *ast.Base
 }
+
+type inuseLogic map[string]bool
 
 func clipString(input string) string {
 	if strings.HasPrefix(input, "\"") && strings.HasSuffix(input, "\"") {
@@ -143,7 +146,7 @@ func toCamelCase(in string, upper bool) string {
 }
 
 func IsVoid(t TypeRef) bool {
-	_, isVoid := t.(*VoidType)
+	_, isVoid := t.(*voidType)
 	return isVoid
 }
 
@@ -157,4 +160,21 @@ func (t *standardType) NeedRelease() bool {
 
 func (t *standardType) NodeBase() *ast.Base {
 	return t.base
+}
+
+func (t *standardType) InUse() bool {
+	return t.inuse
+}
+
+func (t *inuseLogic) push(name string, ref ast.Node, conv *Convert) bool {
+	_, ret := (*t)[name]
+	if ret {
+		conv.failing(ref, "circular typedef chain: %s", name)
+	}
+	(*t)[name] = true
+	return ret
+}
+
+func (t *inuseLogic) pop(name string) {
+	delete(*t, name)
 }

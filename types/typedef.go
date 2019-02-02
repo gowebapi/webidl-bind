@@ -8,6 +8,7 @@ type typeDef struct {
 	standardType
 	basic BasicInfo
 	Type  TypeRef
+	name  string
 }
 
 var _ Type = &typeDef{}
@@ -20,6 +21,7 @@ func (t *extractTypes) convertTypeDef(in *ast.Typedef) *typeDef {
 		},
 		basic: fromIdlToTypeName("", in.Name, "typedef"),
 		Type:  convertType(in.Type),
+		name:  in.Name,
 	}
 	for _, a := range in.Annotations {
 		t.warning(a, "typedef: unsupported annotation '%s'", a.Name)
@@ -35,13 +37,18 @@ func (t *typeDef) DefaultParam() *TypeInfo {
 	return t.Param(false, false, false)
 }
 
-func (t *typeDef) GetAllTypeRefs(list []TypeRef) []TypeRef {
-	list = append(list, t.Type)
-	return list
-}
-
 func (t *typeDef) key() string {
 	return t.basic.Idl
+}
+
+func (t *typeDef) link(conv *Convert, inuse inuseLogic) TypeRef {
+	if inuse.push(t.name, t.base, conv) {
+		t.Type = t.Type.link(conv, inuse)
+		inuse.pop(t.name)
+		return t.Type
+	}
+	// if we are failing, we just return something
+	return t.Type
 }
 
 func (t *typeDef) Param(nullable, option, vardict bool) *TypeInfo {
