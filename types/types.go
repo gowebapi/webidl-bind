@@ -2,6 +2,8 @@ package types
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/dennwc/webidl/ast"
 )
@@ -66,7 +68,7 @@ func convertType(in ast.Type) TypeRef {
 		}
 		ret = newParametrizedType(in.Name, elems)
 	case *ast.UnionType:
-		ret = newUnionType(in.Types)
+		ret = newUnionType(in)
 	case *ast.NullableType:
 		inner := convertType(in.Type)
 		ret = newNullableType(inner)
@@ -109,8 +111,8 @@ func newAnyType() *AnyType {
 func (t *AnyType) Basic() BasicInfo {
 	ret := BasicInfo{
 		Idl:      "any",
-		Package:  "<build-in-any>",
-		Def:      "interface{}",
+		Package:  "<build-in>",
+		Def:      "js.Value",
 		Internal: "<any>",
 		Template: "any",
 	}
@@ -278,19 +280,28 @@ func (t *PrimitiveType) Param(nullable, option, vardict bool) *TypeInfo {
 }
 
 type SequenceType struct {
-	Elem TypeRef
+	Elem  TypeRef
+	basic BasicInfo
 }
 
 var _ TypeRef = &SequenceType{}
 
 func newSequenceType(elem TypeRef) *SequenceType {
-	return &SequenceType{
+	ret := &SequenceType{
 		Elem: elem,
+		basic: BasicInfo{
+			Idl:      "idl-sequence",
+			Package:  "<built-in>",
+			Def:      "def-sequence",
+			Internal: "internal-sequence",
+			Template: "sequence",
+		},
 	}
+	return ret
 }
 
 func (t *SequenceType) Basic() BasicInfo {
-	panic("todo")
+	return t.basic
 }
 
 func (t *SequenceType) DefaultParam() *TypeInfo {
@@ -302,7 +313,7 @@ func (t *SequenceType) link(conv *Convert) {
 }
 
 func (t *SequenceType) Param(nullable, option, vardict bool) *TypeInfo {
-	panic("todo")
+	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false)
 }
 
 func (t *SequenceType) NeedRelease() bool {
@@ -348,21 +359,24 @@ func (t *TypeNameRef) NeedRelease() bool {
 }
 
 type UnionType struct {
+	in    *ast.UnionType
+	name  string
 	Types []TypeRef
+	basic BasicInfo
 }
 
 var _ TypeRef = &UnionType{}
 
-func newUnionType(input []ast.Type) *UnionType {
-	ret := &UnionType{}
-	for _, t := range input {
+func newUnionType(in *ast.UnionType) *UnionType {
+	ret := &UnionType{in: in}
+	for _, t := range in.Types {
 		ret.Types = append(ret.Types, convertType(t))
 	}
 	return ret
 }
 
 func (t *UnionType) Basic() BasicInfo {
-	panic("todo")
+	return t.basic
 }
 
 func (t *UnionType) DefaultParam() *TypeInfo {
@@ -370,13 +384,25 @@ func (t *UnionType) DefaultParam() *TypeInfo {
 }
 
 func (t *UnionType) link(conv *Convert) {
+	names := []string{}
 	for _, t := range t.Types {
 		t.link(conv)
+		n := toCamelCase(t.Basic().Idl, true)
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	t.name = strings.Join(names, "")
+	t.basic = BasicInfo{
+		Idl:      t.name + "Union",
+		Package:  "<built-in>",
+		Def:      t.name + "Union",
+		Internal: "union" + t.name,
+		Template: "union",
 	}
 }
 
 func (t *UnionType) Param(nullable, option, vardict bool) *TypeInfo {
-	panic("todo")
+	return newTypeInfo(t.basic, nullable, option, vardict, true, false, false)
 }
 
 func (t *UnionType) NeedRelease() bool {

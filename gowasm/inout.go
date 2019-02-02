@@ -39,6 +39,8 @@ const inoutFromTmplInput = `
 {{define "type-enum"}}		{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-interface-type"}} {{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-interface"}}	{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
+{{define "type-union"}}  {{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
+{{define "type-any"}}    {{.Out}} := {{.In}} {{end}}
 
 `
 
