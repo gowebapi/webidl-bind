@@ -66,7 +66,7 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_method := _klass.Get("{{.Name.Idl}}")
 {{end}}
 {{define "static-method-invoke"}}
-	{{if not .IsVoidReturn}}ret :={{end}} _method.Invoke(_to_args[0:_to_count]...) //  {{.To.AllOut}})
+	{{if not .IsVoidReturn}}ret :={{end}} _method.Invoke( {{.To.AllOut}} )
 {{end}}
 {{define "static-method-end"}}
 	{{if not .IsVoidReturn}}result = value{{end}}
