@@ -26,6 +26,11 @@ const inoutToTmplInput = `
 	_releaseList = append(_releaseList, {{.Out}})
 {{end}}
 {{define "type-enum"}}      {{.Out}} := {{.Info.Internal}}ToWasm({{.In}}) {{end}}
+{{define "type-union"}}	{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
+{{define "type-any"}}    {{.Out}} := any( {{.In}} ) {{end}}
+{{define "type-sequence"}} {{.Out}} := sequence( {{.In}} ) {{end}}
+{{define "type-parametrized"}}	{{.Out}} := parametrized( {{.In}} ) {{end}}
+
 `
 
 const inoutFromTmplInput = `
@@ -34,14 +39,15 @@ const inoutFromTmplInput = `
 {{define "end"}}
 {{end}}
 
-{{define "type-primitive"}}	{{.Out}} := ({{.In}}).{{.Type.JsMethod}}() {{end}}
+{{define "type-primitive"}}	{{.Out}} := ( {{.In}} ) . {{.Prim.JsMethod}} () {{end}}
 {{define "type-callback"}}	callbackInFrom() {{end}}
 {{define "type-enum"}}		{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
-{{define "type-interface-type"}} {{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-interface"}}	{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-union"}}  {{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
-{{define "type-any"}}    {{.Out}} := {{.In}} {{end}}
-
+{{define "type-any"}}    {{.Out}} := any( {{.In}} ) {{end}}
+{{define "type-sequence"}} {{.Out}} := sequence( {{.In}} ) {{end}}
+{{define "type-parametrized"}}	{{.Out}} := parametrized( {{.In}} ) {{end}}
+{{define "type-dictionary"}}	{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 `
 
 var inoutToTmpl = template.Must(template.New("inout-to").Parse(inoutToTmplInput))
@@ -181,11 +187,17 @@ func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, t
 		In, Out string
 		Type    types.TypeRef
 		Info    *types.TypeInfo
+		Prim    *types.PrimitiveType
 	}{
 		In:   in,
 		Out:  out,
 		Type: t,
 		Info: info,
 	}
+	candidate := t
+	if null, ok := candidate.(*types.NullableType); ok {
+		candidate = null.Type
+	}
+	data.Prim, _ = candidate.(*types.PrimitiveType)
 	return convertType(t, data, tmpl) + "\n"
 }

@@ -104,6 +104,9 @@ func getIdlName(input string) string {
 }
 
 func newTypeInfo(basic BasicInfo, nullable, option, vardict, pointer, disablePtr, release bool) *TypeInfo {
+	if basic.Template == "" {
+		panic("empty template name")
+	}
 	t := &TypeInfo{
 		BasicInfo:   basic,
 		InOut:       basic.Def,
@@ -169,10 +172,11 @@ func (t *standardType) InUse() bool {
 func (t *inuseLogic) push(name string, ref ast.Node, conv *Convert) bool {
 	_, ret := (*t)[name]
 	if ret {
-		conv.failing(ref, "circular typedef chain: %s", name)
+		conv.failing(ref, "circular typedef chain: %s: ", name)
+		return false
 	}
 	(*t)[name] = true
-	return ret
+	return true
 }
 
 func (t *inuseLogic) pop(name string) {

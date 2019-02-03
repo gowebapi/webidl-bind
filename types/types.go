@@ -66,7 +66,7 @@ func convertType(in ast.Type) TypeRef {
 		for _, e := range in.Elems {
 			elems = append(elems, convertType(e))
 		}
-		ret = newParametrizedType(in.Name, elems)
+		ret = newParametrizedType(in, in.Name, elems)
 	case *ast.UnionType:
 		ret = newUnionType(in)
 	case *ast.NullableType:
@@ -189,7 +189,7 @@ func (t *NullableType) Basic() BasicInfo {
 }
 
 func (t *NullableType) DefaultParam() *TypeInfo {
-	return t.Param(false, false, false)
+	return t.Param(true, false, false)
 }
 
 func (t *NullableType) link(conv *Convert, inuse inuseLogic) TypeRef {
@@ -205,22 +205,26 @@ func (t *NullableType) NeedRelease() bool {
 	return t.Type.NeedRelease()
 }
 
+// ParametrizedType is e.g. "Promise<any>"
 type ParametrizedType struct {
+	in        *ast.ParametrizedType
 	ParamName string
 	Elems     []TypeRef
+	basic     BasicInfo
 }
 
 var _ TypeRef = &ParametrizedType{}
 
-func newParametrizedType(name string, elems []TypeRef) *ParametrizedType {
+func newParametrizedType(in *ast.ParametrizedType, name string, elems []TypeRef) *ParametrizedType {
 	return &ParametrizedType{
+		in:        in,
 		ParamName: name,
 		Elems:     elems,
 	}
 }
 
 func (t *ParametrizedType) Basic() BasicInfo {
-	panic("todo")
+	return t.basic
 }
 
 func (t *ParametrizedType) DefaultParam() *TypeInfo {
@@ -228,15 +232,24 @@ func (t *ParametrizedType) DefaultParam() *TypeInfo {
 }
 
 func (t *ParametrizedType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	names := []string{}
 	for i := range t.Elems {
 		inner := make(inuseLogic)
 		t.Elems[i] = t.Elems[i].link(conv, inner)
+		names = append(names, t.Elems[i].Basic().Idl)
+	}
+	t.basic = BasicInfo{
+		Idl:      t.ParamName,
+		Package:  "",
+		Def:      toCamelCase(t.ParamName, true),
+		Internal: toCamelCase(t.ParamName, false),
+		Template: "parametrized",
 	}
 	return t
 }
 
 func (t *ParametrizedType) Param(nullable, option, vardict bool) *TypeInfo {
-	panic("todo")
+	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false)
 }
 
 func (t *ParametrizedType) NeedRelease() bool {

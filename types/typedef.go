@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/dennwc/webidl/ast"
 )
 
@@ -47,6 +49,12 @@ func (t *typeDef) link(conv *Convert, inuse inuseLogic) TypeRef {
 		inuse.pop(t.name)
 		return t.Type
 	}
+	fmt.Println("DEBUG: ", t.name, inuse)
+
+	// at this point the source code should be consider faulty.
+	// create a test that is checking that we do get an error
+	// message at this point.
+	panic("untested code, remove this panic")
 	// if we are failing, we just return something
 	return t.Type
 }

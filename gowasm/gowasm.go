@@ -50,16 +50,24 @@ func WriteSource(conv *types.Convert) (map[string][]byte, error) {
 	target := make(map[string]*bytes.Buffer)
 	var err error
 	for _, e := range conv.Enums {
-		err = writeType(e, target, writeEnum, err)
+		if e.InUse() {
+			err = writeType(e, target, writeEnum, err)
+		}
 	}
 	for _, v := range conv.Callbacks {
+		if v.InUse() {
+		}
 		err = writeType(v, target, writeCallback, err)
 	}
 	for _, v := range conv.Dictionary {
-		err = writeType(v, target, writeDictionary, err)
+		if v.InUse() {
+			err = writeType(v, target, writeDictionary, err)
+		}
 	}
 	for _, v := range conv.Interface {
-		err = writeType(v, target, writeInterface, err)
+		if v.InUse() {
+			err = writeType(v, target, writeInterface, err)
+		}
 	}
 	if err != nil {
 		return nil, err
