@@ -32,10 +32,11 @@ func (t *extractTypes) convertTypeDef(in *ast.Typedef) *typeDef {
 }
 
 func (t *typeDef) Basic() BasicInfo {
-	return t.basic
+	panic("not supported for this type")
+	// return t.basic
 }
 
-func (t *typeDef) DefaultParam() *TypeInfo {
+func (t *typeDef) DefaultParam() (info *TypeInfo, inner TypeRef) {
 	return t.Param(false, false, false)
 }
 
@@ -56,9 +57,10 @@ func (t *typeDef) link(conv *Convert, inuse inuseLogic) TypeRef {
 	// message at this point.
 	panic("untested code, remove this panic")
 	// if we are failing, we just return something
-	return t.Type
+	// return t.Type
 }
 
-func (t *typeDef) Param(nullable, option, vardict bool) *TypeInfo {
-	return t.Type.Param(nullable, option, vardict)
+func (t *typeDef) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
+	panic("not supported for this type")
+	// return t.Type.Param(nullable, option, vardict)
 }

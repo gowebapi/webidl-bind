@@ -34,7 +34,7 @@ func (t *Callback) Basic() BasicInfo {
 	return t.basic
 }
 
-func (t *Callback) DefaultParam() *TypeInfo {
+func (t *Callback) DefaultParam() (info *TypeInfo, inner TypeRef) {
 	return t.Param(false, false, false)
 }
 
@@ -55,6 +55,6 @@ func (t *Callback) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *Callback) Param(nullable, option, vardict bool) *TypeInfo {
-	return newTypeInfo(t.basic, nullable, option, vardict, false, true, true)
+func (t *Callback) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, vardict, false, true, true), t
 }

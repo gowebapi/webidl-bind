@@ -8,9 +8,9 @@ import (
 
 const callbackTmplInput = `
 {{define "start"}}
-type {{.CB.Basic.Def}} func ({{.ParamLine}})
+type {{.Type.Def}} func ({{.ParamLine}})
 
-func {{.CB.Basic.Internal}}FromWasm(callback {{.CB.DefaultParam.InOut}}, args []js.Value) {
+func {{.Type.Internal}}FromWasm(callback {{.Type.InOut}}, args []js.Value) {
 	if len(args) != 1 {
 		panic("unexpected parameter count")
 	}
@@ -26,6 +26,7 @@ var callbackTempl = template.Must(template.New("callback").Parse(callbackTmplInp
 
 type callbackData struct {
 	CB        *types.Callback
+	Type      *types.TypeInfo
 	Return    types.BasicInfo
 	Params    []string
 	ParamLine string
@@ -39,6 +40,7 @@ func writeCallback(dst io.Writer, value types.Type) error {
 		Return: cb.Return.Basic(),
 		InOut:  setupInOutWasmData(cb.Parameters, "args[%d]", "_p%d"),
 	}
+	data.Type, _ = cb.DefaultParam()
 	data.ParamLine, data.Params = parameterArgumentLine(cb.Parameters)
 	if err := callbackTempl.ExecuteTemplate(dst, "start", data); err != nil {
 		return err

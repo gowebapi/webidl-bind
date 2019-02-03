@@ -52,7 +52,7 @@ func (t *Enum) Basic() BasicInfo {
 	return t.basic
 }
 
-func (t *Enum) DefaultParam() *TypeInfo {
+func (t *Enum) DefaultParam() (info *TypeInfo, inner TypeRef) {
 	return t.Param(false, false, false)
 }
 
@@ -65,6 +65,6 @@ func (t *Enum) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *Enum) Param(nullable, option, vardict bool) *TypeInfo {
-	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false)
+func (t *Enum) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false), t
 }

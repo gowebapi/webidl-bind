@@ -12,7 +12,7 @@ import (
 const dictionaryTmplInput = `
 {{define "header"}}
 type {{.Dict.Basic.Def}} struct {
-{{range .Members}}   {{.Name.Def}} {{.Info.Def}}
+{{range .Members}}   {{.Name.Def}} {{.Type.Def}}
 {{end}}
 }
 
@@ -46,33 +46,34 @@ type dictionaryData struct {
 
 type dictionaryMember struct {
 	Name types.MethodName
-	Info *types.TypeInfo
+	Type *types.TypeInfo
+	Ref  types.TypeRef
 }
 
 func writeDictionary(dst io.Writer, value types.Type) error {
 	dict := value.(*types.Dictionary)
 	data := &dictionaryData{
 		Dict: dict,
-		Type: dict.DefaultParam(),
 	}
+	data.Type, _ = dict.DefaultParam()
 	var to, from bytes.Buffer
 	reqParam := []string{}
 	for idx, mi := range dict.Members {
 		mo := dictionaryMember{
 			Name: mi.Name(),
-			Info: mi.Type.DefaultParam(),
 		}
+		mo.Type, mo.Ref = mi.Type.DefaultParam()
 		data.Members = append(data.Members, mo)
 		if mi.Required {
 			data.HaveReq = true
-			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.Info.InOut))
+			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.Type.InOut))
 			data.Required = append(data.Required, mo)
 		}
 		fromIn, fromOut := setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Def)
 		toIn, toOut := setupVarName("input.@name@", idx, mo.Name.Def), setupVarName("value%d", idx, mo.Name.Def)
-		from.WriteString(inoutGetToFromWasm(mi.Type, nil, fromOut, fromIn, inoutFromTmpl))
+		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, fromOut, fromIn, inoutFromTmpl))
 		from.WriteString(fmt.Sprintf("\n\tout.%s = out%d\n", mo.Name.Def, idx))
-		to.WriteString(inoutGetToFromWasm(mi.Type, nil, toOut, toIn, inoutToTmpl))
+		to.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, toOut, toIn, inoutToTmpl))
 		to.WriteString(fmt.Sprintf("\n\tout.Set(\"%s\", value%d)\n", mi.Name().Idl, idx))
 	}
 	data.ReqParamLine = strings.Join(reqParam, ", ")

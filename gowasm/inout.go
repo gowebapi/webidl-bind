@@ -39,7 +39,7 @@ const inoutFromTmplInput = `
 {{define "end"}}
 {{end}}
 
-{{define "type-primitive"}}	{{.Out}} := ( {{.In}} ) . {{.Prim.JsMethod}} () {{end}}
+{{define "type-primitive"}}	{{.Out}} := ( {{.In}} ) . {{.Type.JsMethod}} () {{end}}
 {{define "type-callback"}}	callbackInFrom() {{end}}
 {{define "type-enum"}}		{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-interface"}}	{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
@@ -75,14 +75,16 @@ type inoutParam struct {
 	// output variable during convert to/from wasm
 	Out string
 
-	// RealP references input parameter
-	RealP *types.Parameter
-	RealT types.TypeRef
+	// Param references input parameter
+	Param *types.Parameter
+
+	// Inner type definintion
+	Type types.TypeRef
 }
 
 func parameterArgumentLine(input []*types.Parameter) (all string, list []string) {
 	for _, value := range input {
-		info := value.Type.Param(false, value.Optional, value.Variadic)
+		info, _ := value.Type.Param(false, value.Optional, value.Variadic)
 		name := value.Name + " " + info.InOut
 		list = append(list, name)
 	}
@@ -98,12 +100,11 @@ func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 	for idx, pi := range params {
 		po := inoutParam{
 			Name:  pi.Name,
-			Info:  pi.Type.Param(false, pi.Optional, pi.Variadic),
-			RealP: pi,
-			RealT: pi.Type,
+			Param: pi,
 			In:    setupVarName(in, idx, pi.Name),
 			Out:   setupVarName(out, idx, pi.Name),
 		}
+		po.Info, po.Type = pi.Type.Param(false, pi.Optional, pi.Variadic)
 		po.Tmpl = po.Info.Template
 		releaseHdl = releaseHdl || pi.Type.NeedRelease()
 		paramList = append(paramList, po)
@@ -123,12 +124,11 @@ func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
 	pi := param
 	po := inoutParam{
 		Name:  pi.Name,
-		Info:  pi.Type.Param(false, pi.Optional, pi.Variadic),
-		RealP: pi,
-		RealT: pi.Type,
+		Param: pi,
 		In:    setupVarName(in, idx, pi.Name),
 		Out:   setupVarName(out, idx, pi.Name),
 	}
+	po.Info, po.Type = pi.Type.Param(false, pi.Optional, pi.Variadic)
 	po.Tmpl = po.Info.Template
 	return &inoutData{
 		ParamList:  []inoutParam{po},
@@ -168,7 +168,7 @@ func writeInOutLoop(data *inoutData, tmpl *template.Template, dst io.Writer) err
 		return err
 	}
 	for _, p := range data.ParamList {
-		code := inoutGetToFromWasm(p.RealT, p.Info, p.Out, p.In, tmpl)
+		code := inoutGetToFromWasm(p.Type, p.Info, p.Out, p.In, tmpl)
 		if _, err := io.WriteString(dst, code); err != nil {
 			return err
 		}
@@ -181,23 +181,18 @@ func writeInOutLoop(data *inoutData, tmpl *template.Template, dst io.Writer) err
 
 func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, tmpl *template.Template) string {
 	if info == nil {
-		info = t.DefaultParam()
+		panic("null")
+		// info = t.DefaultParam()
 	}
 	data := struct {
 		In, Out string
 		Type    types.TypeRef
 		Info    *types.TypeInfo
-		Prim    *types.PrimitiveType
 	}{
 		In:   in,
-		Out:  out,
 		Type: t,
+		Out:  out,
 		Info: info,
 	}
-	candidate := t
-	if null, ok := candidate.(*types.NullableType); ok {
-		candidate = null.Type
-	}
-	data.Prim, _ = candidate.(*types.PrimitiveType)
 	return convertType(t, data, tmpl) + "\n"
 }

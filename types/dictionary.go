@@ -72,7 +72,7 @@ func (t *Dictionary) Basic() BasicInfo {
 	return t.basic
 }
 
-func (t *Dictionary) DefaultParam() *TypeInfo {
+func (t *Dictionary) DefaultParam() (info *TypeInfo, inner TypeRef) {
 	return t.Param(false, false, false)
 }
 
@@ -106,8 +106,8 @@ func (t *Dictionary) NeedRelease() bool {
 	return need
 }
 
-func (t *Dictionary) Param(nullable, option, vardict bool) *TypeInfo {
-	return newTypeInfo(t.basic, nullable, option, vardict, true, false, false)
+func (t *Dictionary) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, vardict, true, false, false), t
 }
 
 func (t *DictMember) Name() MethodName {

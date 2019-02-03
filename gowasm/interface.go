@@ -110,11 +110,13 @@ var interfaceTmpl = template.Must(template.New("interface").Parse(interfaceTmplI
 type interfaceData struct {
 	If   *types.Interface
 	Type *types.TypeInfo
+	Ref  types.TypeRef
 }
 
 type interfaceAttribute struct {
 	Name types.MethodName
 	Type *types.TypeInfo
+	Ref  types.TypeRef
 	From string
 	To   string
 	If   *types.Interface
@@ -132,9 +134,9 @@ type interfaceMethod struct {
 func writeInterface(dst io.Writer, input types.Type) error {
 	value := input.(*types.Interface)
 	data := &interfaceData{
-		If:   value,
-		Type: value.DefaultParam(),
+		If: value,
 	}
+	data.Type, data.Ref = value.DefaultParam()
 	if err := interfaceTmpl.ExecuteTemplate(dst, "header", data); err != nil {
 		return err
 	}
@@ -160,11 +162,13 @@ func writeInterface(dst io.Writer, input types.Type) error {
 
 func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set string, dst io.Writer) error {
 	for _, a := range vars {
+		typ, ref := a.Type.DefaultParam()
 		in := &interfaceAttribute{
 			Name: a.Name(),
-			Type: a.Type.DefaultParam(),
-			From: inoutGetToFromWasm(a.Type, nil, "ret", "value", inoutFromTmpl),
-			To:   inoutGetToFromWasm(a.Type, nil, "input", "value", inoutToTmpl),
+			Type: typ,
+			Ref:  ref,
+			From: inoutGetToFromWasm(ref, typ, "ret", "value", inoutFromTmpl),
+			To:   inoutGetToFromWasm(ref, typ, "input", "value", inoutToTmpl),
 			If:   main,
 		}
 		if err := interfaceTmpl.ExecuteTemplate(dst, get, in); err != nil {

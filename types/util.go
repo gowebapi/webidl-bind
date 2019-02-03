@@ -39,9 +39,14 @@ type TypeInfo struct {
 	// NeedRelease define if the type need a release handle
 	NeedRelease bool
 
+	// Nullable indicate that a null/nil value is a possibility
 	Nullable bool
-	Option   bool
-	Vardict  bool
+
+	// Optional input value
+	Option bool
+
+	// Vardict is variable number of input values
+	Vardict bool
 }
 
 type MethodName struct {
