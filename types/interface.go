@@ -8,9 +8,11 @@ import (
 
 type Interface struct {
 	standardType
-	source   *ast.Interface
-	basic    BasicInfo
-	Inherits *Interface
+	source *ast.Interface
+	basic  BasicInfo
+
+	Inherits     *Interface
+	inheritsName string
 
 	Constructor *IfMethod
 
@@ -74,8 +76,9 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			base:        in.NodeBase(),
 			needRelease: false,
 		},
-		basic:  fromIdlToTypeName(t.main.setup.Package, in.Name, "interface"),
-		source: in,
+		basic:        fromIdlToTypeName(t.main.setup.Package, in.Name, "interface"),
+		source:       in,
+		inheritsName: in.Inherits,
 	}
 	for _, raw := range in.Members {
 		mi, ok := raw.(*ast.Member)
@@ -231,6 +234,18 @@ func (t *Interface) link(conv *Convert, inuse inuseLogic) TypeRef {
 		return t
 	}
 	t.inuse = true
+
+	if t.inheritsName != "" {
+		if parent, ok := conv.Types[t.inheritsName]; ok {
+			if ip, ok := parent.(*Interface); ok {
+				t.Inherits = ip
+			} else {
+				conv.failing(t, "inherits '%s' that is not an interface but a %T", t.inheritsName, parent)
+			}
+		} else {
+			conv.failing(t, "inherits unknown '%s'", t.inheritsName)
+		}
+	}
 
 	if t.Constructor != nil {
 		t.Constructor.Return = t.Constructor.Return.link(conv, make(inuseLogic))
