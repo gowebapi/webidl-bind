@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"wasm/generator/gowasm"
 	"wasm/generator/types"
@@ -15,11 +16,13 @@ import (
 )
 
 var args struct {
-	output   string
-	warnings bool
+	outputPath  string
+	packageBase string
+	warnings    bool
 }
 
 var stopErr = errors.New("stopping for previous error")
+var currentFilename string
 
 func main() {
 	if msg := parseArgs(); msg != "" {
@@ -33,6 +36,12 @@ func main() {
 }
 
 func run() error {
+	if fi, err := os.Stat(args.outputPath); err != nil {
+		return fmt.Errorf("trouble evaluate %s: %s", args.outputPath, err)
+	} else if !fi.IsDir() {
+		return fmt.Errorf("output path '%s' doesn't point to a directory", args.outputPath)
+	}
+
 	conv := types.NewConvert()
 	setup := &types.Setup{
 		Package: "",
@@ -58,8 +67,16 @@ func run() error {
 	}
 
 	for k, v := range files {
-		fmt.Println("writing output file", k, "to", args.output)
-		if err := ioutil.WriteFile(args.output, v, 0666); err != nil {
+		path := filepath.Join(args.outputPath, k)
+		dir := filepath.Dir(path)
+		if !pathExist(dir) {
+			fmt.Println("creating folder", dir)
+			if err := os.MkdirAll(dir, 0775); err != nil {
+				return err
+			}
+		}
+		fmt.Println("saving ", path)
+		if err := ioutil.WriteFile(path, v, 0666); err != nil {
 			return err
 		}
 	}
@@ -82,6 +99,7 @@ func processFile(filename string, conv *types.Convert, setup *types.Setup) error
 		return stopErr
 	}
 
+	currentFilename = filename
 	setup.Package = gowasm.FormatPkg(filename)
 	if err := conv.Process(file, setup); err != nil {
 		return err
@@ -91,7 +109,7 @@ func processFile(filename string, conv *types.Convert, setup *types.Setup) error
 
 func failing(base *ast.Base, format string, args ...interface{}) {
 	dst := os.Stderr
-	fmt.Fprint(dst, "error:")
+	fmt.Fprint(dst, "error:", currentFilename, ":")
 	if base != nil {
 		fmt.Fprint(dst, base.Line, ":")
 	}
@@ -104,7 +122,7 @@ func warning(base *ast.Base, format string, values ...interface{}) {
 		return
 	}
 	dst := os.Stderr
-	fmt.Fprint(dst, "warning:")
+	fmt.Fprint(dst, "warning:", currentFilename, ":")
 	if base != nil {
 		fmt.Fprint(dst, base.Line, ":")
 	}
@@ -114,13 +132,21 @@ func warning(base *ast.Base, format string, values ...interface{}) {
 
 func parseArgs() string {
 	flag.BoolVar(&args.warnings, "log-warning", true, "log warnings")
-	flag.StringVar(&args.output, "output", "", "output file")
+	flag.StringVar(&args.outputPath, "output", "", "output path")
+	flag.StringVar(&args.packageBase, "package-base", "", "package base name (e.g. github.com/foo/bar)")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		return "no input files on command line"
 	}
-	if args.output == "" {
-		return "missing output file"
+	if args.outputPath == "" {
+		return "missing output path for file(s)"
 	}
 	return ""
+}
+
+func pathExist(path string) bool {
+	if _, err := os.Stat(path); err == nil {
+		return true
+	}
+	return false
 }
