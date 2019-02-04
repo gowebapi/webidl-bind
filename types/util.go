@@ -72,6 +72,15 @@ type nameAndLink struct {
 
 type inuseLogic map[string]bool
 
+var reservedKeywords = map[string]bool{
+	"break": true, "case": true, "chan": true, "const": true, "continue": true,
+	"default": true, "defer": true, "else": true, "for": true, "fallthrough": true,
+	"func": true, "go": true, "goto": true, "if": true, "interface": true,
+	"import": true, "map": true, "package": true, "range": true, "return": true,
+	"select": true, "struct": true, "switch": true, "type": true, "var": true,
+}
+
+// clipString is removing any starting and ending '"' + spaces
 func clipString(input string) string {
 	if strings.HasPrefix(input, "\"") && strings.HasSuffix(input, "\"") {
 		return strings.TrimSpace(input[1 : len(input)-1])
@@ -84,8 +93,8 @@ func fromIdlToTypeName(pkg string, name string, tmpl string) BasicInfo {
 	ret := BasicInfo{
 		Package:  pkg,
 		Idl:      name,
-		Def:      toCamelCase(name, true),
-		Internal: toCamelCase(name, false),
+		Def:      fixLangName(toCamelCase(name, true)),
+		Internal: fixLangName(toCamelCase(name, false)),
 		Template: tmpl,
 	}
 	return ret
@@ -95,8 +104,8 @@ func fromIdlToMethodName(name string) MethodName {
 	name = getIdlName(name)
 	ret := MethodName{
 		Idl:      name,
-		Def:      toCamelCase(name, true),
-		Internal: toCamelCase(name, false),
+		Def:      fixLangName(toCamelCase(name, true)),
+		Internal: fixLangName(toCamelCase(name, false)),
 	}
 	return ret
 }
@@ -104,6 +113,19 @@ func fromIdlToMethodName(name string) MethodName {
 func getIdlName(input string) string {
 	if strings.HasPrefix(input, "_") && len(input) > 1 {
 		input = input[1:]
+	}
+	return input
+}
+
+func fixLangName(input string) string {
+	if input == "" {
+		return input
+	}
+	if _, f := reservedKeywords[input]; f {
+		input = "_" + input
+	}
+	if len(input) > 1 && input[0] >= '0' && input[0] <= '9' {
+		input = "_" + input
 	}
 	return input
 }

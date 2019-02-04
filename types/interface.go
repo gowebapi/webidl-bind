@@ -93,10 +93,14 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			ret.Vars = append(ret.Vars, mo)
 		} else if mi.Static {
 			mo := t.convertInterfaceMethod(mi)
-			ret.StaticMethod = append(ret.StaticMethod, mo)
+			if mo != nil {
+				ret.StaticMethod = append(ret.StaticMethod, mo)
+			}
 		} else {
 			mo := t.convertInterfaceMethod(mi)
-			ret.Method = append(ret.Method, mo)
+			if mo != nil {
+				ret.Method = append(ret.Method, mo)
+			}
 		}
 	}
 	for _, a := range in.Annotations {
@@ -179,6 +183,14 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 }
 
 func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
+	if in.Name == "" {
+		if in.Specialization != "" {
+			conv.warning(in, "skipping method, no support for specialization '%s'", in.Specialization)
+		} else {
+			conv.failing(in, "empty method name")
+		}
+		return nil
+	}
 	conv.warningTrue(in.Specialization == "", in, "method: unsupported specialization (need to be implemented)")
 	conv.assertTrue(in.Init == nil, in, "method: unsupported default value")
 	conv.assertTrue(!in.Required, in, "method: unsupported required tag")

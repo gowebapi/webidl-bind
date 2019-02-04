@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/dennwc/webidl/ast"
 )
 
@@ -33,13 +35,17 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 		Values: []EnumValue{},
 	}
 
-	for _, v := range in.Values {
+	for i, v := range in.Values {
 		if b, ok := v.(*ast.BasicLiteral); ok {
-			v := b.Value
-			v = clipString(v)
+			idl := b.Value
+			idl = clipString(idl)
+			lang := idl
+			if lang == "" {
+				lang = fmt.Sprintf("empty_string_%d", i)
+			}
 			ret.Values = append(ret.Values, EnumValue{
-				Idl: v,
-				Go:  toCamelCase(v, true),
+				Idl: idl,
+				Go:  fixLangName(toCamelCase(lang, true)),
 			})
 		} else {
 			t.failing(in, "unsupported literal: %T: %#V", v, v)

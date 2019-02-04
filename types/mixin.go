@@ -48,10 +48,14 @@ func (t *extractTypes) convertMixin(in *ast.Mixin) (*mixin, bool) {
 			ret.Vars = append(ret.Vars, mo)
 		} else if mi.Static {
 			mo := t.convertInterfaceMethod(mi)
-			ret.StaticMethod = append(ret.StaticMethod, mo)
+			if mo != nil {
+				ret.StaticMethod = append(ret.StaticMethod, mo)
+			}
 		} else {
 			mo := t.convertInterfaceMethod(mi)
-			ret.Method = append(ret.Method, mo)
+			if mo != nil {
+				ret.Method = append(ret.Method, mo)
+			}
 		}
 	}
 	for _, a := range in.Annotations {

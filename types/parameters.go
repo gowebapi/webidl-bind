@@ -23,9 +23,10 @@ func (t *extractTypes) convertParams(list []*ast.Parameter) []*Parameter {
 
 func (t *extractTypes) convertParam(in *ast.Parameter) *Parameter {
 	t.warningTrue(len(in.Annotations) == 0, in, "parameter: unsupported annotation")
+	name := getIdlName(in.Name)
 	return &Parameter{
 		in:       in,
-		Name:     toCamelCase(in.Name, false),
+		Name:     fixLangName(toCamelCase(name, false)),
 		Type:     convertType(in.Type),
 		Optional: in.Optional,
 		Variadic: in.Variadic,
