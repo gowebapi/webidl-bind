@@ -74,6 +74,8 @@ func WriteSource(conv *types.Convert) (map[string][]byte, error) {
 	}
 	ret := make(map[string][]byte)
 	for k, v := range target {
+		low := strings.ToLower(k)
+		filename := fmt.Sprintf("%s/%s.go", low, low)
 		content := v.Bytes()
 		content = sourceCodeRemoveEmptyLines(content)
 		if source, err := format.Source(content); err == nil {
@@ -81,10 +83,8 @@ func WriteSource(conv *types.Convert) (map[string][]byte, error) {
 		} else {
 			// we just print this error to get an output file that we
 			// later can correct and fix the bug
-			fmt.Fprintf(os.Stderr, "unable to format output source code: %s\n", err)
+			fmt.Fprintf(os.Stderr, "error:%s:unable to format output source code: %s\n", filename, err)
 		}
-		low := strings.ToLower(k)
-		filename := fmt.Sprintf("%s/%s.go", low, low)
 		ret[filename] = content
 	}
 	return ret, nil
