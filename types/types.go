@@ -133,10 +133,9 @@ func (t *AnyType) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *AnyType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	// TODO shoud returned any type be js.Value ?
 	ret := &TypeInfo{
 		BasicInfo:   t.Basic(),
-		InOut:       "interface{}",
+		InOut:       "js.Value",
 		Pointer:     false,
 		NeedRelease: false,
 		Nullable:    false,

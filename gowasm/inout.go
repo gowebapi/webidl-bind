@@ -27,7 +27,7 @@ const inoutToTmplInput = `
 {{end}}
 {{define "type-enum"}}      {{.Out}} := {{.Info.Internal}}ToWasm({{.In}}) {{end}}
 {{define "type-union"}}	{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
-{{define "type-any"}}    {{.Out}} := any( {{.In}} ) {{end}}
+{{define "type-any"}}    {{.Out}} := {{.In}} {{end}}
 {{define "type-sequence"}} {{.Out}} := sequence( {{.In}} ) {{end}}
 {{define "type-typedarray"}} {{.Out}} := typedarray( {{.In}} ) {{end}}
 {{define "type-parametrized"}}	{{.Out}} := parametrized( {{.In}} ) {{end}}
@@ -45,7 +45,7 @@ const inoutFromTmplInput = `
 {{define "type-enum"}}		{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-interface"}}	{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-union"}}  {{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
-{{define "type-any"}}    {{.Out}} := any( {{.In}} ) {{end}}
+{{define "type-any"}}    {{.Out}} := {{.In}} {{end}}
 {{define "type-sequence"}} {{.Out}} := sequence( {{.In}} ) {{end}}
 {{define "type-typedarray"}} {{.Out}} := typedarray( {{.In}} ) {{end}}
 {{define "type-parametrized"}}	{{.Out}} := parametrized( {{.In}} ) {{end}}
