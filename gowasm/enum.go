@@ -13,7 +13,7 @@ const enumTmplInput = `
 type {{.Basic.Def}} int
 
 const (
-{{range $idx, $v := .Enum.Values}}	{{$v.Go}}{{if eq $idx 0}} {{$.Basic.Def}} = iota{{end}}
+{{range $idx, $v := .Enum.Values}}	{{$.Enum.Prefix}}{{$v.Go}}{{$.Enum.Suffix}}{{if eq $idx 0}} {{$.Basic.Def}} = iota{{end}}
 {{end}}
 )
 
@@ -22,7 +22,7 @@ var {{.Basic.Internal}}ToWasmTable = []string{
 }
 
 var {{.Basic.Internal}}FromWasmTable = map[string]{{.Basic.Def}} {
-	{{range .Enum.Values}}"{{.Idl}}": {{.Go}},{{end}}
+	{{range .Enum.Values}}"{{.Idl}}": {{$.Enum.Prefix}}{{.Go}}{{$.Enum.Suffix}},{{end}}
 }
 
 func {{.Basic.Internal}}ToWasm(in {{.DefaultParam.InOut}}) string {

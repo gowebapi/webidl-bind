@@ -12,6 +12,9 @@ type Enum struct {
 	basic  BasicInfo
 	source *ast.Enum
 	Values []EnumValue
+
+	// target language prefix and suffix for enum values
+	Prefix, Suffix string
 }
 
 // Enum need to implement Type
@@ -34,6 +37,7 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 		source: in,
 		Values: []EnumValue{},
 	}
+	ret.Suffix = ret.basic.Def
 
 	for i, v := range in.Values {
 		if b, ok := v.(*ast.BasicLiteral); ok {
