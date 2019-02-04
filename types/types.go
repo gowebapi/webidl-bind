@@ -22,35 +22,37 @@ type TypeRef interface {
 	NeedRelease() bool
 }
 
+const builtInPackage = "<built-in>"
+
 func convertType(in ast.Type) TypeRef {
 	var ret TypeRef
 	switch in := in.(type) {
 	case *ast.TypeName:
 		switch in.Name {
 		case "boolean":
-			ret = newPrimitiveType(in.Name, "bool", "Bool")
+			ret = newPrimitiveType(in.Name, "bool", "Bool", false)
 		case "short":
-			ret = newPrimitiveType(in.Name, "int", "Int")
+			ret = newPrimitiveType(in.Name, "int", "Int", true)
 		case "unsigned short":
-			ret = newPrimitiveType(in.Name, "int", "Int")
+			ret = newPrimitiveType(in.Name, "int", "Int", true)
 		case "long":
-			ret = newPrimitiveType(in.Name, "int", "Int")
+			ret = newPrimitiveType(in.Name, "int", "Int", false)
 		case "unsigned long":
-			ret = newPrimitiveType(in.Name, "uint", "Int")
+			ret = newPrimitiveType(in.Name, "uint", "Int", false)
 		case "long long":
-			ret = newPrimitiveType(in.Name, "int", "Int")
+			ret = newPrimitiveType(in.Name, "int", "Int", false)
 		case "unsigned long long":
-			ret = newPrimitiveType(in.Name, "int", "Int")
+			ret = newPrimitiveType(in.Name, "int", "Int", false)
 		case "double":
-			ret = newPrimitiveType(in.Name, "float64", "Float")
+			ret = newPrimitiveType(in.Name, "float64", "Float", true)
 		case "unrestricted double":
-			ret = newPrimitiveType(in.Name, "float64", "Float")
+			ret = newPrimitiveType(in.Name, "float64", "Float", true)
 		case "void":
 			ret = newVoidType(in)
 		case "DOMString":
-			ret = newPrimitiveType(in.Name, "string", "String")
+			ret = newPrimitiveType(in.Name, "string", "String", false)
 		case "USVString":
-			ret = newPrimitiveType(in.Name, "string", "String")
+			ret = newPrimitiveType(in.Name, "string", "String", false)
 		default:
 			ret = newTypeNameRef(in)
 		}
@@ -58,7 +60,14 @@ func convertType(in ast.Type) TypeRef {
 		ret = newAnyType()
 	case *ast.SequenceType:
 		elem := convertType(in.Elem)
-		ret = newSequenceType(elem)
+		if primitive, ok := elem.(*PrimitiveType); ok {
+			if primitive.supportTypedArray {
+				ret = newTypedArrayType(primitive)
+			}
+		}
+		if ret == nil {
+			ret = newSequenceType(elem)
+		}
 	case *ast.RecordType:
 		panic(fmt.Sprintf("support not implemented: input source line %d", in.Line))
 	case *ast.ParametrizedType:
@@ -107,7 +116,7 @@ func newAnyType() *AnyType {
 func (t *AnyType) Basic() BasicInfo {
 	ret := BasicInfo{
 		Idl:      "any",
-		Package:  "<build-in>",
+		Package:  builtInPackage,
 		Def:      "js.Value",
 		Internal: "<any>",
 		Template: "any",
@@ -268,25 +277,30 @@ type PrimitiveType struct {
 	Idl      string
 	Lang     string
 	JsMethod string
+
+	// if this represent a primitive type that can be supported
+	// by TypedArray, e.g. int8, int, float32 etc
+	supportTypedArray bool
 }
 
 var _ TypeRef = &PrimitiveType{}
 
-func newPrimitiveType(idl, lang, method string) *PrimitiveType {
+func newPrimitiveType(idl, lang, method string, sta bool) *PrimitiveType {
 	return &PrimitiveType{
 		basicType: basicType{
 			needRelease: false,
 		},
-		Idl:      idl,
-		Lang:     lang,
-		JsMethod: method,
+		Idl:               idl,
+		Lang:              lang,
+		JsMethod:          method,
+		supportTypedArray: sta,
 	}
 }
 
 func (t *PrimitiveType) Basic() BasicInfo {
 	return BasicInfo{
 		Idl:      t.Idl,
-		Package:  "<build-in>",
+		Package:  builtInPackage,
 		Def:      t.Lang,
 		Internal: "<primitive-internal-name>",
 		Template: "primitive",
@@ -317,7 +331,7 @@ func newSequenceType(elem TypeRef) *SequenceType {
 		Elem: elem,
 		basic: BasicInfo{
 			Idl:      "idl-sequence",
-			Package:  "<built-in>",
+			Package:  builtInPackage,
 			Def:      "def-sequence",
 			Internal: "internal-sequence",
 			Template: "sequence",
@@ -337,6 +351,16 @@ func (t *SequenceType) DefaultParam() (info *TypeInfo, inner TypeRef) {
 func (t *SequenceType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	inner := make(inuseLogic)
 	t.Elem = t.Elem.link(conv, inner)
+
+	eb := t.Elem.Basic()
+	_, prim := t.Elem.(*PrimitiveType)
+	_, enum := t.Elem.(*Enum)
+	_, cb := t.Elem.(*Callback)
+	if prim || enum || cb {
+		t.basic.Def = "[]" + eb.Def
+	} else {
+		t.basic.Def = "[]*" + eb.Def
+	}
 	return t
 }
 
@@ -346,6 +370,47 @@ func (t *SequenceType) Param(nullable, option, vardict bool) (info *TypeInfo, in
 
 func (t *SequenceType) NeedRelease() bool {
 	return t.Elem.NeedRelease()
+}
+
+type TypedArrayType struct {
+	Elem  *PrimitiveType
+	basic BasicInfo
+}
+
+var _ TypeRef = &TypedArrayType{}
+
+func newTypedArrayType(primitive *PrimitiveType) *TypedArrayType {
+	return &TypedArrayType{
+		Elem: primitive,
+		basic: BasicInfo{
+			Idl:      "typed-array",
+			Package:  builtInPackage,
+			Def:      "js.TypedArray",
+			Internal: "typed-array",
+			Template: "typedarray",
+		},
+	}
+}
+
+func (t *TypedArrayType) Basic() BasicInfo {
+	return t.basic
+}
+
+func (t *TypedArrayType) DefaultParam() (info *TypeInfo, inner TypeRef) {
+	return t.Param(false, false, false)
+}
+
+func (t *TypedArrayType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	// assumes that PrimitiveType.link() doesn't do anything
+	return t
+}
+
+func (t *TypedArrayType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false), t
+}
+
+func (t *TypedArrayType) NeedRelease() bool {
+	return true
 }
 
 type typeNameRef struct {
@@ -433,7 +498,7 @@ func (t *UnionType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	t.name = strings.Join(names, "")
 	t.basic = BasicInfo{
 		Idl:      t.name + "Union",
-		Package:  "<built-in>",
+		Package:  builtInPackage,
 		Def:      t.name + "Union",
 		Internal: "union" + t.name,
 		Template: "union",
@@ -473,7 +538,7 @@ func newVoidType(in *ast.TypeName) *voidType {
 func (t *voidType) Basic() BasicInfo {
 	return BasicInfo{
 		Idl:      "void",
-		Package:  "<built-in>",
+		Package:  builtInPackage,
 		Def:      "",
 		Internal: "void",
 		Template: "void",

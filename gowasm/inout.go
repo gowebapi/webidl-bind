@@ -29,6 +29,7 @@ const inoutToTmplInput = `
 {{define "type-union"}}	{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
 {{define "type-any"}}    {{.Out}} := any( {{.In}} ) {{end}}
 {{define "type-sequence"}} {{.Out}} := sequence( {{.In}} ) {{end}}
+{{define "type-typedarray"}} {{.Out}} := typedarray( {{.In}} ) {{end}}
 {{define "type-parametrized"}}	{{.Out}} := parametrized( {{.In}} ) {{end}}
 
 `
@@ -46,6 +47,7 @@ const inoutFromTmplInput = `
 {{define "type-union"}}  {{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-any"}}    {{.Out}} := any( {{.In}} ) {{end}}
 {{define "type-sequence"}} {{.Out}} := sequence( {{.In}} ) {{end}}
+{{define "type-typedarray"}} {{.Out}} := typedarray( {{.In}} ) {{end}}
 {{define "type-parametrized"}}	{{.Out}} := parametrized( {{.In}} ) {{end}}
 {{define "type-dictionary"}}	{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 `
