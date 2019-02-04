@@ -196,7 +196,7 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 	to := setupInOutWasmData(m.Params, "@name@", "_p%d")
 	retLang, retList, isVoid := calculateMethodReturn(m.Return, to.ReleaseHdl)
 	in := &interfaceMethod{
-		Name:         m.Name(),
+		Name:         m.Name,
 		Return:       retLang,
 		ReturnList:   retList,
 		IsVoidReturn: isVoid,

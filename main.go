@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"wasm/generator/gowasm"
+	"wasm/generator/transform"
 	"wasm/generator/types"
 
 	"github.com/dennwc/webidl/ast"
@@ -61,6 +62,7 @@ func run() error {
 	if err := conv.EvaluateOutput(); err != nil {
 		return err
 	}
+	transform.RenameOverrideMethods(conv)
 
 	files, err := gowasm.WriteSource(conv)
 	if err != nil {

@@ -45,7 +45,7 @@ type IfVar struct {
 
 type IfMethod struct {
 	nameAndLink
-	name   MethodName
+	Name   MethodName
 	Src    *ast.Member
 	SrcA   *ast.Annotation
 	Return TypeRef
@@ -115,7 +115,7 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 				nameAndLink: nameAndLink{
 					base: a.NodeBase(),
 				},
-				name:   fromIdlToMethodName("New_" + ret.basic.Idl),
+				Name:   fromIdlToMethodName("New_" + ret.basic.Idl),
 				Static: true,
 				SrcA:   a,
 				Return: newInterfaceType(ret),
@@ -209,7 +209,7 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 		nameAndLink: nameAndLink{
 			base: in.NodeBase(),
 		},
-		name:   fromIdlToMethodName(in.Name),
+		Name:   fromIdlToMethodName(in.Name),
 		Src:    in,
 		Return: convertType(in.Type),
 		Static: in.Static,
@@ -302,9 +302,5 @@ func (t *IfConst) Name() MethodName {
 }
 
 func (t *IfVar) Name() MethodName {
-	return t.name
-}
-
-func (t *IfMethod) Name() MethodName {
 	return t.name
 }
