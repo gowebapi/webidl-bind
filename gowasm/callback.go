@@ -11,7 +11,7 @@ const callbackTmplInput = `
 type {{.Type.Def}} func ({{.ParamLine}})
 
 func {{.Type.Internal}}FromWasm(callback {{.Type.InOut}}, args []js.Value) {
-	if len(args) != 1 {
+	if len(args) != {{len .Params}} {
 		panic("unexpected parameter count")
 	}
 {{end}}
