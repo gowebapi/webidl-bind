@@ -19,6 +19,7 @@ var args struct {
 	outputPath  string
 	packageBase string
 	warnings    bool
+	singlePkg   string
 }
 
 var stopErr = errors.New("stopping for previous error")
@@ -44,7 +45,7 @@ func run() error {
 
 	conv := types.NewConvert()
 	setup := &types.Setup{
-		Package: "",
+		Package: args.singlePkg,
 		Error:   failing,
 		Warning: warning,
 	}
@@ -100,7 +101,9 @@ func processFile(filename string, conv *types.Convert, setup *types.Setup) error
 	}
 
 	currentFilename = filename
-	setup.Package = gowasm.FormatPkg(filename)
+	if args.singlePkg == "" {
+		setup.Package = gowasm.FormatPkg(filename)
+	}
 	if err := conv.Process(file, setup); err != nil {
 		return err
 	}
@@ -134,6 +137,7 @@ func parseArgs() string {
 	flag.BoolVar(&args.warnings, "log-warning", true, "log warnings")
 	flag.StringVar(&args.outputPath, "output", "", "output path")
 	flag.StringVar(&args.packageBase, "package-base", "", "package base name (e.g. github.com/foo/bar)")
+	flag.StringVar(&args.singlePkg, "single-package", "", "all types to same package")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		return "no input files on command line"
