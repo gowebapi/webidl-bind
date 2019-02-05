@@ -36,8 +36,8 @@ var dictionaryTmpl = template.Must(template.New("dictionary").Parse(dictionaryTm
 
 type dictionaryData struct {
 	Dict         *types.Dictionary
-	Members      []dictionaryMember
-	Required     []dictionaryMember
+	Members      []*dictionaryMember
+	Required     []*dictionaryMember
 	HaveReq      bool
 	ReqParamLine string
 	From         string
@@ -49,6 +49,9 @@ type dictionaryMember struct {
 	Name types.MethodName
 	Type *types.TypeInfo
 	Ref  types.TypeRef
+
+	fromIn, fromOut string
+	toIn, toOut     string
 }
 
 func writeDictionary(dst io.Writer, value types.Type) error {
@@ -60,7 +63,7 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 	var to, from bytes.Buffer
 	reqParam := []string{}
 	for idx, mi := range dict.Members {
-		mo := dictionaryMember{
+		mo := &dictionaryMember{
 			Name: mi.Name(),
 		}
 		mo.Type, mo.Ref = mi.Type.DefaultParam()
@@ -70,15 +73,21 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.Type.InOut))
 			data.Required = append(data.Required, mo)
 		}
-		fromIn, fromOut := setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Def)
-		toIn, toOut := setupVarName("input.@name@", idx, mo.Name.Def), setupVarName("value%d", idx, mo.Name.Def)
-		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, fromOut, fromIn, idx, inoutFromTmpl))
+		mo.fromIn, mo.fromOut = setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Def)
+		mo.toIn, mo.toOut = setupVarName("input.@name@", idx, mo.Name.Def), setupVarName("value%d", idx, mo.Name.Def)
+		from.WriteString(inoutParamStart(mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
+		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
+		from.WriteString(inoutParamEnd(mo.Type, inoutFromTmpl))
 		from.WriteString(fmt.Sprintf("\n\tout.%s = out%d\n", mo.Name.Def, idx))
-		to.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, toOut, toIn, idx, inoutToTmpl))
+		to.WriteString(inoutParamStart(mo.Type, mo.toOut, mo.toIn, idx, inoutToTmpl))
+		to.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.toOut, mo.toIn, idx, inoutToTmpl))
+		to.WriteString(inoutParamEnd(mo.Type, inoutToTmpl))
 		to.WriteString(fmt.Sprintf("\n\tout.Set(\"%s\", value%d)\n", mi.Name().Idl, idx))
 	}
+	varFrom := inoutDictionaryVariableStart(data, true, inoutFromTmpl)
+	varTo := inoutDictionaryVariableStart(data, false, inoutToTmpl)
 	data.ReqParamLine = strings.Join(reqParam, ", ")
-	data.From, data.To = from.String(), to.String()
+	data.From, data.To = varFrom+from.String(), varTo+to.String()
 
 	if err := dictionaryTmpl.ExecuteTemplate(dst, "header", data); err != nil {
 		return err

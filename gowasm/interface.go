@@ -40,6 +40,7 @@ func {{.Type.Internal}}ToWasm(input {{.Type.InOut}}) js.Value {
 
 {{define "get-static-attribute"}}
 func {{.Name.Def}} () {{.Type.InOut}} {
+	var ret {{.Type.InOut}}
 	klass := js.Global().Get("{{.If.Basic.Idl}}")
 	value := klass.Get("{{.Name.Idl}}")
 	{{.From}}
@@ -48,15 +49,18 @@ func {{.Name.Def}} () {{.Type.InOut}} {
 {{end}}
 
 {{define "set-static-attribute"}}
-func Set{{.Name.Def}} ( value {{.Type.InOut}} ) {
+func Set{{.Name.Def}} ( value {{.Type.InOut}} ) {{.Ret}} {
+	{{if len .Ret}}var _releaseList releasableApiResourceList{{end}}
 	klass := js.Global().Get("{{.If.Basic.Idl}}")
 	{{.To}}
 	klass.Set("{{.Name.Idl}}", input)
+	{{if len .Ret}}return{{end}}
 }
 {{end}}
 
 {{define "get-object-attribute"}}
 func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.InOut}} {
+	var ret {{.Type.InOut}}
 	value := _this.value.Get("{{.Name.Idl}}")
 	{{.From}}
 	return ret
@@ -64,9 +68,11 @@ func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.InOut}} {
 {{end}}
 
 {{define "set-object-attribute"}}
-func (_this * {{.If.Basic.Def}} ) Set{{.Name.Def}} ( value {{.Type.InOut}} )  {
+func (_this * {{.If.Basic.Def}} ) Set{{.Name.Def}} ( value {{.Type.InOut}} ) {{.Ret}} {
+	{{if len .Ret}}var _releaseList releasableApiResourceList{{end}}
 	{{.To}}
 	_this.value.Set("{{.Name.Idl}}", input)
+	{{if len .Ret}}return{{end}}
 }
 {{end}}
 
@@ -77,11 +83,11 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_method := _klass.Get("{{.Name.Idl}}")
 {{end}}
 {{define "static-method-invoke"}}
-	{{if not .IsVoidReturn}}ret :={{end}} _method.Invoke( {{.To.AllOut}} )
+	{{if not .IsVoidReturn}}_returned :={{end}} _method.Invoke( {{.To.AllOut}} )
 {{end}}
 {{define "static-method-end"}}
-	{{if not .IsVoidReturn}}result = value{{end}}
-	{{if .To.ReleaseHdl}}release = _releaseList{{end}}
+	{{if not .IsVoidReturn}}_result = value{{end}}
+	{{if .To.ReleaseHdl}}_release = _releaseList{{end}}
 	return
 }
 {{end}}
@@ -94,7 +100,7 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_returned := _klass.New({{.To.AllOut}})
 {{end}}
 {{define "constructor-end"}}
-	result = _result
+	_result = _converted
 	return
 }
 {{end}}
@@ -105,11 +111,11 @@ func ( _this * {{.If.Basic.Def}} ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnL
 	_method := _this.value.Get("{{.Name.Idl}}")
 {{end}}
 {{define "object-method-invoke"}}
-	{{if not .IsVoidReturn}}ret :={{end}} _method.Invoke({{.To.AllOut}})
+	{{if not .IsVoidReturn}}_returned :={{end}} _method.Invoke({{.To.AllOut}})
 {{end}}
 {{define "object-method-end"}}
-	{{if not .IsVoidReturn}}result = value{{end}}
-	{{if .To.ReleaseHdl}}release = _releaseList{{end}}
+	{{if not .IsVoidReturn}}_result = _converted{{end}}
+	{{if .To.ReleaseHdl}}_release = _releaseList{{end}}
 	return
 }
 {{end}}
@@ -131,6 +137,7 @@ type interfaceAttribute struct {
 	From string
 	To   string
 	If   *types.Interface
+	Ret  string
 }
 
 type interfaceMethod struct {
@@ -174,6 +181,10 @@ func writeInterface(dst io.Writer, input types.Type) error {
 func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set string, dst io.Writer) error {
 	for idx, a := range vars {
 		typ, ref := a.Type.DefaultParam()
+		ret := ""
+		if a.Type.NeedRelease() {
+			ret = "(_release ReleasableApiResource)"
+		}
 		in := &interfaceAttribute{
 			Name: a.Name(),
 			Type: typ,
@@ -181,6 +192,7 @@ func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set str
 			From: inoutGetToFromWasm(ref, typ, "ret", "value", idx, inoutFromTmpl),
 			To:   inoutGetToFromWasm(ref, typ, "input", "value", idx, inoutToTmpl),
 			If:   main,
+			Ret:  ret,
 		}
 		if err := interfaceTmpl.ExecuteTemplate(dst, get, in); err != nil {
 			return err
@@ -224,7 +236,7 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 		return err
 	}
 	if !isVoid {
-		result := setupInOutWasmForType(m.Return, "_returned", "_result")
+		result := setupInOutWasmForType(m.Return, "_what_return_name", "_returned", "_converted")
 		if err := writeInOutFromWasm(result, dst); err != nil {
 			return err
 		}
@@ -242,10 +254,10 @@ func calculateMethodReturn(t types.TypeRef, releaseHdl bool) (lang, list string,
 
 	candidate := []string{}
 	if !isVoid {
-		candidate = append(candidate, "result "+lang)
+		candidate = append(candidate, "_result "+lang)
 	}
 	if releaseHdl {
-		candidate = append(candidate, "release ReleasableApiResource")
+		candidate = append(candidate, "_release ReleasableApiResource")
 	}
 	list = strings.Join(candidate, ", ")
 	return
