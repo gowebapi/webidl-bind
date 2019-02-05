@@ -277,8 +277,8 @@ func (t *Interface) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *Interface) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, vardict, true, false, false), t
+func (t *Interface) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, variadic, true, false, false), t
 }
 
 func (t *Interface) merge(m *Interface, conv *Convert) {

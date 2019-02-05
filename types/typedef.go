@@ -60,7 +60,7 @@ func (t *typeDef) link(conv *Convert, inuse inuseLogic) TypeRef {
 	// return t.Type
 }
 
-func (t *typeDef) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
+func (t *typeDef) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	panic("not supported for this type")
-	// return t.Type.Param(nullable, option, vardict)
+	// return t.Type.Param(nullable, option, variadic)
 }

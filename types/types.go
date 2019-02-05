@@ -132,7 +132,7 @@ func (t *AnyType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *AnyType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
+func (t *AnyType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	ret := &TypeInfo{
 		BasicInfo:   t.Basic(),
 		InOut:       "js.Value",
@@ -140,12 +140,9 @@ func (t *AnyType) Param(nullable, option, vardict bool) (info *TypeInfo, inner T
 		NeedRelease: false,
 		Nullable:    false,
 		Option:      option,
-		Vardict:     vardict,
+		Variadic:    variadic,
 	}
-	// if option {
-	//	ret.InOut = "*" + ret.InOut
-	// }
-	if vardict {
+	if variadic {
 		ret.Def = "..." + ret.Def
 		ret.InOut = "..." + ret.InOut
 	}
@@ -182,9 +179,9 @@ func (t *interfaceType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t.If
 }
 
-func (t *interfaceType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
+func (t *interfaceType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	panic("not supported for this type")
-	// return t.If.Param(nullable, option, vardict)
+	// return t.If.Param(nullable, option, variadic)
 }
 
 type nullableType struct {
@@ -210,8 +207,8 @@ func (t *nullableType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *nullableType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	return t.Type.Param(true, option, vardict)
+func (t *nullableType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
+	return t.Type.Param(true, option, variadic)
 }
 
 func (t *nullableType) NeedRelease() bool {
@@ -266,8 +263,8 @@ func (t *ParametrizedType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *ParametrizedType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, vardict, true, false, false), t
+func (t *ParametrizedType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, variadic, true, false, false), t
 }
 
 func (t *ParametrizedType) NeedRelease() bool {
@@ -324,8 +321,8 @@ func (t *PrimitiveType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *PrimitiveType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.Basic(), nullable, option, vardict, false, false, false), t
+func (t *PrimitiveType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.Basic(), nullable, option, variadic, false, false, false), t
 }
 
 type SequenceType struct {
@@ -373,8 +370,8 @@ func (t *SequenceType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *SequenceType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false), t
+func (t *SequenceType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, variadic, false, false, false), t
 }
 
 func (t *SequenceType) NeedRelease() bool {
@@ -414,8 +411,8 @@ func (t *TypedArrayType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *TypedArrayType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false), t
+func (t *TypedArrayType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, variadic, false, false, false), t
 }
 
 func (t *TypedArrayType) NeedRelease() bool {
@@ -455,9 +452,9 @@ func (t *typeNameRef) link(conv *Convert, inuse inuseLogic) TypeRef {
 	}
 }
 
-func (t *typeNameRef) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
+func (t *typeNameRef) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	panic("not supported by this type")
-	// return t.Underlying.Param(nullable, option, vardict)
+	// return t.Underlying.Param(nullable, option, variadic)
 }
 
 func (t *typeNameRef) NeedRelease() bool {
@@ -515,8 +512,8 @@ func (t *UnionType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *UnionType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, vardict, true, false, false), t
+func (t *UnionType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, variadic, true, false, false), t
 }
 
 func (t *UnionType) NeedRelease() bool {
@@ -562,13 +559,13 @@ func (t *voidType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *voidType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
+func (t *voidType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	return &TypeInfo{
 		BasicInfo:   t.Basic(),
 		InOut:       "",
 		NeedRelease: false,
 		Nullable:    false,
 		Option:      false,
-		Vardict:     false,
+		Variadic:    false,
 	}, t
 }

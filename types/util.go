@@ -45,8 +45,8 @@ type TypeInfo struct {
 	// Optional input value
 	Option bool
 
-	// Vardict is variable number of input values
-	Vardict bool
+	// Variadic is variable number of input values
+	Variadic bool
 }
 
 type MethodName struct {
@@ -131,7 +131,7 @@ func fixLangName(input string) string {
 	return input
 }
 
-func newTypeInfo(basic BasicInfo, nullable, option, vardict, pointer, disablePtr, release bool) *TypeInfo {
+func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePtr, release bool) *TypeInfo {
 	if basic.Template == "" {
 		panic("empty template name")
 	}
@@ -142,12 +142,12 @@ func newTypeInfo(basic BasicInfo, nullable, option, vardict, pointer, disablePtr
 		Pointer:     (nullable || option || pointer) && !disablePtr,
 		Nullable:    nullable,
 		Option:      option,
-		Vardict:     vardict,
+		Variadic:    variadic,
 	}
 	if t.Pointer {
 		t.InOut = "*" + t.InOut
 	}
-	if vardict {
+	if variadic {
 		t.Def = "..." + t.Def
 		t.InOut = "..." + t.InOut
 	}

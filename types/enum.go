@@ -75,6 +75,6 @@ func (t *Enum) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *Enum) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false), t
+func (t *Enum) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, variadic, false, false, false), t
 }

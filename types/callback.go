@@ -55,6 +55,6 @@ func (t *Callback) link(conv *Convert, inuse inuseLogic) TypeRef {
 	return t
 }
 
-func (t *Callback) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, vardict, false, true, true), t
+func (t *Callback) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.basic, nullable, option, variadic, false, true, true), t
 }
