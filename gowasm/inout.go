@@ -40,7 +40,7 @@ const inoutFromTmplInput = `
 {{define "end"}}
 {{end}}
 
-{{define "type-primitive"}}	{{.Out}} := ( {{.In}} ) . {{.Type.JsMethod}} () {{end}}
+{{define "type-primitive"}}	{{.Out}} := {{if .Type.Cast}}( {{.Type.Lang}} ) ( {{end}} ( {{.In}} ) . {{.Type.JsMethod}} () {{if .Type.Cast}} ) {{end}} {{end}}
 {{define "type-callback"}}	callbackInFrom() {{end}}
 {{define "type-enum"}}		{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-interface"}}	{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}

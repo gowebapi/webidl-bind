@@ -30,29 +30,29 @@ func convertType(in ast.Type) TypeRef {
 	case *ast.TypeName:
 		switch in.Name {
 		case "boolean":
-			ret = newPrimitiveType(in.Name, "bool", "Bool", false)
+			ret = newPrimitiveType(in.Name, "bool", "Bool", false, false)
 		case "short":
-			ret = newPrimitiveType(in.Name, "int", "Int", true)
+			ret = newPrimitiveType(in.Name, "int", "Int", false, true)
 		case "unsigned short":
-			ret = newPrimitiveType(in.Name, "int", "Int", true)
+			ret = newPrimitiveType(in.Name, "int", "Int", false, true)
 		case "long":
-			ret = newPrimitiveType(in.Name, "int", "Int", false)
+			ret = newPrimitiveType(in.Name, "int", "Int", false, false)
 		case "unsigned long":
-			ret = newPrimitiveType(in.Name, "uint", "Int", false)
+			ret = newPrimitiveType(in.Name, "uint", "Int", true, false)
 		case "long long":
-			ret = newPrimitiveType(in.Name, "int", "Int", false)
+			ret = newPrimitiveType(in.Name, "int", "Int", false, false)
 		case "unsigned long long":
-			ret = newPrimitiveType(in.Name, "int", "Int", false)
+			ret = newPrimitiveType(in.Name, "int", "Int", false, false)
 		case "double":
-			ret = newPrimitiveType(in.Name, "float64", "Float", true)
+			ret = newPrimitiveType(in.Name, "float64", "Float", false, true)
 		case "unrestricted double":
-			ret = newPrimitiveType(in.Name, "float64", "Float", true)
+			ret = newPrimitiveType(in.Name, "float64", "Float", false, true)
 		case "void":
 			ret = newVoidType(in)
 		case "DOMString":
-			ret = newPrimitiveType(in.Name, "string", "String", false)
+			ret = newPrimitiveType(in.Name, "string", "String", false, false)
 		case "USVString":
-			ret = newPrimitiveType(in.Name, "string", "String", false)
+			ret = newPrimitiveType(in.Name, "string", "String", false, false)
 		default:
 			ret = newTypeNameRef(in)
 		}
@@ -276,6 +276,7 @@ type PrimitiveType struct {
 	Idl      string
 	Lang     string
 	JsMethod string
+	Cast     bool
 
 	// if this represent a primitive type that can be supported
 	// by TypedArray, e.g. int8, int, float32 etc
@@ -284,7 +285,7 @@ type PrimitiveType struct {
 
 var _ TypeRef = &PrimitiveType{}
 
-func newPrimitiveType(idl, lang, method string, sta bool) *PrimitiveType {
+func newPrimitiveType(idl, lang, method string, cast, sta bool) *PrimitiveType {
 	return &PrimitiveType{
 		basicType: basicType{
 			needRelease: false,
@@ -292,6 +293,7 @@ func newPrimitiveType(idl, lang, method string, sta bool) *PrimitiveType {
 		Idl:               idl,
 		Lang:              lang,
 		JsMethod:          method,
+		Cast:              cast,
 		supportTypedArray: sta,
 	}
 }
