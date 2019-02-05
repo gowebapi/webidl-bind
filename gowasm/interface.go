@@ -21,7 +21,14 @@ func (t *{{.Type.Def}}) JSValue() js.Value {
 }
 
 func {{.Type.Internal}}FromWasm(input js.Value) {{.Type.InOut}} {
-	return {{if .Type.Pointer}}&{{end}} {{.Type.Def}} {value: input}
+	{{if .Type.Pointer}}
+	if input.Type() == js.TypeNull {
+		return nil
+	}
+	{{end}}
+	ret := {{if .Type.Pointer}}&{{end}} {{.Type.Def}} { }
+	ret.value = input
+	return ret
 }
 
 func {{.Type.Internal}}ToWasm(input {{.Type.InOut}}) js.Value {
@@ -228,8 +235,8 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 }
 
 func calculateMethodReturn(t types.TypeRef, releaseHdl bool) (lang, list string, isVoid bool) {
-	info := t.Basic()
-	lang = info.Def
+	info, _ := t.DefaultParam()
+	lang = info.InOut
 	isVoid = types.IsVoid(t)
 
 	candidate := []string{}
