@@ -172,14 +172,14 @@ func writeInterface(dst io.Writer, input types.Type) error {
 }
 
 func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set string, dst io.Writer) error {
-	for _, a := range vars {
+	for idx, a := range vars {
 		typ, ref := a.Type.DefaultParam()
 		in := &interfaceAttribute{
 			Name: a.Name(),
 			Type: typ,
 			Ref:  ref,
-			From: inoutGetToFromWasm(ref, typ, "ret", "value", inoutFromTmpl),
-			To:   inoutGetToFromWasm(ref, typ, "input", "value", inoutToTmpl),
+			From: inoutGetToFromWasm(ref, typ, "ret", "value", idx, inoutFromTmpl),
+			To:   inoutGetToFromWasm(ref, typ, "input", "value", idx, inoutToTmpl),
 			If:   main,
 		}
 		if err := interfaceTmpl.ExecuteTemplate(dst, get, in); err != nil {

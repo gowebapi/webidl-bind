@@ -28,9 +28,17 @@ const inoutToTmplInput = `
 {{define "type-enum"}}      {{.Out}} := {{.Info.Internal}}ToWasm({{.In}}) {{end}}
 {{define "type-union"}}	{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
 {{define "type-any"}}    {{.Out}} := {{.In}} {{end}}
-{{define "type-sequence"}} {{.Out}} := sequence( {{.In}} ) {{end}}
 {{define "type-typedarray"}} {{.Out}} := typedarray( {{.In}} ) {{end}}
 {{define "type-parametrized"}}	{{.Out}} := parametrized( {{.In}} ) {{end}}
+
+{{define "type-sequence"}} 
+	{{.Out}} := js.Global().Get("Array").New(len( {{.In}} ))
+	for __idx := range {{.In}} {
+		__in := {{.In}} [__idx]
+		{{.Inner}}
+		{{.Out}} .SetIndex(__idx, __out )
+	}
+{{end}}
 
 `
 
@@ -46,10 +54,19 @@ const inoutFromTmplInput = `
 {{define "type-interface"}}	{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-union"}}  {{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-any"}}    {{.Out}} := {{.In}} {{end}}
-{{define "type-sequence"}} {{.Out}} := sequence( {{.In}} ) {{end}}
 {{define "type-typedarray"}} {{.Out}} := typedarray( {{.In}} ) {{end}}
 {{define "type-parametrized"}}	{{.Out}} := parametrized( {{.In}} ) {{end}}
 {{define "type-dictionary"}}	{{.Out}} := {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
+
+{{define "type-sequence"}}
+	__length{{.Idx}} := {{.In}}.Length() 
+	{{.Out}} := make( {{.Info.InOut}} , __length{{.Idx}}, __length{{.Idx}} )
+	for __idx := 0; __idx < __length{{.Idx}} ; __idx++ {
+		__in := {{.In}}.Index(__idx)
+		{{.Inner}}
+		{{.Out}}[__idx] = __out
+	}
+{{end}}
 `
 
 var inoutToTmpl = template.Must(template.New("inout-to").Parse(inoutToTmplInput))
@@ -169,8 +186,8 @@ func writeInOutLoop(data *inoutData, tmpl *template.Template, dst io.Writer) err
 	if err := tmpl.ExecuteTemplate(dst, "start", data); err != nil {
 		return err
 	}
-	for _, p := range data.ParamList {
-		code := inoutGetToFromWasm(p.Type, p.Info, p.Out, p.In, tmpl)
+	for idx, p := range data.ParamList {
+		code := inoutGetToFromWasm(p.Type, p.Info, p.Out, p.In, idx, tmpl)
 		if _, err := io.WriteString(dst, code); err != nil {
 			return err
 		}
@@ -181,20 +198,33 @@ func writeInOutLoop(data *inoutData, tmpl *template.Template, dst io.Writer) err
 	return nil
 }
 
-func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, tmpl *template.Template) string {
+func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, idx int, tmpl *template.Template) string {
 	if info == nil {
 		panic("null")
 		// info = t.DefaultParam()
 	}
+
+	// sequence types need conversion of inner type
+	var inner string
+	if seq, ok := t.(*types.SequenceType); ok {
+		innerInfo, innerType := seq.Elem.DefaultParam()
+		inner = inoutGetToFromWasm(innerType, innerInfo, "__out", "__in", idx*100, tmpl)
+	}
+
+	// convert current
 	data := struct {
 		In, Out string
 		Type    types.TypeRef
 		Info    *types.TypeInfo
+		Idx     int
+		Inner   string
 	}{
-		In:   in,
-		Type: t,
-		Out:  out,
-		Info: info,
+		In:    in,
+		Type:  t,
+		Out:   out,
+		Info:  info,
+		Idx:   idx,
+		Inner: inner,
 	}
 	return convertType(t, data, tmpl) + "\n"
 }

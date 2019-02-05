@@ -72,9 +72,9 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 		}
 		fromIn, fromOut := setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Def)
 		toIn, toOut := setupVarName("input.@name@", idx, mo.Name.Def), setupVarName("value%d", idx, mo.Name.Def)
-		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, fromOut, fromIn, inoutFromTmpl))
+		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, fromOut, fromIn, idx, inoutFromTmpl))
 		from.WriteString(fmt.Sprintf("\n\tout.%s = out%d\n", mo.Name.Def, idx))
-		to.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, toOut, toIn, inoutToTmpl))
+		to.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, toOut, toIn, idx, inoutToTmpl))
 		to.WriteString(fmt.Sprintf("\n\tout.Set(\"%s\", value%d)\n", mi.Name().Idl, idx))
 	}
 	data.ReqParamLine = strings.Join(reqParam, ", ")
