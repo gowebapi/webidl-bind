@@ -17,13 +17,18 @@ type {{.Dict.Basic.Def}} struct {
 {{end}}
 }
 
-func {{.Dict.Basic.Internal}}ToWasm(input {{.Type.InOut}} ) js.Value {
+// JSValue is allocating a new javasript object and copy
+// all values
+func (_this * {{.Dict.Basic.Def}} ) JSValue() js.Value {
 	out := js.Global().Get("Object").New()
 {{.To}}
 	return out
 }
 
-func {{.Dict.Basic.Internal}}FromWasm(input js.Value) {{.Type.InOut}} {
+// {{.Dict.Basic.Def}}FromJS is allocating a new 
+// {{.Dict.Basic.Def}} object and copy all values from
+// input javascript object
+func {{.Dict.Basic.Def}}FromJS(input js.Value) {{.Type.InOut}} {
 	var out {{.Dict.Basic.Def}}
 	{{.From}}
 	return {{if .Type.Pointer}}&{{end}} out
@@ -74,7 +79,7 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 			data.Required = append(data.Required, mo)
 		}
 		mo.fromIn, mo.fromOut = setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Def)
-		mo.toIn, mo.toOut = setupVarName("input.@name@", idx, mo.Name.Def), setupVarName("value%d", idx, mo.Name.Def)
+		mo.toIn, mo.toOut = setupVarName("_this.@name@", idx, mo.Name.Def), setupVarName("value%d", idx, mo.Name.Def)
 		from.WriteString(inoutParamStart(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
 		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
 		from.WriteString(inoutParamEnd(mo.Type, "", inoutFromTmpl))

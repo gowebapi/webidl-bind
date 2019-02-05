@@ -34,8 +34,8 @@ const inoutToTmplInput = `
 {{end}}
 
 {{define "type-primitive"}}		{{.Out}} := {{.In}} {{end}}
-{{define "type-dictionary"}}	{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
-{{define "type-interface"}}		{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
+{{define "type-dictionary"}}	{{.Out}} := {{.In}}.JSValue() {{end}}
+{{define "type-interface"}}		{{.Out}} := {{.In}}.JSValue() {{end}}
 
 {{define "type-callback"}}
 	{{.Out}} := js.NewCallback(func (_cb_args []js.Value) {
@@ -43,11 +43,11 @@ const inoutToTmplInput = `
 	})
 	_releaseList = append(_releaseList, {{.Out}})
 {{end}}
-{{define "type-enum"}}      {{.Out}} := {{.Info.Internal}}ToWasm( {{if .Info.Pointer}}*{{end}} {{.In}}) {{end}}
-{{define "type-union"}}	{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
+{{define "type-enum"}}      {{.Out}} := {{.In}}.JSValue() {{end}}
+{{define "type-union"}}	{{.Out}} := {{.In}}.JSValue() {{end}}
 {{define "type-any"}}    {{.Out}} := {{.In}} {{end}}
 {{define "type-typedarray"}} {{.Out}} := {{.In}} {{end}}
-{{define "type-parametrized"}}	{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
+{{define "type-parametrized"}}	{{.Out}} := {{.In}}.JSValue() {{end}}
 
 {{define "type-sequence"}} 
 	{{.Out}} := js.Global().Get("Array").New(len( {{.In}} ))
@@ -92,13 +92,13 @@ const inoutFromTmplInput = `
 	{{if .Info.Pointer}} {{.Out}} = &__tmp {{end}}
 {{end}}
 {{define "type-callback"}}	// TODO: callbackInFrom() {{end}}
-{{define "type-enum"}}		{{.Out}} = {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
-{{define "type-interface"}}	{{.Out}} = {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
-{{define "type-union"}}  {{.Out}} = {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
+{{define "type-enum"}}		{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
+{{define "type-interface"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
+{{define "type-union"}}  {{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-any"}}    {{.Out}} = {{.In}} {{end}}
 {{define "type-typedarray"}} {{.Out}} = {{.In}} {{end}}
-{{define "type-parametrized"}}	{{.Out}} = {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
-{{define "type-dictionary"}}	{{.Out}} = {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
+{{define "type-parametrized"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
+{{define "type-dictionary"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 
 {{define "type-sequence"}}
 	__length{{.Idx}} := {{.In}}.Length() 

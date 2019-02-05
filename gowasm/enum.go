@@ -26,15 +26,24 @@ var {{.Basic.Internal}}FromWasmTable = map[string]{{.Basic.Def}} {
 	{{range .Enum.Values}}"{{.Idl}}": {{$.Enum.Prefix}}{{.Go}}{{$.Enum.Suffix}},{{end}}
 }
 
-func {{.Basic.Internal}}ToWasm(in {{.DefaultParam.InOut}}) string {
-	idx := int(in)
+// JSValue is converting this enum into a java object
+func (this * {{.Basic.Def}} ) JSValue() js.Value {
+	return js.ValueOf( this.Value() )
+}
+
+// Value is converting this into javascript defined
+// string value
+func (this {{.Basic.Def}} ) Value() string {
+	idx := int(this)
 	if idx >= 0 && idx < len({{.Basic.Internal}}ToWasmTable) {
 		return {{.Basic.Internal}}ToWasmTable[idx]
 	}
 	panic("unknown input value")
 }
 
-func {{.Basic.Internal}}FromWasm(value js.Value) {{.DefaultParam.InOut}} {
+// {{.Basic.Def}}FromJS is converting a javascript value into
+// a {{.Basic.Def}} enum value.
+func {{.Basic.Def}}FromJS(value js.Value) {{.DefaultParam.InOut}} {
 	key := value.String()
 	conv, ok := {{.Basic.Internal}}FromWasmTable[key]
 	if !ok {
