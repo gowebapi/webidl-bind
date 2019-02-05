@@ -81,9 +81,13 @@ func (_this * {{.If.Basic.Def}} ) Set{{.Name.Def}} ( value {{.Type.InOut}} ) {{.
 func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_klass := js.Global().Get("{{.If.Basic.Idl}}")
 	_method := _klass.Get("{{.Name.Idl}}")
+	var (
+		_args [ {{len .To.ParamList }} ]interface{} 
+		_end int 
+	)
 {{end}}
 {{define "static-method-invoke"}}
-	{{if not .IsVoidReturn}}_returned :={{end}} _method.Invoke( {{.To.AllOut}} )
+	{{if not .IsVoidReturn}}_returned :={{end}} _method.Invoke( _args[0:_end]... )
 {{end}}
 {{define "static-method-end"}}
 	{{if not .IsVoidReturn}}_result = value{{end}}
@@ -95,9 +99,13 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 {{define "constructor-start"}}
 func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_klass := js.Global().Get("{{.If.Basic.Idl}}")
+	var (
+		_args [ {{len .To.ParamList }} ]interface{} 
+		_end int 
+	)
 {{end}}
 {{define "constructor-invoke"}}
-	_returned := _klass.New({{.To.AllOut}})
+	_returned := _klass.New( _args[0:_end]... )
 {{end}}
 {{define "constructor-end"}}
 	_result = _converted
@@ -109,9 +117,13 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 {{define "object-method-start"}}
 func ( _this * {{.If.Basic.Def}} ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnList}} ) {
 	_method := _this.value.Get("{{.Name.Idl}}")
+	var (
+		_args [ {{len .To.ParamList }} ]interface{} 
+		_end int 
+	)
 {{end}}
 {{define "object-method-invoke"}}
-	{{if not .IsVoidReturn}}_returned :={{end}} _method.Invoke({{.To.AllOut}})
+	{{if not .IsVoidReturn}}_returned :={{end}} _method.Invoke( _args[0:_end]... )
 {{end}}
 {{define "object-method-end"}}
 	{{if not .IsVoidReturn}}_result = _converted{{end}}
@@ -229,7 +241,8 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-start", in); err != nil {
 		return err
 	}
-	if err := writeInOutToWasm(in.To, dst); err != nil {
+	assign := "_args[%d] = _p%d; _end++"
+	if err := writeInOutToWasm(in.To, assign, dst); err != nil {
 		return err
 	}
 	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-invoke", in); err != nil {
@@ -237,7 +250,7 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 	}
 	if !isVoid {
 		result := setupInOutWasmForType(m.Return, "_what_return_name", "_returned", "_converted")
-		if err := writeInOutFromWasm(result, dst); err != nil {
+		if err := writeInOutFromWasm(result, "", dst); err != nil {
 			return err
 		}
 	}

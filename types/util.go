@@ -74,10 +74,11 @@ type inuseLogic map[string]bool
 
 var reservedKeywords = map[string]bool{
 	"break": true, "case": true, "chan": true, "const": true, "continue": true,
-	"default": true, "defer": true, "else": true, "for": true, "fallthrough": true,
-	"func": true, "go": true, "goto": true, "if": true, "interface": true,
-	"import": true, "map": true, "package": true, "range": true, "return": true,
-	"select": true, "struct": true, "switch": true, "type": true, "var": true,
+	"default": true, "defer": true, "else": true, "error": true, "for": true,
+	"fallthrough": true, "func": true, "go": true, "goto": true, "if": true,
+	"interface": true, "import": true, "map": true, "package": true,
+	"range": true, "return": true, "select": true, "struct": true,
+	"switch": true, "type": true, "var": true,
 }
 
 // clipString is removing any starting and ending '"' + spaces

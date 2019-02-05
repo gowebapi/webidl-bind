@@ -75,13 +75,13 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 		}
 		mo.fromIn, mo.fromOut = setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Def)
 		mo.toIn, mo.toOut = setupVarName("input.@name@", idx, mo.Name.Def), setupVarName("value%d", idx, mo.Name.Def)
-		from.WriteString(inoutParamStart(mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
+		from.WriteString(inoutParamStart(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
 		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
-		from.WriteString(inoutParamEnd(mo.Type, inoutFromTmpl))
+		from.WriteString(inoutParamEnd(mo.Type, "", inoutFromTmpl))
 		from.WriteString(fmt.Sprintf("\n\tout.%s = out%d\n", mo.Name.Def, idx))
-		to.WriteString(inoutParamStart(mo.Type, mo.toOut, mo.toIn, idx, inoutToTmpl))
+		to.WriteString(inoutParamStart(mo.Ref, mo.Type, mo.toOut, mo.toIn, idx, inoutToTmpl))
 		to.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.toOut, mo.toIn, idx, inoutToTmpl))
-		to.WriteString(inoutParamEnd(mo.Type, inoutToTmpl))
+		to.WriteString(inoutParamEnd(mo.Type, "", inoutToTmpl))
 		to.WriteString(fmt.Sprintf("\n\tout.Set(\"%s\", value%d)\n", mi.Name().Idl, idx))
 	}
 	varFrom := inoutDictionaryVariableStart(data, true, inoutFromTmpl)

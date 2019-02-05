@@ -17,8 +17,20 @@ const inoutToTmplInput = `
 {{end}}
 
 {{define "param-start"}}
+	// {{.Nullable}} {{.Optional}}
+	{{if .Optional}}
+		{{if .AnyType}}
+			if {{.In}}.Type() != js.TypeUndefined {
+		{{else}}
+			if {{.In}} != nil {
+		{{end}}
+	{{end}}
 {{end}}
 {{define "param-end"}}
+	{{.Assign}}
+	{{if .Optional}}
+		}
+	{{end}}
 {{end}}
 
 {{define "type-primitive"}}		{{.Out}} := {{.In}} {{end}}
@@ -31,11 +43,11 @@ const inoutToTmplInput = `
 	})
 	_releaseList = append(_releaseList, {{.Out}})
 {{end}}
-{{define "type-enum"}}      {{.Out}} := {{.Info.Internal}}ToWasm({{.In}}) {{end}}
+{{define "type-enum"}}      {{.Out}} := {{.Info.Internal}}ToWasm( {{if .Info.Pointer}}*{{end}} {{.In}}) {{end}}
 {{define "type-union"}}	{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
 {{define "type-any"}}    {{.Out}} := {{.In}} {{end}}
-{{define "type-typedarray"}} {{.Out}} := typedarray( {{.In}} ) {{end}}
-{{define "type-parametrized"}}	{{.Out}} := parametrized( {{.In}} ) {{end}}
+{{define "type-typedarray"}} {{.Out}} := {{.In}} {{end}}
+{{define "type-parametrized"}}	{{.Out}} := {{.Info.Internal}}ToWasm( {{.In}} ) {{end}}
 
 {{define "type-sequence"}} 
 	{{.Out}} := js.Global().Get("Array").New(len( {{.In}} ))
@@ -84,8 +96,8 @@ const inoutFromTmplInput = `
 {{define "type-interface"}}	{{.Out}} = {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-union"}}  {{.Out}} = {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-any"}}    {{.Out}} = {{.In}} {{end}}
-{{define "type-typedarray"}} {{.Out}} = typedarray( {{.In}} ) {{end}}
-{{define "type-parametrized"}}	{{.Out}} = parametrized( {{.In}} ) {{end}}
+{{define "type-typedarray"}} {{.Out}} = {{.In}} {{end}}
+{{define "type-parametrized"}}	{{.Out}} = {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 {{define "type-dictionary"}}	{{.Out}} = {{.Info.Internal}}FromWasm( {{.In}} ) {{end}}
 
 {{define "type-sequence"}}
@@ -199,26 +211,33 @@ func setupInOutWasmForType(t types.TypeRef, name, in, out string) *inoutData {
 
 func setupVarName(value string, idx int, name string) string {
 	value = strings.Replace(value, "@name@", name, -1)
-	if strings.Index(value, "%") != -1 {
-		return fmt.Sprintf(value, idx)
+	count := strings.Count(value, "%")
+	switch count {
+	case 0:
+	case 1:
+		value = fmt.Sprintf(value, idx)
+	case 2:
+		value = fmt.Sprintf(value, idx, idx)
+	default:
+		panic("invalid count")
 	}
 	return value
 }
 
-func writeInOutToWasm(data *inoutData, dst io.Writer) error {
-	return writeInOutLoop(data, inoutToTmpl, dst)
+func writeInOutToWasm(data *inoutData, assign string, dst io.Writer) error {
+	return writeInOutLoop(data, assign, inoutToTmpl, dst)
 }
 
-func writeInOutFromWasm(data *inoutData, dst io.Writer) error {
-	return writeInOutLoop(data, inoutFromTmpl, dst)
+func writeInOutFromWasm(data *inoutData, assign string, dst io.Writer) error {
+	return writeInOutLoop(data, assign, inoutFromTmpl, dst)
 }
 
-func writeInOutLoop(data *inoutData, tmpl *template.Template, dst io.Writer) error {
+func writeInOutLoop(data *inoutData, assign string, tmpl *template.Template, dst io.Writer) error {
 	if err := tmpl.ExecuteTemplate(dst, "start", data); err != nil {
 		return err
 	}
 	for idx, p := range data.ParamList {
-		start := inoutParamStart(p.Info, p.Out, p.In, idx, tmpl)
+		start := inoutParamStart(p.Type, p.Info, p.Out, p.In, idx, tmpl)
 		if _, err := io.WriteString(dst, start); err != nil {
 			return err
 		}
@@ -226,7 +245,8 @@ func writeInOutLoop(data *inoutData, tmpl *template.Template, dst io.Writer) err
 		if _, err := io.WriteString(dst, code); err != nil {
 			return err
 		}
-		end := inoutParamEnd(p.Info, tmpl)
+		av := setupVarName(assign, idx, p.Name)
+		end := inoutParamEnd(p.Info, av, tmpl)
 		if _, err := io.WriteString(dst, end); err != nil {
 			return err
 		}
@@ -270,13 +290,14 @@ func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, i
 	return convertType(t, data, tmpl) + "\n"
 }
 
-func inoutParamStart(info *types.TypeInfo, out, in string, idx int, tmpl *template.Template) string {
+func inoutParamStart(t types.TypeRef, info *types.TypeInfo, out, in string, idx int, tmpl *template.Template) string {
 	data := struct {
 		Nullable bool
 		Optional bool
 		Info     *types.TypeInfo
 		In, Out  string
 		Idx      int
+		AnyType  bool
 	}{
 		Nullable: info.Nullable,
 		Optional: info.Option,
@@ -285,18 +306,21 @@ func inoutParamStart(info *types.TypeInfo, out, in string, idx int, tmpl *templa
 		Out:      out,
 		Idx:      idx,
 	}
+	_, data.AnyType = t.(*types.AnyType)
 	return executeTemplateToString("param-start", data, true, tmpl)
 }
 
-func inoutParamEnd(info *types.TypeInfo, tmpl *template.Template) string {
+func inoutParamEnd(info *types.TypeInfo, assign string, tmpl *template.Template) string {
 	data := struct {
 		Nullable bool
 		Optional bool
 		Info     *types.TypeInfo
+		Assign   string
 	}{
 		Nullable: info.Nullable,
 		Optional: info.Option,
 		Info:     info,
+		Assign:   assign,
 	}
 	return executeTemplateToString("param-end", data, true, tmpl)
 }

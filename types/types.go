@@ -142,6 +142,9 @@ func (t *AnyType) Param(nullable, option, vardict bool) (info *TypeInfo, inner T
 		Option:      option,
 		Vardict:     vardict,
 	}
+	// if option {
+	//	ret.InOut = "*" + ret.InOut
+	// }
 	if vardict {
 		ret.Def = "..." + ret.Def
 		ret.InOut = "..." + ret.InOut
@@ -226,6 +229,11 @@ type ParametrizedType struct {
 var _ TypeRef = &ParametrizedType{}
 
 func newParametrizedType(in *ast.ParametrizedType, name string, elems []TypeRef) *ParametrizedType {
+	// what types are parameterized? only Promise or is there more?
+	if name != "Promise" && name != "FrozenArray" {
+		panic("parameterized type name: " + name)
+	}
+
 	return &ParametrizedType{
 		in:        in,
 		ParamName: name,
@@ -259,7 +267,7 @@ func (t *ParametrizedType) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *ParametrizedType) Param(nullable, option, vardict bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, vardict, false, false, false), t
+	return newTypeInfo(t.basic, nullable, option, vardict, true, false, false), t
 }
 
 func (t *ParametrizedType) NeedRelease() bool {
@@ -386,7 +394,7 @@ func newTypedArrayType(primitive *PrimitiveType) *TypedArrayType {
 		basic: BasicInfo{
 			Idl:      "typed-array",
 			Package:  builtInPackage,
-			Def:      "js.TypedArray",
+			Def:      "js.Value",
 			Internal: "typed-array",
 			Template: "typedarray",
 		},

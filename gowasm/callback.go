@@ -43,7 +43,7 @@ func writeCallback(dst io.Writer, value types.Type) error {
 	if err := callbackTempl.ExecuteTemplate(dst, "start", data); err != nil {
 		return err
 	}
-	if err := writeInOutFromWasm(data.InOut, dst); err != nil {
+	if err := writeInOutFromWasm(data.InOut, "", dst); err != nil {
 		return err
 	}
 	if err := callbackTempl.ExecuteTemplate(dst, "end", data); err != nil {
