@@ -10,7 +10,10 @@ import (
 const interfaceTmplInput = `
 {{define "header"}}
 type {{.Type.Def}} struct {
+	{{if .If.Inherits}} {{.If.Inherits.Basic.Def}}
+	{{else}}
 	value js.Value
+	{{end}}
 }
 
 func (t *{{.Type.Def}}) JSValue() js.Value {
