@@ -9,6 +9,7 @@ import (
 
 const interfaceTmplInput = `
 {{define "header"}}
+// interface: {{.Type.Idl}}
 type {{.Type.Def}} struct {
 	{{if .If.Inherits}} {{.If.Inherits.Basic.Def}}
 	{{else}}

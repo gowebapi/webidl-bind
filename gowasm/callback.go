@@ -8,6 +8,7 @@ import (
 
 const callbackTmplInput = `
 {{define "start"}}
+// callback: {{.Type.Idl}}
 type {{.Type.Def}} func ({{.ParamLine}})
 
 func {{.Type.Internal}}FromWasm(callback {{.Type.InOut}}, args []js.Value) {

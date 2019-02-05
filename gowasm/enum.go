@@ -10,6 +10,7 @@ import (
 
 const enumTmplInput = `
 {{define "header"}}
+// enum: {{.Basic.Idl}}
 type {{.Basic.Def}} int
 
 const (
