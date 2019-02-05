@@ -13,7 +13,7 @@ const dictionaryTmplInput = `
 {{define "header"}}
 // dictionary: {{.Dict.Basic.Idl}}
 type {{.Dict.Basic.Def}} struct {
-{{range .Members}}   {{.Name.Def}} {{.Type.Def}}
+{{range .Members}}   {{.Name.Def}} {{.Type.InOut}}
 {{end}}
 }
 
