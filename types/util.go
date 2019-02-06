@@ -68,6 +68,7 @@ type standardType struct {
 
 type nameAndLink struct {
 	base *ast.Base
+	name MethodName
 }
 
 type changeTemplateType struct {
@@ -188,6 +189,10 @@ func IsVoid(t TypeRef) bool {
 
 func (t *nameAndLink) NodeBase() *ast.Base {
 	return t.base
+}
+
+func (t *nameAndLink) Name() *MethodName {
+	return &t.name
 }
 
 func (t *standardType) NeedRelease() bool {

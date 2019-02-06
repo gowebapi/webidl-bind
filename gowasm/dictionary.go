@@ -69,7 +69,7 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 	reqParam := []string{}
 	for idx, mi := range dict.Members {
 		mo := &dictionaryMember{
-			Name: mi.Name(),
+			Name: *mi.Name(),
 		}
 		mo.Type, mo.Ref = mi.Type.DefaultParam()
 		data.Members = append(data.Members, mo)

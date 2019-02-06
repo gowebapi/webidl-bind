@@ -203,7 +203,7 @@ func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set str
 		to += inoutGetToFromWasm(ref, typ, "input", "value", idx, inoutToTmpl)
 		to += inoutParamStart(ref, typ, "input", "value", idx, inoutToTmpl)
 		in := &interfaceAttribute{
-			Name: a.Name(),
+			Name: *a.Name(),
 			Type: typ,
 			Ref:  ref,
 			From: from,
@@ -236,7 +236,7 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 	to := setupInOutWasmData(m.Params, "@name@", "_p%d")
 	retLang, retList, isVoid := calculateMethodReturn(m.Return, to.ReleaseHdl)
 	in := &interfaceMethod{
-		Name:         m.Name,
+		Name:         *m.Name(),
 		Return:       retLang,
 		ReturnList:   retList,
 		IsVoidReturn: isVoid,

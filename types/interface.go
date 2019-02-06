@@ -28,7 +28,6 @@ var _ Type = &Interface{}
 
 type IfConst struct {
 	nameAndLink
-	name  MethodName
 	Src   *ast.Member
 	Type  TypeRef
 	Value string
@@ -36,7 +35,6 @@ type IfConst struct {
 
 type IfVar struct {
 	nameAndLink
-	name     MethodName
 	Src      *ast.Member
 	Type     TypeRef
 	Static   bool
@@ -45,7 +43,6 @@ type IfVar struct {
 
 type IfMethod struct {
 	nameAndLink
-	Name   MethodName
 	Src    *ast.Member
 	SrcA   *ast.Annotation
 	Return TypeRef
@@ -114,8 +111,8 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			ret.Constructor = &IfMethod{
 				nameAndLink: nameAndLink{
 					base: a.NodeBase(),
+					name: fromIdlToMethodName("New_" + ret.basic.Idl),
 				},
-				Name:   fromIdlToMethodName("New_" + ret.basic.Idl),
 				Static: true,
 				SrcA:   a,
 				Return: newInterfaceType(ret),
@@ -143,8 +140,8 @@ func (conv *extractTypes) convertInterfaceConst(in *ast.Member) *IfConst {
 	return &IfConst{
 		nameAndLink: nameAndLink{
 			base: in.NodeBase(),
+			name: fromIdlToMethodName(in.Name),
 		},
-		name:  fromIdlToMethodName(in.Name),
 		Src:   in,
 		Type:  convertType(in.Type),
 		Value: value,
@@ -176,8 +173,8 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 	return &IfVar{
 		nameAndLink: nameAndLink{
 			base: in.NodeBase(),
+			name: fromIdlToMethodName(in.Name),
 		},
-		name:     fromIdlToMethodName(in.Name),
 		Src:      in,
 		Type:     convertType(in.Type),
 		Static:   in.Static,
@@ -208,8 +205,8 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 	return &IfMethod{
 		nameAndLink: nameAndLink{
 			base: in.NodeBase(),
+			name: fromIdlToMethodName(in.Name),
 		},
-		Name:   fromIdlToMethodName(in.Name),
 		Src:    in,
 		Return: convertType(in.Type),
 		Static: in.Static,
@@ -295,12 +292,4 @@ func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
 	t.StaticVars = append(t.StaticVars, m.StaticVars...)
 	t.Method = append(t.Method, m.Method...)
 	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
-}
-
-func (t *IfConst) Name() MethodName {
-	return t.name
-}
-
-func (t *IfVar) Name() MethodName {
-	return t.name
 }

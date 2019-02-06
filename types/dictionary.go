@@ -18,8 +18,6 @@ var _ Type = &Dictionary{}
 
 type DictMember struct {
 	nameAndLink
-	name     MethodName
-	Src      *ast.Member
 	Type     TypeRef
 	Required bool
 }
@@ -60,9 +58,8 @@ func (conv *extractTypes) convertDictMember(in *ast.Member) *DictMember {
 	return &DictMember{
 		nameAndLink: nameAndLink{
 			base: in.NodeBase(),
+			name: fromIdlToMethodName(in.Name),
 		},
-		name:     fromIdlToMethodName(in.Name),
-		Src:      in,
 		Type:     convertType(in.Type),
 		Required: in.Required,
 	}
@@ -108,8 +105,4 @@ func (t *Dictionary) NeedRelease() bool {
 
 func (t *Dictionary) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	return newTypeInfo(t.basic, nullable, option, variadic, true, false, false), t
-}
-
-func (t *DictMember) Name() MethodName {
-	return t.name
 }

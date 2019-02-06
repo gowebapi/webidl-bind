@@ -44,6 +44,7 @@ func run() error {
 		return fmt.Errorf("output path '%s' doesn't point to a directory", args.outputPath)
 	}
 
+	trans := transform.New()
 	conv := types.NewConvert()
 	setup := &types.Setup{
 		Package: args.singlePkg,
@@ -52,7 +53,12 @@ func run() error {
 	}
 
 	for _, name := range flag.Args() {
-		if err := processFile(name, conv, setup); err != nil {
+		ext := filepath.Ext(name)
+		if ext == ".md" {
+			if err := trans.Load(name); err != nil {
+				return err
+			}
+		} else if err := processFile(name, conv, setup); err != nil {
 			return err
 		}
 	}
@@ -60,6 +66,9 @@ func run() error {
 		return err
 	}
 	if err := conv.EvaluateOutput(); err != nil {
+		return err
+	}
+	if err := trans.Execute(conv); err != nil {
 		return err
 	}
 	transform.RenameOverrideMethods(conv)

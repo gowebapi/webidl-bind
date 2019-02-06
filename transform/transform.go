@@ -5,46 +5,88 @@ import (
 	"wasm/generator/types"
 )
 
-// RenameOverrideMethods is renamning all methods in interfaces to make
-// sure that there is no override occuring
-func RenameOverrideMethods(conv *types.Convert) {
-	done := make(map[*types.Interface]map[string]int)
-	for _, inf := range conv.Interface {
-		innerRenameOverrideMethods(inf, done)
+type Transform struct {
+	All    map[string]*onType
+	errors int
+}
+
+type ref struct {
+	Filename string
+	Line     int
+}
+
+type onType struct {
+	Name    string
+	Ref     ref
+	Actions []action
+}
+
+func New() *Transform {
+	return &Transform{
+		All: make(map[string]*onType),
 	}
 }
 
-func innerRenameOverrideMethods(inf *types.Interface, done map[*types.Interface]map[string]int) map[string]int {
-	if result, alreadyDone := done[inf]; alreadyDone {
-		return result
-	}
-	methods := make(map[string]int)
-	if inf.Inherits != nil {
-		parent := innerRenameOverrideMethods(inf.Inherits, done)
-		for k, v := range parent {
-			methods[k] = v
+func (t *Transform) Execute(conv *types.Convert) error {
+	fmt.Println("applying transformation on", len(t.All), "types")
+	for name, change := range t.All {
+		fmt.Println("TRANSFORM:", name)
+		value, ok := conv.Types[name]
+		if !ok {
+			t.messageError(change.Ref, "reference to unknown type '%s'", name)
+			continue
+		}
+		switch value := value.(type) {
+		case *types.Interface:
+			t.processInterface(value, change)
+		case *types.Callback:
+			t.processCallback(value, change)
+		default:
+			panic(fmt.Sprintf("unknown type %T", value))
+		}
+		if t.errors > 10 {
+			break
 		}
 	}
-	for _, m := range inf.Method {
-		if idx, exist := methods[m.Name.Def]; exist {
-			// already exist, rename current
-			idx++
-			var name string
-			for {
-				name = fmt.Sprint(m.Name.Def, idx)
-				if _, found := methods[name]; found {
-					idx++
-					continue
-				}
-				break
-			}
-			m.Name.Def = name
-			methods[name] = idx
-		} else {
-			// a unique method
-			methods[m.Name.Def] = 1
-		}
+	if t.errors > 0 {
+		return fmt.Errorf("stop reading from previous error")
 	}
-	done[inf] = methods
-	return methods
+	return nil
+}
+
+func (t *Transform) processCallback(instance *types.Callback, change *onType) {
+	// execution
+	for _, a := range change.Actions {
+		a.ExecuteCallback(instance, t)
+	}
+}
+
+func (t *Transform) processInterface(instance *types.Interface, change *onType) {
+	// preparation
+	values := make(map[string]renameTarget)
+	for _, v := range instance.Consts {
+		values[v.Name().Idl] = v
+	}
+	for _, v := range instance.Vars {
+		values[v.Name().Idl] = v
+	}
+	for _, v := range instance.StaticVars {
+		values[v.Name().Idl] = v
+	}
+	for _, v := range instance.Method {
+		values[v.Name().Idl] = v
+	}
+	for _, v := range instance.StaticMethod {
+		values[v.Name().Idl] = v
+	}
+
+	// execution
+	for _, a := range change.Actions {
+		a.ExecuteInterface(instance, values, t)
+	}
+}
+
+func (t *Transform) messageError(ref ref, format string, args ...interface{}) {
+	messageError(ref, format, args...)
+	t.errors++
 }
