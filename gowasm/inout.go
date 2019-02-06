@@ -17,7 +17,6 @@ const inoutToTmplInput = `
 {{end}}
 
 {{define "param-start"}}
-	// {{.Nullable}} {{.Optional}}
 	{{if .Optional}}
 		{{if .AnyType}}
 			if {{.In}}.Type() != js.TypeUndefined {
@@ -51,8 +50,7 @@ const inoutToTmplInput = `
 
 {{define "type-sequence"}} 
 	{{.Out}} := js.Global().Get("Array").New(len( {{if .Info.Pointer}}*{{end}} {{.In}} ))
-	for __idx := range {{if .Info.Pointer}}*{{end}} {{.In}} {
-		__in := ( {{if .Info.Pointer}}*{{end}} {{.In}} ) [__idx]
+	for __idx, __in := range {{if .Info.Pointer}}*{{end}} {{.In}} {
 		{{.Inner}}
 		{{.Out}} .SetIndex(__idx, __out )
 	}
