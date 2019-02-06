@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"strings"
 	"wasm/generator/types"
 )
 
@@ -29,12 +30,18 @@ func (t *property) ExecuteCallback(instance *types.Callback, trans *Transform) {
 	if f, ok := callbackProperties[t.Name]; ok {
 		f(instance, t.Value)
 	} else {
-		trans.messageError(t.Ref, "unknow property '%s'", t.Name)
+		trans.messageError(t.Ref, "unknow property '%s', valid are: %s",
+			t.Name, strings.Join(callbackPropertyNames, ", "))
 	}
 }
 
 func (t *property) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, trans *Transform) {
-	panic("todo")
+	if f, ok := interfaceProperties[t.Name]; ok {
+		f(value, t.Value)
+	} else {
+		trans.messageError(t.Ref, "unknow property '%s', valid are: %s",
+			t.Name, strings.Join(interfacePropertyNames, ", "))
+	}
 }
 
 func (t *rename) ExecuteCallback(instance *types.Callback, trans *Transform) {

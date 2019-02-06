@@ -36,6 +36,10 @@ func {{.Type.Def}}FromJS(input js.Value) {{.Type.InOut}} {
 
 {{end}}
 
+{{define "const-var"}}
+	const {{.If.ConstPrefix}}{{.Const.Name.Def}}{{.If.ConstSuffix}} {{.Info.Def}} = {{.Const.Value}}
+{{end}}
+
 {{define "get-static-attribute"}}
 func {{.Name.Def}} () {{.Type.InOut}} {
 	var ret {{.Type.InOut}}
@@ -171,6 +175,9 @@ func writeInterface(dst io.Writer, input types.Type) error {
 			return err
 		}
 	}
+	if err := writeInterfaceConst(value.Consts, value, dst); err != nil {
+		return err
+	}
 	if err := writeInterfaceVars(value.StaticVars, value, "get-static-attribute", "set-static-attribute", dst); err != nil {
 		return err
 	}
@@ -187,6 +194,27 @@ func writeInterface(dst io.Writer, input types.Type) error {
 	}
 	if err := writeInterfaceMethods(value.Method, value, "object-method", dst); err != nil {
 		return err
+	}
+	return nil
+}
+
+func writeInterfaceConst(vars []*types.IfConst, main *types.Interface, dst io.Writer) error {
+	for idx, a := range vars {
+		data := struct {
+			Const *types.IfConst
+			Idx   int
+			Type  types.TypeRef
+			Info  *types.TypeInfo
+			If    *types.Interface
+		}{
+			Const: a,
+			Idx:   idx,
+			If:    main,
+		}
+		data.Info, data.Type = a.Type.DefaultParam()
+		if err := interfaceTmpl.ExecuteTemplate(dst, "const-var", data); err != nil {
+			return err
+		}
 	}
 	return nil
 }

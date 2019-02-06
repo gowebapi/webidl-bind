@@ -101,6 +101,9 @@ func (p *parser) tryEqualCommand(line string) bool {
 		p.messageError("invalid equal syntax")
 		return true
 	}
+	if value == "\"\"" {
+		value = ""
+	}
 	if strings.HasPrefix(onwhat, ".") {
 		p.ontype.Actions = append(p.ontype.Actions, &property{
 			Name:  onwhat[1:],

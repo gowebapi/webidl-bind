@@ -18,6 +18,9 @@ type Interface struct {
 	// global scope of javascript
 	Global bool
 
+	// variable naming prefix and suffix for const variables
+	ConstPrefix, ConstSuffix string
+
 	Constructor *IfMethod
 
 	Consts       []*IfConst
@@ -81,6 +84,7 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 		source:       in,
 		inheritsName: in.Inherits,
 	}
+	ret.ConstSuffix = "_" + ret.basic.Def
 	for _, raw := range in.Members {
 		mi, ok := raw.(*ast.Member)
 		if !ok {
@@ -282,6 +286,10 @@ func (t *Interface) link(conv *Convert, inuse inuseLogic) TypeRef {
 
 func (t *Interface) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	return newTypeInfo(t.basic, nullable, option, variadic, true, false, false), t
+}
+
+func (t *Interface) SetBasic(value BasicInfo) {
+	t.basic = value
 }
 
 func (t *Interface) merge(m *Interface, conv *Convert) {
