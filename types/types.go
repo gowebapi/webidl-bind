@@ -106,9 +106,7 @@ var _ TypeRef = &AnyType{}
 func newAnyType() *AnyType {
 	return &AnyType{
 		basicType: basicType{
-			// if the any type is a js.Func or js.TypeArray a
-			// release handle is needed
-			needRelease: true,
+			needRelease: false,
 		},
 	}
 }

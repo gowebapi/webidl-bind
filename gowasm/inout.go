@@ -38,7 +38,7 @@ const inoutToTmplInput = `
 
 {{define "type-callback"}}
 	{{.Out}} := js.NewCallback(func (_cb_args []js.Value) {
-		{{.Info.Internal}}FromWasm({{.In}}, _cb_args)
+		invoke{{.Info.Def}} ( {{.In}}, _cb_args )
 	})
 	_releaseList = append(_releaseList, {{.Out}})
 {{end}}
@@ -97,7 +97,7 @@ const inoutFromTmplInput = `
 	{{if .Info.Pointer}}__tmp := {{else}} {{.Out}} = {{end}} {{if .Type.Cast}}( {{.Type.Lang}} ) ( {{end}} ( {{.In}} ) . {{.Type.JsMethod}} () {{if .Type.Cast}} ) {{end}}
 	{{if .Info.Pointer}} {{.Out}} = &__tmp {{end}}
 {{end}}
-{{define "type-callback"}}	// TODO: callbackInFrom() {{end}}
+{{define "type-callback"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-enum"}}		{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-interface"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-union"}}  {{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
@@ -306,6 +306,7 @@ func inoutParamStart(t types.TypeRef, info *types.TypeInfo, out, in string, idx 
 		Nullable bool
 		Optional bool
 		Info     *types.TypeInfo
+		Type     types.TypeRef
 		In, Out  string
 		Idx      int
 		AnyType  bool
@@ -313,6 +314,7 @@ func inoutParamStart(t types.TypeRef, info *types.TypeInfo, out, in string, idx 
 		Nullable: info.Nullable,
 		Optional: info.Option,
 		Info:     info,
+		Type:     t,
 		In:       in,
 		Out:      out,
 		Idx:      idx,

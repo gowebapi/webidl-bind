@@ -196,12 +196,18 @@ func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set str
 		if a.Type.NeedRelease() {
 			ret = "(_release ReleasableApiResource)"
 		}
+		from := inoutParamStart(ref, typ, "ret", "value", idx, inoutFromTmpl)
+		from += inoutGetToFromWasm(ref, typ, "ret", "value", idx, inoutFromTmpl)
+		from += inoutParamEnd(typ, "", inoutFromTmpl)
+		to := inoutParamStart(ref, typ, "input", "value", idx, inoutToTmpl)
+		to += inoutGetToFromWasm(ref, typ, "input", "value", idx, inoutToTmpl)
+		to += inoutParamStart(ref, typ, "input", "value", idx, inoutToTmpl)
 		in := &interfaceAttribute{
 			Name: a.Name(),
 			Type: typ,
 			Ref:  ref,
-			From: inoutGetToFromWasm(ref, typ, "ret", "value", idx, inoutFromTmpl),
-			To:   inoutGetToFromWasm(ref, typ, "input", "value", idx, inoutToTmpl),
+			From: from,
+			To:   to,
 			If:   main,
 			Ret:  ret,
 		}
