@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	StopErr = errors.New("stopping for previous error")
+	StopErr = errors.New("too many errors")
 )
 
 type Type interface {

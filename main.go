@@ -23,7 +23,7 @@ var args struct {
 	singlePkg   string
 }
 
-var stopErr = errors.New("stopping for previous error")
+var stopErr = errors.New("too many errors")
 var currentFilename string
 
 func main() {
@@ -55,11 +55,15 @@ func run() error {
 	for _, name := range flag.Args() {
 		ext := filepath.Ext(name)
 		if ext == ".md" {
+			fmt.Println("reading modificaton file", name)
 			if err := trans.Load(name); err != nil {
 				return err
 			}
-		} else if err := processFile(name, conv, setup); err != nil {
-			return err
+		} else {
+			fmt.Println("reading WebIDL file", name)
+			if err := processFile(name, conv, setup); err != nil {
+				return err
+			}
 		}
 	}
 	if err := conv.EvaluateInput(); err != nil {
@@ -97,6 +101,7 @@ func run() error {
 }
 
 func processFile(filename string, conv *types.Convert, setup *types.Setup) error {
+	currentFilename = filename
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -111,7 +116,6 @@ func processFile(filename string, conv *types.Convert, setup *types.Setup) error
 		return stopErr
 	}
 
-	currentFilename = filename
 	if args.singlePkg == "" {
 		setup.Package = gowasm.FormatPkg(filename)
 	}

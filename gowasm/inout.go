@@ -107,14 +107,15 @@ const inoutFromTmplInput = `
 {{define "type-dictionary"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 
 {{define "type-sequence"}}
-	__length{{.Idx}} := {{.In}}.Length() 
-	{{.Out}} = make( {{.Info.InOut}} , __length{{.Idx}}, __length{{.Idx}} )
+	__length{{.Idx}} := {{.In}}.Length()
+	__array{{.Idx}} := make( {{.Info.Def}} , __length{{.Idx}}, __length{{.Idx}} )
 	for __idx := 0; __idx < __length{{.Idx}} ; __idx++ {
 		var __out {{.InnerInfo.InOut}}
 		__in := {{.In}}.Index(__idx)
 		{{.Inner}}
-		{{.Out}}[__idx] = __out
+		__array{{.Idx}}[__idx] = __out
 	}
+	{{.Out}} = {{if .Info.Pointer}} & {{end}} __array{{.Idx}}
 {{end}}
 `
 

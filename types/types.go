@@ -43,6 +43,10 @@ func convertType(in ast.Type) TypeRef {
 			ret = newPrimitiveType(in.Name, "int", "Int", false, false)
 		case "unsigned long long":
 			ret = newPrimitiveType(in.Name, "int", "Int", false, false)
+		case "float":
+			ret = newPrimitiveType(in.Name, "float32", "Float", false, true)
+		case "unrestricted float":
+			ret = newPrimitiveType(in.Name, "float32", "Float", false, true)
 		case "double":
 			ret = newPrimitiveType(in.Name, "float64", "Float", false, true)
 		case "unrestricted double":
@@ -355,6 +359,12 @@ func (t *SequenceType) DefaultParam() (info *TypeInfo, inner TypeRef) {
 func (t *SequenceType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	inner := make(inuseLogic)
 	t.Elem = t.Elem.link(conv, inner)
+	if conv.HaveError {
+		// if we have failing, we can't evaluate Basic() as e.g.
+		// typeNameRef is returning faulty type when trigger an
+		// error
+		return t
+	}
 
 	eb := t.Elem.Basic()
 	_, prim := t.Elem.(*PrimitiveType)
