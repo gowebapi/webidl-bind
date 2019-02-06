@@ -1,6 +1,7 @@
 package gowasm
 
 import (
+	"fmt"
 	"io"
 	"strings"
 	"text/template"
@@ -79,7 +80,7 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_klass := js.Global().Get("{{.If.Basic.Idl}}")
 	_method := _klass.Get("{{.Name.Idl}}")
 	var (
-		_args [ {{len .To.ParamList }} ]interface{} 
+		_args {{.ArgVar}} 
 		_end int 
 	)
 {{end}}
@@ -97,7 +98,7 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	_klass := js.Global().Get("{{.If.Basic.Idl}}")
 	var (
-		_args [ {{len .To.ParamList }} ]interface{} 
+		_args {{.ArgVar}} 
 		_end int 
 	)
 {{end}}
@@ -115,7 +116,7 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 func ( _this * {{.If.Basic.Def}} ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnList}} ) {
 	_method := _this.value.Get("{{.Name.Idl}}")
 	var (
-		_args [ {{len .To.ParamList }} ]interface{} 
+		_args {{.ArgVar}} 
 		_end int 
 	)
 {{end}}
@@ -156,6 +157,7 @@ type interfaceMethod struct {
 	ReturnList   string
 	IsVoidReturn bool
 	To           *inoutData
+	ArgVar       string
 }
 
 func writeInterface(dst io.Writer, input types.Type) error {
@@ -234,6 +236,7 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 		IsVoidReturn: isVoid,
 		If:           main,
 		To:           to,
+		ArgVar:       calculateMethodArgsSize(to),
 	}
 	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-start", in); err != nil {
 		return err
@@ -271,4 +274,14 @@ func calculateMethodReturn(t types.TypeRef, releaseHdl bool) (lang, list string,
 	}
 	list = strings.Join(candidate, ", ")
 	return
+}
+
+func calculateMethodArgsSize(method *inoutData) string {
+	for _, p := range method.ParamList {
+		if p.Info.Variadic {
+			return fmt.Sprintf("[]interface{} = make([]interface{}, %d + len(%s))",
+				len(method.ParamList)-1, p.Name)
+		}
+	}
+	return fmt.Sprintf("[%d]interface{}", len(method.ParamList))
 }

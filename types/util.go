@@ -70,6 +70,11 @@ type nameAndLink struct {
 	base *ast.Base
 }
 
+type changeTemplateType struct {
+	template string
+	real     TypeRef
+}
+
 type inuseLogic map[string]bool
 
 var reservedKeywords = map[string]bool{
@@ -209,4 +214,39 @@ func (t *inuseLogic) push(name string, ref ast.Node, conv *Convert) bool {
 
 func (t *inuseLogic) pop(name string) {
 	delete(*t, name)
+}
+
+func ChangeTemplateName(on TypeRef, name string) TypeRef {
+	return &changeTemplateType{
+		real:     on,
+		template: name,
+	}
+}
+
+func (t *changeTemplateType) Basic() BasicInfo {
+	in := t.real.Basic()
+	in.Template = t.template
+	return in
+}
+
+func (t *changeTemplateType) DefaultParam() (*TypeInfo, TypeRef) {
+	info, ref := t.DefaultParam()
+	copy := *info
+	copy.Template = t.template
+	return &copy, ref
+}
+
+func (t *changeTemplateType) NeedRelease() bool {
+	return t.NeedRelease()
+}
+
+func (t *changeTemplateType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	panic("unsupported")
+}
+
+func (t *changeTemplateType) Param(nullable, optional, variadic bool) (*TypeInfo, TypeRef) {
+	info, ref := t.Param(nullable, optional, variadic)
+	copy := *info
+	copy.Template = t.template
+	return &copy, ref
 }

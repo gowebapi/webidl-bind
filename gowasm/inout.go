@@ -58,6 +58,14 @@ const inoutToTmplInput = `
 	}
 {{end}}
 
+{{define "type-variadic"}}
+	for _, __in := range {{.In}} {
+		{{.Inner}}
+		_args[_end] = __out
+		_end++
+	} 
+{{end}}
+
 `
 
 const inoutFromTmplInput = `
@@ -286,7 +294,12 @@ func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, i
 		data.InnerInfo, data.InnerType = seq.Elem.DefaultParam()
 		data.Inner = inoutGetToFromWasm(data.InnerType, data.InnerInfo, "__out", "__in", idx*100, tmpl)
 	}
-
+	if data.Info.Variadic {
+		copy := *data.Info
+		copy.Variadic = false
+		data.Inner = inoutGetToFromWasm(data.Type, &copy, "__out", "__in", idx*100, tmpl)
+		t = types.ChangeTemplateName(t, "variadic")
+	}
 	return convertType(t, data, tmpl) + "\n"
 }
 
@@ -311,6 +324,9 @@ func inoutParamStart(t types.TypeRef, info *types.TypeInfo, out, in string, idx 
 }
 
 func inoutParamEnd(info *types.TypeInfo, assign string, tmpl *template.Template) string {
+	if info.Variadic {
+		assign = ""
+	}
 	data := struct {
 		Nullable bool
 		Optional bool
