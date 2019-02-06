@@ -14,6 +14,10 @@ type Interface struct {
 	Inherits     *Interface
 	inheritsName string
 
+	// Global indicate that this "interface" is actually the
+	// global scope of javascript
+	Global bool
+
 	Constructor *IfMethod
 
 	Consts       []*IfConst
@@ -118,6 +122,8 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 				Return: newInterfaceType(ret),
 				Params: params,
 			}
+		} else if a.Name == "OnGlobalScope" {
+			ret.Global = true
 		} else if _, f := ignoredInterfaceAnnotation[a.Name]; !f {
 			t.warning(a, "unsupported interface annotation '%s'", a.Name)
 		}

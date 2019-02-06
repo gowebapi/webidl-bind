@@ -39,8 +39,8 @@ func {{.Type.Def}}FromJS(input js.Value) {{.Type.InOut}} {
 {{define "get-static-attribute"}}
 func {{.Name.Def}} () {{.Type.InOut}} {
 	var ret {{.Type.InOut}}
-	klass := js.Global().Get("{{.If.Basic.Idl}}")
-	value := klass.Get("{{.Name.Idl}}")
+	_klass := js.Global() {{if not .If.Global}} .Get("{{.If.Basic.Idl}}") {{end}}
+	value := _klass.Get("{{.Name.Idl}}")
 	{{.From}}
 	return ret
 }
@@ -49,9 +49,9 @@ func {{.Name.Def}} () {{.Type.InOut}} {
 {{define "set-static-attribute"}}
 func Set{{.Name.Def}} ( value {{.Type.InOut}} ) {{.Ret}} {
 	{{if len .Ret}}var _releaseList releasableApiResourceList{{end}}
-	klass := js.Global().Get("{{.If.Basic.Idl}}")
+	_klass := js.Global() {{if not .If.Global}} .Get("{{.If.Basic.Idl}}") {{end}}
 	{{.To}}
-	klass.Set("{{.Name.Idl}}", input)
+	_klass.Set("{{.Name.Idl}}", input)
 	{{if len .Ret}}return{{end}}
 }
 {{end}}
@@ -77,7 +77,7 @@ func (_this * {{.If.Basic.Def}} ) Set{{.Name.Def}} ( value {{.Type.InOut}} ) {{.
 
 {{define "static-method-start"}}
 func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
-	_klass := js.Global().Get("{{.If.Basic.Idl}}")
+	_klass := js.Global() {{if not .If.Global}} .Get("{{.If.Basic.Idl}}") {{end}}
 	_method := _klass.Get("{{.Name.Idl}}")
 	var (
 		_args {{.ArgVar}} 
@@ -166,8 +166,10 @@ func writeInterface(dst io.Writer, input types.Type) error {
 		If: value,
 	}
 	data.Type, data.Ref = value.DefaultParam()
-	if err := interfaceTmpl.ExecuteTemplate(dst, "header", data); err != nil {
-		return err
+	if !value.Global {
+		if err := interfaceTmpl.ExecuteTemplate(dst, "header", data); err != nil {
+			return err
+		}
 	}
 	if err := writeInterfaceVars(value.StaticVars, value, "get-static-attribute", "set-static-attribute", dst); err != nil {
 		return err
