@@ -2,7 +2,8 @@ package transform
 
 import (
 	"strings"
-	"wasm/generator/types"
+
+	"github.com/gowebapi/webidlgenerator/types"
 )
 
 type action interface {

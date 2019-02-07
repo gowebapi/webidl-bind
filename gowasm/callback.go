@@ -3,7 +3,8 @@ package gowasm
 import (
 	"io"
 	"text/template"
-	"wasm/generator/types"
+
+	"github.com/gowebapi/webidlgenerator/types"
 )
 
 const callbackTmplInput = `

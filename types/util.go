@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/dennwc/webidl/ast"
+	"github.com/gowebapi/webidlparser/ast"
 )
 
 // TypeName contains usage information about a type

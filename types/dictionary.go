@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/dennwc/webidl/ast"
+	"github.com/gowebapi/webidlparser/ast"
 )
 
 type Dictionary struct {

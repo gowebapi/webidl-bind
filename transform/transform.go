@@ -2,7 +2,8 @@ package transform
 
 import (
 	"fmt"
-	"wasm/generator/types"
+
+	"github.com/gowebapi/webidlgenerator/types"
 )
 
 type Transform struct {

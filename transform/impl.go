@@ -2,7 +2,8 @@ package transform
 
 import (
 	"sort"
-	"wasm/generator/types"
+
+	"github.com/gowebapi/webidlgenerator/types"
 )
 
 var callbackProperties = map[string]func(cb *types.Callback, value string){

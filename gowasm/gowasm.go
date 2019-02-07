@@ -10,7 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-	"wasm/generator/types"
+
+	"github.com/gowebapi/webidlgenerator/types"
 )
 
 const fileTemplInput = `

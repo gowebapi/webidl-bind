@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/dennwc/webidl/ast"
+	"github.com/gowebapi/webidlparser/ast"
 )
 
 type mixin struct {

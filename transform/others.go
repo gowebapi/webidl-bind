@@ -2,7 +2,8 @@ package transform
 
 import (
 	"fmt"
-	"wasm/generator/types"
+
+	"github.com/gowebapi/webidlgenerator/types"
 )
 
 // RenameOverrideMethods is renamning all methods in interfaces to make

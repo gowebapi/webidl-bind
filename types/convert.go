@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dennwc/webidl/ast"
-	"github.com/dennwc/webidl/parser"
+	"github.com/gowebapi/webidlparser/ast"
+	"github.com/gowebapi/webidlparser/parser"
 )
 
 var (

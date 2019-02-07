@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/dennwc/webidl/ast"
+	"github.com/gowebapi/webidlparser/ast"
 )
 
 type TypeRef interface {
