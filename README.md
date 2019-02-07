@@ -23,7 +23,7 @@ The program need following input files:
 
 ## Status/TODO
 
-Currently the generator can process the DOM and HTML specification and create a compilable output. There are still missing feature, see [Go WASM](gwasm.md) for details.
+Currently the generator can process the DOM and HTML specification and create a compilable output. There are still missing feature, see [Go WASM](gowasm.md) for details.
 
 ## WebIDL
 
@@ -78,18 +78,21 @@ helloWorld = SayHelloWorld
 ### Callback
 
 |Syntax Name|Description|Default|
+|-----------|-----------|-------|
 |.package|package name|first part of the input file|
 |.name|type output name|idl type name in public access format|
 
 ### Dictionary
 
 |Syntax Name|Description|Default|
+|-----------|-----------|-------|
 |.package|package name|first part of the input file|
 |.name|type output name|idl type name in public access format|
 
 ### Enum
 
 |Syntax Name|Description|Default|
+|-----------|-----------|-------|
 |.package|package name|first part of the input file|
 |.name|type output name|idl type name in public access format|
 
@@ -98,6 +101,7 @@ helloWorld = SayHelloWorld
 Interfaces have following properites
 
 |Syntax Name|Description|Default|
+|-----------|-----------|-------|
 |.package|package name|first part of the input file|
 |.name|type output name|idl type name in public access format|
 |.constPrefix|a prefix added to all type constants|empty|
