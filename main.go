@@ -24,7 +24,7 @@ var args struct {
 	singlePkg   string
 }
 
-var stopErr = errors.New("too many errors")
+var errStop = errors.New("too many errors")
 var currentFilename string
 
 func main() {
@@ -114,7 +114,7 @@ func processFile(filename string, conv *types.Convert, setup *types.Setup) error
 		for _, e := range trouble {
 			failing(e.NodeBase(), e.Message)
 		}
-		return stopErr
+		return errStop
 	}
 
 	if args.singlePkg == "" {

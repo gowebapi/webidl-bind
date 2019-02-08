@@ -39,11 +39,11 @@ func interfaceConstSuffix(inf *types.Interface, value string) {
 }
 
 func init() {
-	for k, _ := range callbackProperties {
+	for k := range callbackProperties {
 		callbackPropertyNames = append(callbackPropertyNames, k)
 	}
 	sort.Strings(callbackPropertyNames)
-	for k, _ := range interfaceProperties {
+	for k := range interfaceProperties {
 		callbackPropertyNames = append(interfacePropertyNames, k)
 	}
 	sort.Strings(interfacePropertyNames)

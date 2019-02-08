@@ -351,7 +351,7 @@ func executeTemplateToString(name string, data interface{}, newLine bool, tmpl *
 	out := buf.String()
 	// out = strings.Replace(out, "\n", " ", -1)
 	out = strings.TrimSpace(out)
-	if newLine || strings.Index(out, "\n") != -1 {
+	if newLine || strings.Contains(out, "\n") {
 		out += "\n"
 	}
 	return out

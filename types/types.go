@@ -249,11 +249,11 @@ func (t *ParametrizedType) DefaultParam() (info *TypeInfo, inner TypeRef) {
 }
 
 func (t *ParametrizedType) link(conv *Convert, inuse inuseLogic) TypeRef {
-	names := []string{}
+	// names := []string{}
 	for i := range t.Elems {
 		inner := make(inuseLogic)
 		t.Elems[i] = t.Elems[i].link(conv, inner)
-		names = append(names, t.Elems[i].Basic().Idl)
+		// names = append(names, t.Elems[i].Basic().Idl)
 	}
 	t.basic = BasicInfo{
 		Idl:      t.ParamName,

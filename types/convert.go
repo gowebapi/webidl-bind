@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	StopErr = errors.New("too many errors")
+	ErrStop = errors.New("too many errors")
 )
 
 type Type interface {
@@ -82,7 +82,7 @@ func (t *Convert) Process(file *ast.File, setup *Setup) error {
 	list := extractTypes{main: t}
 	ast.Accept(file, &list)
 	if t.HaveError {
-		return StopErr
+		return ErrStop
 	}
 	return nil
 }
@@ -91,10 +91,10 @@ func (t *Convert) Process(file *ast.File, setup *Setup) error {
 // to WebIDL specification
 func (conv *Convert) EvaluateInput() error {
 	if conv.processPartialAndMixin(); conv.HaveError {
-		return StopErr
+		return ErrStop
 	}
 	if conv.processTypeLinks(); conv.HaveError {
-		return StopErr
+		return ErrStop
 	}
 	return nil
 }
@@ -164,7 +164,7 @@ func (conv *Convert) processPartialAndMixin() {
 //for the output language
 func (t *Convert) EvaluateOutput() error {
 	if t.HaveError {
-		return StopErr
+		return ErrStop
 	}
 	return nil
 }

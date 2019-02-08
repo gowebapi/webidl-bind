@@ -160,10 +160,6 @@ func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePt
 	return t
 }
 
-func stringToConst(input string) string {
-	return toCamelCase(clipString(input), true)
-}
-
 func toCamelCase(in string, upper bool) string {
 	out := ""
 	up := true
@@ -235,14 +231,14 @@ func (t *changeTemplateType) Basic() BasicInfo {
 }
 
 func (t *changeTemplateType) DefaultParam() (*TypeInfo, TypeRef) {
-	info, ref := t.DefaultParam()
+	info, ref := t.real.DefaultParam()
 	copy := *info
 	copy.Template = t.template
 	return &copy, ref
 }
 
 func (t *changeTemplateType) NeedRelease() bool {
-	return t.NeedRelease()
+	return t.real.NeedRelease()
 }
 
 func (t *changeTemplateType) link(conv *Convert, inuse inuseLogic) TypeRef {
@@ -250,7 +246,7 @@ func (t *changeTemplateType) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *changeTemplateType) Param(nullable, optional, variadic bool) (*TypeInfo, TypeRef) {
-	info, ref := t.Param(nullable, optional, variadic)
+	info, ref := t.real.Param(nullable, optional, variadic)
 	copy := *info
 	copy.Template = t.template
 	return &copy, ref

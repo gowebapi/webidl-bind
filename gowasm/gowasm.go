@@ -59,8 +59,8 @@ func WriteSource(conv *types.Convert) (map[string][]byte, error) {
 	}
 	for _, v := range conv.Callbacks {
 		if v.InUse() {
+			err = writeType(v, target, writeCallback, err)
 		}
-		err = writeType(v, target, writeCallback, err)
 	}
 	for _, v := range conv.Dictionary {
 		if v.InUse() {

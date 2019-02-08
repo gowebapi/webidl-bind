@@ -19,7 +19,7 @@ func convertType(value types.TypeRef, data interface{}, tmpl *template.Template)
 	out := buf.String()
 	// out = strings.Replace(out, "\n", " ", -1)
 	out = strings.TrimSpace(out)
-	if strings.Index(out, "\n") != -1 {
+	if strings.Contains(out, "\n") {
 		out += "\n"
 	}
 	return out
