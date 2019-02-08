@@ -180,6 +180,6 @@ func createMultieOSLib(content []byte) (wasm, others []byte) {
 	newTag := []byte("// +build !js\n\npackage")
 	wasm = content
 	others = bytes.Replace(content, oldImport, newImport, 1)
-	others = bytes.Replace(content, oldTag, newTag, 1)
+	others = bytes.Replace(others, oldTag, newTag, 1)
 	return
 }
