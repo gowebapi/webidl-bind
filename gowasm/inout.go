@@ -38,10 +38,13 @@ const inoutToTmplInput = `
 {{define "type-interface"}}		{{.Out}} := {{.In}}.JSValue() {{end}}
 
 {{define "type-callback"}}
-	{{.Out}} := js.NewCallback(func (_cb_args []js.Value) {
-		invoke{{.Info.Def}} ( {{.In}}, _cb_args )
-	})
-	_releaseList = append(_releaseList, {{.Out}})
+	var __callback{{.Idx}} js.Value
+	if {{.In}} != nil {
+		__callback{{.Idx}} = ( * {{.In}} ).Value
+	} else {
+		__callback{{.Idx}} = js.Null()
+	}
+	{{.Out}} := __callback{{.Idx}}
 {{end}}
 {{define "type-enum"}}      {{.Out}} := {{.In}}.JSValue() {{end}}
 {{define "type-union"}}	{{.Out}} := {{.In}}.JSValue() {{end}}
@@ -155,7 +158,7 @@ type inoutParam struct {
 func parameterArgumentLine(input []*types.Parameter) (all string, list []string) {
 	for _, value := range input {
 		info, _ := value.Type.Param(false, value.Optional, value.Variadic)
-		name := value.Name + " " + info.InOut
+		name := value.Name + " " + info.Input
 		list = append(list, name)
 	}
 	all = strings.Join(list, ", ")
@@ -178,7 +181,7 @@ func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 		po.Tmpl = po.Info.Template
 		releaseHdl = releaseHdl || pi.Type.NeedRelease()
 		paramList = append(paramList, po)
-		paramTextList = append(paramTextList, fmt.Sprint(pi.Name, " ", po.Info.InOut))
+		paramTextList = append(paramTextList, fmt.Sprint(pi.Name, " ", po.Info.Input))
 		allout = append(allout, po.Out)
 	}
 	return &inoutData{
@@ -202,7 +205,7 @@ func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
 	po.Tmpl = po.Info.Template
 	return &inoutData{
 		ParamList:  []inoutParam{po},
-		Params:     fmt.Sprint(pi.Name, " ", po.Info.InOut),
+		Params:     fmt.Sprint(pi.Name, " ", po.Info.Input),
 		ReleaseHdl: pi.Type.NeedRelease(),
 		AllOut:     po.Out,
 	}

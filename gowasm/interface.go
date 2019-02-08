@@ -42,8 +42,8 @@ func {{.Type.Def}}FromJS(input js.Value) {{.Type.InOut}} {
 {{end}}
 
 {{define "get-static-attribute"}}
-func {{.Name.Def}} () {{.Type.InOut}} {
-	var ret {{.Type.InOut}}
+func {{.Name.Def}} () {{.Type.Output}} {
+	var ret {{.Type.Output}}
 	_klass := js.Global() {{if not .If.Global}} .Get("{{.If.Basic.Idl}}") {{end}}
 	value := _klass.Get("{{.Name.Idl}}")
 	{{.From}}
@@ -52,7 +52,7 @@ func {{.Name.Def}} () {{.Type.InOut}} {
 {{end}}
 
 {{define "set-static-attribute"}}
-func Set{{.Name.Def}} ( value {{.Type.InOut}} ) {{.Ret}} {
+func Set{{.Name.Def}} ( value {{.Type.Input}} ) {{.Ret}} {
 	{{if len .Ret}}var _releaseList releasableApiResourceList{{end}}
 	_klass := js.Global() {{if not .If.Global}} .Get("{{.If.Basic.Idl}}") {{end}}
 	{{.To}}
@@ -62,7 +62,7 @@ func Set{{.Name.Def}} ( value {{.Type.InOut}} ) {{.Ret}} {
 {{end}}
 
 {{define "get-object-attribute"}}
-func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.InOut}} {
+func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.Output}} {
 	var ret {{.Type.InOut}}
 	value := _this.value.Get("{{.Name.Idl}}")
 	{{.From}}
@@ -71,7 +71,7 @@ func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.InOut}} {
 {{end}}
 
 {{define "set-object-attribute"}}
-func (_this * {{.If.Basic.Def}} ) Set{{.Name.Def}} ( value {{.Type.InOut}} ) {{.Ret}} {
+func (_this * {{.If.Basic.Def}} ) Set{{.Name.Def}} ( value {{.Type.Input}} ) {{.Ret}} {
 	{{if len .Ret}}var _releaseList releasableApiResourceList{{end}}
 	{{.To}}
 	_this.value.Set("{{.Name.Idl}}", input)
@@ -116,7 +116,6 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 }
 {{end}}
 
-
 {{define "object-method-start"}}
 func ( _this * {{.If.Basic.Def}} ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnList}} ) {
 	_method := _this.value.Get("{{.Name.Idl}}")
@@ -134,7 +133,6 @@ func ( _this * {{.If.Basic.Def}} ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnL
 	return
 }
 {{end}}
-
 `
 
 var interfaceTmpl = template.Must(template.New("interface").Parse(interfaceTmplInput))
@@ -299,7 +297,7 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 
 func calculateMethodReturn(t types.TypeRef, releaseHdl bool) (lang, list string, isVoid bool) {
 	info, _ := t.DefaultParam()
-	lang = info.InOut
+	lang = info.Output
 	isVoid = types.IsVoid(t)
 
 	candidate := []string{}

@@ -7,7 +7,6 @@ The output should be considers as helping libraries to _syscall/js_ than a stand
 * Dividing into multplie packages is missing. Currently everything is created into a single package.
 * Method/Enum rename - transformation support to get a better API.
 * Union support are missing as methods depending of this is unusable.
-* Callback release is not correct all the time, leading to memory leakage.
 
 ### Go 1.12
 

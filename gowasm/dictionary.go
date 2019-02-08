@@ -76,7 +76,7 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 		data.Members = append(data.Members, mo)
 		if mi.Required {
 			data.HaveReq = true
-			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.Type.InOut))
+			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.Type.Input))
 			data.Required = append(data.Required, mo)
 		}
 		mo.fromIn, mo.fromOut = setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Def)

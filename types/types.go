@@ -138,6 +138,8 @@ func (t *AnyType) Param(nullable, option, variadic bool) (info *TypeInfo, inner 
 	ret := &TypeInfo{
 		BasicInfo:   t.Basic(),
 		InOut:       "js.Value",
+		Input:       "js.Value",
+		Output:      "js.Value",
 		Pointer:     false,
 		NeedRelease: false,
 		Nullable:    false,
@@ -147,6 +149,7 @@ func (t *AnyType) Param(nullable, option, variadic bool) (info *TypeInfo, inner 
 	if variadic {
 		ret.Def = "..." + ret.Def
 		ret.InOut = "..." + ret.InOut
+		ret.Input = "..." + ret.Input
 	}
 	return ret, t
 }
@@ -424,7 +427,7 @@ func (t *TypedArrayType) Param(nullable, option, variadic bool) (info *TypeInfo,
 }
 
 func (t *TypedArrayType) NeedRelease() bool {
-	return true
+	return false
 }
 
 type typeNameRef struct {
@@ -571,6 +574,8 @@ func (t *voidType) Param(nullable, option, variadic bool) (info *TypeInfo, inner
 	return &TypeInfo{
 		BasicInfo:   t.Basic(),
 		InOut:       "",
+		Input:       "",
+		Output:      "",
 		NeedRelease: false,
 		Nullable:    false,
 		Option:      false,

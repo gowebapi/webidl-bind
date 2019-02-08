@@ -12,12 +12,18 @@ const callbackTmplInput = `
 // callback: {{.Type.Idl}}
 type {{.Type.Def}} func ({{.ParamLine}}) {{.Return.InOut}}
 
-func invoke{{.Type.Def}}(callback {{.Type.InOut}}, args []js.Value) {
+func {{.Type.Def}}ToJS(callback {{.Type.Def}} ) *js.Callback {
+	if callback == nil {
+		return nil
+	}
+	ret := js.NewCallback(func (args []js.Value) {
 {{end}}
 	
 {{define "middle"}}
-	// TODO: return value
-	callback({{.InOut.AllOut}})
+		// TODO: return value
+		callback({{.InOut.AllOut}})
+	})
+	return &ret
 }
 
 func {{.Type.Def}}FromJS(_value js.Value) {{.Type.Def}} {

@@ -20,7 +20,7 @@ func (t *extractTypes) convertCallback(in *ast.Callback) *Callback {
 	ret := &Callback{
 		standardType: standardType{
 			base:        in.NodeBase(),
-			needRelease: true,
+			needRelease: false,
 		},
 		basic:      fromIdlToTypeName(t.main.setup.Package, in.Name, "callback"),
 		source:     in,
@@ -56,7 +56,10 @@ func (t *Callback) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *Callback) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, variadic, false, true, true), t
+	info, typ := newTypeInfo(t.basic, nullable, option, variadic, false, true, false), t
+	info.Input = "*js.Callback"
+	info.Pointer = true
+	return info, typ
 }
 
 func (t *Callback) SetBasic(basic BasicInfo) {
