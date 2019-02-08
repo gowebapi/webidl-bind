@@ -42,6 +42,8 @@ func {{.Type.Def}}FromJS(input js.Value) {{.Type.InOut}} {
 {{end}}
 
 {{define "get-static-attribute"}}
+// {{.Name.Def}} returning attribute '{{.Name.Idl}}' with
+// type {{.Type.Def}} (idl: {{.Type.Idl}}).
 func {{.Name.Def}} () {{.Type.Output}} {
 	var ret {{.Type.Output}}
 	_klass := js.Global() {{if not .If.Global}} .Get("{{.If.Basic.Idl}}") {{end}}
@@ -52,6 +54,8 @@ func {{.Name.Def}} () {{.Type.Output}} {
 {{end}}
 
 {{define "set-static-attribute"}}
+// {{.Name.Def}} returning attribute '{{.Name.Idl}}' with
+// type {{.Type.Def}} (idl: {{.Type.Idl}}).
 func Set{{.Name.Def}} ( value {{.Type.Input}} ) {{.Ret}} {
 	{{if len .Ret}}var _releaseList releasableApiResourceList{{end}}
 	_klass := js.Global() {{if not .If.Global}} .Get("{{.If.Basic.Idl}}") {{end}}
@@ -62,6 +66,8 @@ func Set{{.Name.Def}} ( value {{.Type.Input}} ) {{.Ret}} {
 {{end}}
 
 {{define "get-object-attribute"}}
+// {{.Name.Def}} returning attribute '{{.Name.Idl}}' with
+// type {{.Type.Def}} (idl: {{.Type.Idl}}).
 func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.Output}} {
 	var ret {{.Type.InOut}}
 	value := _this.value.Get("{{.Name.Idl}}")
@@ -71,6 +77,8 @@ func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.Output}} {
 {{end}}
 
 {{define "set-object-attribute"}}
+// Set{{.Name.Def}} setting attribute '{{.Name.Idl}}' with
+// type {{.Type.Def}} (idl: {{.Type.Idl}}).
 func (_this * {{.If.Basic.Def}} ) Set{{.Name.Def}} ( value {{.Type.Input}} ) {{.Ret}} {
 	{{if len .Ret}}var _releaseList releasableApiResourceList{{end}}
 	{{.To}}
