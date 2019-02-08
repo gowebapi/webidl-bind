@@ -126,14 +126,13 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 
 {{define "object-method-start"}}
 func ( _this * {{.If.Basic.Def}} ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnList}} ) {
-	_method := _this.value.Get("{{.Name.Idl}}")
 	var (
 		_args {{.ArgVar}} 
 		_end int 
 	)
 {{end}}
 {{define "object-method-invoke"}}
-	{{if not .IsVoidReturn}}_returned :={{end}} _method.Invoke( _args[0:_end]... )
+	{{if not .IsVoidReturn}}_returned :={{end}} _this.value.Call("{{.Name.Idl}}", _args[0:_end]... )
 {{end}}
 {{define "object-method-end"}}
 	{{if not .IsVoidReturn}}_result = _converted{{end}}
