@@ -174,9 +174,12 @@ func sourceCodeRemoveEmptyLines(code []byte) []byte {
 }
 
 func createMultieOSLib(content []byte) (wasm, others []byte) {
-	oldTag := []byte("import \"syscall/js\"")
-	newTag := []byte("// +build !js\nimport js \"github.com/gowebapi/webapi/core/failjs\"")
+	oldImport := []byte("import \"syscall/js\"")
+	newImport := []byte("import js \"github.com/gowebapi/webapi/core/failjs\"")
+	oldTag := []byte("package")
+	newTag := []byte("// +build !js\n\npackage")
 	wasm = content
+	others = bytes.Replace(content, oldImport, newImport, 1)
 	others = bytes.Replace(content, oldTag, newTag, 1)
 	return
 }
