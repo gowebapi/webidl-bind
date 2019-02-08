@@ -88,7 +88,8 @@ func WriteSource(conv *types.Convert) (map[string][]byte, error) {
 			// later can correct and fix the bug
 			fmt.Fprintf(os.Stderr, "error:%s:unable to format output source code: %s\n", filename, err)
 		}
-		ret[filename] = content
+		wasmFile := fmt.Sprintf("%s/%s_js_wasm.go", low, low)
+		ret[wasmFile], ret[filename] = createMultieOSLib(content)
 	}
 	return ret, nil
 }
@@ -170,4 +171,12 @@ func sourceCodeRemoveEmptyLines(code []byte) []byte {
 		out.WriteString(s)
 	}
 	return out.Bytes()
+}
+
+func createMultieOSLib(content []byte) (wasm, others []byte) {
+	oldTag := []byte("import \"syscall/js\"")
+	newTag := []byte("// +build !js\nimport js \"github.com/gowebapi/webapi/core/failjs\"")
+	wasm = content
+	others = bytes.Replace(content, oldTag, newTag, 1)
+	return
 }
