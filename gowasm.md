@@ -36,6 +36,22 @@ callback Foo = void (int a, int b);
 func FooFromJS(_value js.Value) FunctionStringCallback {
 ```
 
+### callback interface
+
+An interface that the developer should implement to get callback from javscript. There is a `NewFoo()` that is used to allocate a javascript
+object that can be used to get callbacks. The function is retuning an instance of
+type `FooValue` that holds the reference to underlaying javascript object.
+On that instance there is also a `Release()` method that need to be invoked when
+the callback is no longer needed.
+
+If the interface is only having a single method, there will also a `NewFooFunc` method that is taking a function as input and will allocate corresponding javascript object. There is a generator option that let `NewFooFunc` a javascript function instead of an object.
+
+```webidl
+callback interface Foo {
+    void bar();
+};
+```
+
 ### dictionary
 
 Will generate a structure with corresponding field. When convered to/from _js.Value_, values are copied into a new javascript object.

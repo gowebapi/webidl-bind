@@ -140,6 +140,166 @@ func ( _this * {{.If.Basic.Def}} ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnL
 	return
 }
 {{end}}
+
+{{define "callback-header"}}
+// {{.Type.Def}} is a callback interface.
+type {{.Type.Def}} interface {
+	{{range .Methods}}
+		{{.Name.Def}} ( {{.To.Params}} ) ( {{ .ReturnList }} )
+	{{end}}
+}
+
+// {{.Type.Def}}Value is javascript reference value for callback interface {{.Type.Def}}.
+// This is holding the underlaying javascript object.
+type {{.Type.Def}}Value struct {
+	// Value is the underlying javascript object{{if .If.FunctionCB}} or function{{end}}.
+	Value     js.Value
+	// Functions is the underlying function objects that is allocated for the interface callback
+	Functions [ {{len .Methods}} ] js.Callback
+
+	// Go interface to invoke
+	impl      {{.Type.Def}}
+	{{if eq (len .Methods) 1 }}
+		function  func ( {{(index .Methods 0).To.Params}} ) ( {{(index .Methods 0).ReturnList}} )
+		useInvoke bool
+	{{end}}
+}
+
+// JSValue is returning the javascript object that implements this callback interface
+func (t * {{.Type.Def}}Value ) JSValue() js.Value {
+	return t.Value
+}
+
+// Release is releasing all resources that is allocated.
+func (t * {{.Type.Def}}Value ) Release() {
+	for i := range t.Functions {
+		if t.Functions[i].Type() != js.TypeUndefined {
+			t.Functions[i].Release()
+		}
+	}
+}
+
+// New{{.Type.Def}} is allocating a new javascript object that
+// implements {{.Type.Def}}.
+func New{{.Type.Def}} ( callback {{.Type.Def}} ) * {{.Type.Def}}Value {
+	ret := & {{.Type.Def}}Value { impl: callback }
+	ret.Value = js.Global().Get("Object").New()
+	{{range $idx, $value := .Methods}}
+		ret.Functions[ {{$idx}} ] = ret.allocate{{$value.Name.Def}} ()
+		ret.Value.Set( "{{$value.Name.Idl}}" , ret.Functions[ {{$idx}} ] )
+	{{end}}
+	return ret
+}
+
+{{if eq (len .Methods) 1 }}
+// New{{.Type.Def}}Func is allocating a new javascript 
+// {{if .If.FunctionCB}}function{{else}}object{{end}} is implements
+// {{.Type.Def}} interface.
+func New{{.Type.Def}}Func( f func( {{(index .Methods 0).To.Params}} ) ( {{(index .Methods 0).ReturnList}} ) ) * {{.Type.Def}}Value {
+	{{if .If.FunctionCB}}
+		// single function will result in javascript function type, not an object
+		ret := & {{.Type.Def}}Value { function: f }
+		ret.Functions[0] = ret.allocate{{ (index .Methods 0).Name.Def }}()
+		ret.Value = ret.Functions[0].Value
+	{{else}}
+		ret := & {{.Type.Def}}Value { Impl: implementation }
+		ret.Value = js.Global().Get("Object").New()
+		{{range $idx, $value := .Methods}}
+			ret.Functions[ {{$idx}} ] = ret.allocate{{$value.Name.Def}} ()
+			ret.Value.Set( "{{$value.Name.Idl}}" , ret.Function[ {{$idx}} ] )
+		{{end}}
+	{{end}}
+	return ret
+}
+{{end}}
+
+// {{.Type.Def}}FromJS is taking an javascript object that reference to a 
+// callback interface and return a corresponding interface that can be used
+// to invoke on that element.
+func {{.Type.Def}}FromJS(value js.Value) * {{.Type.Def}}Value {
+	if value.Type() == js.TypeObject {
+		return &{{.Type.Def}}Value { Value: value }
+	}
+	{{if (len .Methods) 1}}
+	if value.Type() == js.TypeFunction {
+		return &{{.Type.Def}}Value { Value: value, useInvoke: true }
+	}
+	{{else}}
+		// note: have no support for functions, method count: {{len .Methods}}
+	{{end}}
+	panic("unsupported type")
+}
+
+{{end}}
+
+{{define "callback-allocate-start"}}
+func ( t * {{.If.Basic.Def}}Value ) allocate{{.Name.Def}} () js.Callback {
+	return js.NewCallback(func (args []js.Value) {
+
+{{end}}
+
+{{define "callback-allocate-invoke"}}
+	{{if not .IsVoidReturn}}
+		var _returned {{.Return}}
+	{{end}}
+	{{if eq (len .If.Method) 1}}
+		if t.function != nil {
+			{{if not .IsVoidReturn}}_returned={{end}} t.function ( {{range $idx, $value := .To.ParamList}} _p{{$idx}} {{if ge $idx 1}},{{end}} {{end}} )
+		} else {
+	{{end}}
+		{{if not .IsVoidReturn}}_returned={{end}} t.impl.{{.Name.Def}} ( {{range $idx, $value := .To.ParamList}} _p{{$idx}} {{if ge $idx 1}},{{end}} {{end}} )
+	{{if eq (len .If.Method) 1}}
+		}
+	{{end}}
+{{end}}
+
+{{define "callback-allocate-end"}}
+		{{if not .IsVoidReturn}}
+			unused(_converted)
+			panic("go 1.11 does provice anyway to return values in callbacks")
+		{{end}}
+	})
+}
+{{end}}
+
+{{define "callback-invoke-start"}}
+func (_this * {{.If.Basic.Def}}Value ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnList}} ) {
+	{{if eq (len .If.Method) 1 }}
+		if _this.function != nil {
+			{{if not .IsVoidReturn}}return {{end}} _this.function ( {{range $idx, $value := .To.ParamList}} {{$value.Name}} {{if ge $idx 1}},{{end}} {{end}} )
+		}
+	{{end}}
+	if _this.impl != nil {
+		{{if not .IsVoidReturn}}return {{end}} _this.impl. {{.Name.Def}} ( {{range $idx, $value := .To.ParamList}} {{$value.Name}} {{if ge $idx 1}},{{end}} {{end}} )
+	}
+	var (
+		_args {{.ArgVar}} 
+		_end int 
+	)
+{{end}}
+{{define "callback-invoke-invoke"}}
+	{{if not .IsVoidReturn}}
+		var _returned js.Value
+	{{end}}
+	{{if eq (len .If.Method) 1 }}
+	if _this.useInvoke {
+		// invoke a javascript function
+		{{if not .IsVoidReturn}}_returned ={{end}} _this.Value.Invoke(_args[0:_end]... )
+	} else {
+	{{end}}
+		{{if not .IsVoidReturn}}_returned ={{end}} _this.Value.Call("{{.Name.Idl}}", _args[0:_end]... )
+	{{if eq (len .If.Method) 1 }}
+	}
+	{{end}}
+
+{{end}}
+{{define "callback-invoke-end"}}
+	{{if not .IsVoidReturn}}_result = _converted{{end}}
+	{{if .To.ReleaseHdl}}_release = _releaseList{{end}}
+	return
+}
+{{end}}
+
 `
 
 var interfaceTmpl = template.Must(template.New("interface").Parse(interfaceTmplInput))
@@ -163,6 +323,7 @@ type interfaceAttribute struct {
 type interfaceMethod struct {
 	Name         types.MethodName
 	If           *types.Interface
+	Method       *types.IfMethod
 	Return       string
 	ReturnList   string
 	IsVoidReturn bool
@@ -172,6 +333,9 @@ type interfaceMethod struct {
 
 func writeInterface(dst io.Writer, input types.Type) error {
 	value := input.(*types.Interface)
+	if value.Callback {
+		return writeCallbackInterface(value, dst)
+	}
 	data := &interfaceData{
 		If: value,
 	}
@@ -199,6 +363,54 @@ func writeInterface(dst io.Writer, input types.Type) error {
 		return err
 	}
 	if err := writeInterfaceMethods(value.Method, value, "object-method", dst); err != nil {
+		return err
+	}
+	return nil
+}
+
+// callback interface code
+func writeCallbackInterface(value *types.Interface, dst io.Writer) error {
+	if err := writeInterfaceConst(value.Consts, value, dst); err != nil {
+		return err
+	}
+	// first we setup method information
+	methods := []*interfaceMethod{}
+	for _, m := range value.Method {
+		to := setupInOutWasmData(m.Params, "args[%d]", "_p%d")
+		retLang, retList, isVoid := calculateMethodReturn(m.Return, to.ReleaseHdl)
+		in := &interfaceMethod{
+			Name:         *m.Name(),
+			Return:       retLang,
+			ReturnList:   retList,
+			IsVoidReturn: isVoid,
+			If:           value,
+			Method:       m,
+			To:           to,
+			ArgVar:       calculateMethodArgsSize(to),
+		}
+		methods = append(methods, in)
+	}
+
+	data := struct {
+		Type    *types.TypeInfo
+		Ref     types.TypeRef
+		Methods []*interfaceMethod
+		If      *types.Interface
+	}{
+		Methods: methods,
+		If:      value,
+	}
+	data.Type, data.Ref = value.DefaultParam()
+	if err := interfaceTmpl.ExecuteTemplate(dst, "callback-header", data); err != nil {
+		return err
+	}
+	for _, m := range methods {
+		assign := ""
+		if err := writeInterfaceCallbackMethod(m, assign, "callback-allocate", dst); err != nil {
+			return err
+		}
+	}
+	if err := writeInterfaceMethods(value.Method, value, "callback-invoke", dst); err != nil {
 		return err
 	}
 	return nil
@@ -277,6 +489,7 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 		ReturnList:   retList,
 		IsVoidReturn: isVoid,
 		If:           main,
+		Method:       m,
 		To:           to,
 		ArgVar:       calculateMethodArgsSize(to),
 	}
@@ -290,8 +503,8 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-invoke", in); err != nil {
 		return err
 	}
-	if !isVoid {
-		result := setupInOutWasmForType(m.Return, "_what_return_name", "_returned", "_converted")
+	if !in.IsVoidReturn {
+		result := setupInOutWasmForType(in.Method.Return, "_what_return_name", "_returned", "_converted")
 		if err := writeInOutFromWasm(result, "", dst); err != nil {
 			return err
 		}
@@ -302,6 +515,27 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 	return nil
 }
 
+func writeInterfaceCallbackMethod(in *interfaceMethod, assign, tmpl string, dst io.Writer) error {
+	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-start", in); err != nil {
+		return err
+	}
+	if err := writeInOutFromWasm(in.To, assign, dst); err != nil {
+		return err
+	}
+	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-invoke", in); err != nil {
+		return err
+	}
+	if !in.IsVoidReturn {
+		result := setupInOutWasmForType(in.Method.Return, "_what_return_name", "_returned", "_converted")
+		if err := writeInOutToWasm(result, "", dst); err != nil {
+			return err
+		}
+	}
+	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-end", in); err != nil {
+		return err
+	}
+	return nil
+}
 func calculateMethodReturn(t types.TypeRef, releaseHdl bool) (lang, list string, isVoid bool) {
 	info, _ := t.DefaultParam()
 	lang = info.Output

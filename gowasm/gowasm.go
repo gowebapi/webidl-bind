@@ -36,6 +36,11 @@ func (a releasableApiResourceList) Release() {
 	}
 }
 
+// workaround for compiler error
+func unused(value interface{}) {
+	// TODO remove this method
+}
+
 {{end}}
 `
 

@@ -96,6 +96,9 @@ func (conv *Convert) EvaluateInput() error {
 	if conv.processTypeLinks(); conv.HaveError {
 		return ErrStop
 	}
+	if conv.verifyIndividualTypeCheck(); conv.HaveError {
+		return ErrStop
+	}
 	return nil
 }
 

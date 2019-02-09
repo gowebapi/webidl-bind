@@ -18,6 +18,14 @@ type Interface struct {
 	// global scope of javascript
 	Global bool
 
+	// Callback specify that this is an interface that the
+	// developer should implement.
+	Callback bool
+
+	// FunctionCB indicate that an extra function implementation
+	// shall be added in final output
+	FunctionCB bool
+
 	// variable naming prefix and suffix for const variables
 	ConstPrefix, ConstSuffix string
 
@@ -83,6 +91,8 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 		basic:        fromIdlToTypeName(t.main.setup.Package, in.Name, "interface"),
 		source:       in,
 		inheritsName: in.Inherits,
+		Callback:     in.Callback,
+		FunctionCB:   true,
 	}
 	ret.ConstSuffix = "_" + ret.basic.Def
 	for _, raw := range in.Members {
@@ -285,7 +295,11 @@ func (t *Interface) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *Interface) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, variadic, true, false, false), t
+	info = newTypeInfo(t.basic, nullable, option, variadic, true, t.Callback, false)
+	if t.Callback {
+		info.Input = "*" + info.InOut + "Value"
+	}
+	return info, t
 }
 
 func (t *Interface) SetBasic(value BasicInfo) {
