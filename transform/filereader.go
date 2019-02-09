@@ -11,13 +11,14 @@ import (
 )
 
 type parser struct {
-	result *Transform
-	ref    ref
-	ontype *onType
-	errors int
+	result      *Transform
+	ref         ref
+	ontype      *onType
+	errors      int
+	packageName string
 }
 
-func (t *Transform) Load(filename string) error {
+func (t *Transform) Load(filename, packageName string) error {
 	all, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -27,6 +28,7 @@ func (t *Transform) Load(filename string) error {
 		ref: ref{
 			Filename: filename,
 		},
+		packageName: packageName,
 	}
 	return p.processFile(all)
 }
@@ -34,6 +36,11 @@ func (t *Transform) Load(filename string) error {
 func (p *parser) processFile(content []byte) error {
 	content = append(content, '\n')
 	buf := bytes.NewBuffer(content)
+	p.ontype = &onType{
+		Ref:  p.ref,
+		Name: p.packageName,
+	}
+	p.result.Global = append(p.result.Global, p.ontype)
 	for p.ref.Line = 1; p.errors < 10; p.ref.Line++ {
 		input, err := buf.ReadString('\n')
 		if err != nil && err != io.EOF {

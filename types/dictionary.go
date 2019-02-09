@@ -106,3 +106,7 @@ func (t *Dictionary) NeedRelease() bool {
 func (t *Dictionary) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	return newTypeInfo(t.basic, nullable, option, variadic, true, false, false), t
 }
+
+func (t *Dictionary) SetBasic(basic BasicInfo) {
+	t.basic = basic
+}

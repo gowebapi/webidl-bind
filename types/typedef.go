@@ -64,3 +64,7 @@ func (t *typeDef) Param(nullable, option, variadic bool) (info *TypeInfo, inner 
 	panic("not supported for this type")
 	// return t.Type.Param(nullable, option, variadic)
 }
+
+func (t *typeDef) SetBasic(basic BasicInfo) {
+	panic("not supported for this type")
+}
