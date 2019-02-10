@@ -16,13 +16,14 @@ type {{.Type.Def}} struct {
 	{{if .If.Inherits}}
 		{{.If.Inherits.Basic.Def}}
 	{{else}}
-	value js.Value
+		// Value_JS holds a reference to a javascript value
+		Value_JS js.Value
 	{{end}}
 }
 
 {{if not .If.Inherits}}
 func (_this *{{.Type.Def}}) JSValue() js.Value {
-	return _this.value
+	return _this.Value_JS
 }
 {{end}}
 
@@ -34,7 +35,7 @@ func {{.Type.Def}}FromJS(input js.Value) {{.Type.InOut}} {
 	}
 	{{end}}
 	ret := {{if .Type.Pointer}}&{{end}} {{.Type.Def}} { }
-	ret.value = input
+	ret.Value_JS = input
 	return ret
 }
 
@@ -73,7 +74,7 @@ func Set{{.Name.Def}} ( value {{.Type.Input}} ) {{.Ret}} {
 // type {{.Type.Def}} (idl: {{.Type.Idl}}).
 func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.Output}} {
 	var ret {{.Type.InOut}}
-	value := _this.value.Get("{{.Name.Idl}}")
+	value := _this.Value_JS.Get("{{.Name.Idl}}")
 	{{.From}}
 	return ret
 }
@@ -85,7 +86,7 @@ func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.Output}} {
 func (_this * {{.If.Basic.Def}} ) Set{{.Name.Def}} ( value {{.Type.Input}} ) {{.Ret}} {
 	{{if len .Ret}}var _releaseList releasableApiResourceList{{end}}
 	{{.To}}
-	_this.value.Set("{{.Name.Idl}}", input)
+	_this.Value_JS.Set("{{.Name.Idl}}", input)
 	{{if len .Ret}}return{{end}}
 }
 {{end}}
@@ -135,7 +136,7 @@ func ( _this * {{.If.Basic.Def}} ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnL
 	)
 {{end}}
 {{define "object-method-invoke"}}
-	{{if not .IsVoidReturn}}_returned :={{end}} _this.value.Call("{{.Name.Idl}}", _args[0:_end]... )
+	{{if not .IsVoidReturn}}_returned :={{end}} _this.Value_JS.Call("{{.Name.Idl}}", _args[0:_end]... )
 {{end}}
 {{define "object-method-end"}}
 	{{if not .IsVoidReturn}}_result = _converted{{end}}
