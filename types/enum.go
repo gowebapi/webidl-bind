@@ -22,8 +22,7 @@ var _ Type = &Enum{}
 
 // EnumValue is a single enum value
 type EnumValue struct {
-	Idl string
-	Go  string
+	MethodName
 }
 
 func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
@@ -48,8 +47,10 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 				lang = fmt.Sprintf("empty_string_%d", i)
 			}
 			ret.Values = append(ret.Values, EnumValue{
-				Idl: idl,
-				Go:  fixLangName(toCamelCase(lang, true)),
+				MethodName: MethodName{
+					Idl: idl,
+					Def: fixLangName(toCamelCase(lang, true)),
+				},
 			})
 		} else {
 			t.failing(in, "unsupported literal: %T: %#V", v, v)
@@ -81,4 +82,8 @@ func (t *Enum) Param(nullable, option, variadic bool) (info *TypeInfo, inner Typ
 
 func (t *Enum) SetBasic(basic BasicInfo) {
 	t.basic = basic
+}
+
+func (t *EnumValue) Name() *MethodName {
+	return &t.MethodName
 }

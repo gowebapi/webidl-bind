@@ -10,7 +10,7 @@ type action interface {
 	IsGlobal() bool
 	ExecuteCallback(instance *types.Callback, trans *Transform)
 	ExecuteDictionary(instance *types.Dictionary, trans *Transform)
-	ExecuteEnum(instance *types.Enum, trans *Transform)
+	ExecuteEnum(instance *types.Enum, targets map[string]renameTarget, trans *Transform)
 	ExecuteInterface(instance *types.Interface, targets map[string]renameTarget, trans *Transform)
 }
 
@@ -48,7 +48,7 @@ func (t *property) ExecuteDictionary(instance *types.Dictionary, trans *Transfor
 	}
 }
 
-func (t *property) ExecuteEnum(instance *types.Enum, trans *Transform) {
+func (t *property) ExecuteEnum(instance *types.Enum, targets map[string]renameTarget, trans *Transform) {
 	if f, ok := enumProperties[t.Name]; ok {
 		f(instance, t.Value)
 	} else {
@@ -79,15 +79,19 @@ func (t *rename) ExecuteDictionary(value *types.Dictionary, trans *Transform) {
 	trans.messageError(t.Ref, "dictionary doesn't have any attributes or methods that can be renamed")
 }
 
-func (t *rename) ExecuteEnum(value *types.Enum, trans *Transform) {
-	trans.messageError(t.Ref, "enum doesn't have any attributes or methods that can be renamed")
+func (t *rename) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, trans *Transform) {
+	genericRename(t.Name, t.Value, t.Ref, targets, trans)
 }
 
 func (t *rename) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, trans *Transform) {
-	if target, found := targets[t.Name]; found {
-		target.Name().Def = t.Value
+	genericRename(t.Name, t.Value, t.Ref, targets, trans)
+}
+
+func genericRename(name, value string, ref ref, targets map[string]renameTarget, trans *Transform) {
+	if target, found := targets[name]; found {
+		target.Name().Def = value
 	} else {
-		trans.messageError(t.Ref, "unknown rename target '%s'", t.Name)
+		trans.messageError(ref, "unknown rename target '%s'", name)
 	}
 }
 

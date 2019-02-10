@@ -104,8 +104,16 @@ func (t *Transform) processDictionary(instance *types.Dictionary, change *onType
 }
 
 func (t *Transform) processEnum(instance *types.Enum, change *onType) {
+	// preparation
+	values := make(map[string]renameTarget)
+	for i := range instance.Values {
+		ref := &instance.Values[i]
+		values[ref.Idl] = ref
+	}
+
+	// execution
 	for _, a := range change.Actions {
-		a.ExecuteEnum(instance, t)
+		a.ExecuteEnum(instance, values, t)
 	}
 }
 

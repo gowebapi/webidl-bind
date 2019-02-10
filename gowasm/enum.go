@@ -15,7 +15,7 @@ const enumTmplInput = `
 type {{.Basic.Def}} int
 
 const (
-{{range $idx, $v := .Enum.Values}}	{{$.Enum.Prefix}}{{$v.Go}}{{$.Enum.Suffix}}{{if eq $idx 0}} {{$.Basic.Def}} = iota{{end}}
+{{range $idx, $v := .Enum.Values}}	{{$.Enum.Prefix}}{{$v.Def}}{{$.Enum.Suffix}}{{if eq $idx 0}} {{$.Basic.Def}} = iota{{end}}
 {{end}}
 )
 
@@ -24,7 +24,7 @@ var {{.Basic.Internal}}ToWasmTable = []string{
 }
 
 var {{.Basic.Internal}}FromWasmTable = map[string]{{.Basic.Def}} {
-	{{range .Enum.Values}}"{{.Idl}}": {{$.Enum.Prefix}}{{.Go}}{{$.Enum.Suffix}},{{end}}
+	{{range .Enum.Values}}"{{.Idl}}": {{$.Enum.Prefix}}{{.Def}}{{$.Enum.Suffix}},{{end}}
 }
 
 // JSValue is converting this enum into a java object

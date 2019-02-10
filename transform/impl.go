@@ -50,6 +50,8 @@ func dictionaryPackage(cb *types.Dictionary, value string) {
 var enumProperties = map[string]func(cb *types.Enum, value string){
 	"name":    enumName,
 	"package": enumPackage,
+	"prefix":  enumPrefix,
+	"suffix":  enumSuffix,
 }
 var enumPropertyNames = []string{}
 
@@ -63,6 +65,14 @@ func enumPackage(cb *types.Enum, value string) {
 	b := cb.Basic()
 	b.Package = value
 	cb.SetBasic(b)
+}
+
+func enumPrefix(cb *types.Enum, value string) {
+	cb.Prefix = value
+}
+
+func enumSuffix(cb *types.Enum, value string) {
+	cb.Suffix = value
 }
 
 var interfaceProperties = map[string]func(inf *types.Interface, value string){

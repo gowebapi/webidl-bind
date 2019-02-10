@@ -95,6 +95,8 @@ helloWorld = SayHelloWorld
 |-----------|-----------|-------|
 |.package|package name|first part of the input file|
 |.name|type output name|idl type name in public access format|
+|.prefix|prefix that is added to every enum value|nothing|
+|.suffix|suffix that is added to every enum value|enum name|
 
 ### Interface
 
