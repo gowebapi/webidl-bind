@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/gowebapi/webidlgenerator/gowasm"
 	"github.com/gowebapi/webidlgenerator/transform"
@@ -22,6 +24,7 @@ var args struct {
 	warnings   bool
 	singlePkg  string
 	insidePkg  string
+	goBuild    string
 }
 
 var errStop = errors.New("too many errors")
@@ -84,6 +87,7 @@ func run() error {
 		return err
 	}
 
+	folders := []string{}
 	for _, src := range files {
 		filename, inc := src.Filename(args.insidePkg)
 		if !inc {
@@ -92,6 +96,7 @@ func run() error {
 		}
 		path := filepath.Join(args.outputPath, filename)
 		dir := filepath.Dir(path)
+		folders = append(folders, dir)
 		if !pathExist(dir) {
 			fmt.Println("creating folder", dir)
 			if err := os.MkdirAll(dir, 0775); err != nil {
@@ -103,7 +108,9 @@ func run() error {
 			return err
 		}
 	}
-
+	if err := tryCompileResult(folders); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -128,6 +135,46 @@ func processFile(filename string, conv *types.Convert, setup *types.Setup) error
 		return err
 	}
 	currentFilename = "<unknown file>"
+	return nil
+}
+
+func tryCompileResult(folders []string) error {
+	if args.goBuild == "" {
+		return nil
+	}
+	sort.Strings(folders)
+	last := ":/:"
+	failed := []string{}
+	for _, folder := range folders {
+		if folder == last {
+			continue
+		}
+		last = folder
+
+		wasm := args.goBuild == "wasm"
+		args := []string{"build"}
+		if !wasm {
+			args = append(args, "-i")
+		}
+
+		p := exec.Command("go", args...)
+		p.Dir = folder
+		p.Stdout = os.Stdout
+		p.Stderr = os.Stderr
+		if wasm {
+			p.Env = os.Environ()
+			p.Env = append(p.Env, "GOOS=js")
+			p.Env = append(p.Env, "GOARCH=wasm")
+		}
+		fmt.Printf("> running '%s' in folder %s\n", strings.Join(p.Args, " "), folder)
+		if err := p.Run(); err != nil {
+			fmt.Println("> error: command failed:", err)
+			failed = append(failed, folder)
+		}
+	}
+	if len(failed) > 0 {
+		return fmt.Errorf("not all building was successful. failure in %s", strings.Join(failed, ", "))
+	}
 	return nil
 }
 
@@ -159,12 +206,16 @@ func parseArgs() string {
 	flag.StringVar(&args.outputPath, "output", "", "output path")
 	flag.StringVar(&args.insidePkg, "inside-package", "", "output path is inside current package")
 	flag.StringVar(&args.singlePkg, "single-package", "", "all types to same package")
+	flag.StringVar(&args.goBuild, "go-build", "", "execute go build in output folders")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		return "no input files on command line"
 	}
 	if args.outputPath == "" {
 		return "missing output path for file(s)"
+	}
+	if args.goBuild != "" && args.goBuild != "wasm" && args.goBuild != "host" {
+		return "-go-build value should be 'wasm' or 'host'"
 	}
 	return ""
 }
