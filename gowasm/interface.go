@@ -13,15 +13,18 @@ const interfaceTmplInput = `
 {{define "header"}}
 // interface: {{.Type.Idl}}
 type {{.Type.Def}} struct {
-	{{if .If.Inherits}} {{.If.Inherits.Basic.Def}}
+	{{if .If.Inherits}}
+		{{.If.Inherits.Basic.Def}}
 	{{else}}
 	value js.Value
 	{{end}}
 }
 
-func (t *{{.Type.Def}}) JSValue() js.Value {
-	return t.value
+{{if not .If.Inherits}}
+func (_this *{{.Type.Def}}) JSValue() js.Value {
+	return _this.value
 }
+{{end}}
 
 // {{.Type.Def}}FromJS is casting a js.Value into {{.Type.Def}}.
 func {{.Type.Def}}FromJS(input js.Value) {{.Type.InOut}} {
