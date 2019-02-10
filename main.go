@@ -18,10 +18,10 @@ import (
 )
 
 var args struct {
-	outputPath  string
-	packageBase string
-	warnings    bool
-	singlePkg   string
+	outputPath string
+	warnings   bool
+	singlePkg  string
+	insidePkg  string
 }
 
 var errStop = errors.New("too many errors")
@@ -57,7 +57,8 @@ func run() error {
 		ext := filepath.Ext(name)
 		if ext == ".md" {
 			fmt.Println("reading modificaton file", name)
-			if err := trans.Load(name); err != nil {
+			pkg := gowasm.FormatPkg(name, args.singlePkg)
+			if err := trans.Load(name, pkg); err != nil {
 				return err
 			}
 		} else {
@@ -83,8 +84,13 @@ func run() error {
 		return err
 	}
 
-	for k, v := range files {
-		path := filepath.Join(args.outputPath, k)
+	for _, src := range files {
+		filename, inc := src.Filename(args.insidePkg)
+		if !inc {
+			fmt.Printf("skipping '%s' as we are inside '%s'\n", src.Package, args.insidePkg)
+			continue
+		}
+		path := filepath.Join(args.outputPath, filename)
 		dir := filepath.Dir(path)
 		if !pathExist(dir) {
 			fmt.Println("creating folder", dir)
@@ -93,7 +99,7 @@ func run() error {
 			}
 		}
 		fmt.Println("saving ", path)
-		if err := ioutil.WriteFile(path, v, 0666); err != nil {
+		if err := ioutil.WriteFile(path, src.Content, 0666); err != nil {
 			return err
 		}
 	}
@@ -117,12 +123,11 @@ func processFile(filename string, conv *types.Convert, setup *types.Setup) error
 		return errStop
 	}
 
-	if args.singlePkg == "" {
-		setup.Package = gowasm.FormatPkg(filename)
-	}
+	setup.Package = gowasm.FormatPkg(filename, args.singlePkg)
 	if err := conv.Process(file, setup); err != nil {
 		return err
 	}
+	currentFilename = "<unknown file>"
 	return nil
 }
 
@@ -152,7 +157,7 @@ func warning(base *ast.Base, format string, values ...interface{}) {
 func parseArgs() string {
 	flag.BoolVar(&args.warnings, "log-warning", true, "log warnings")
 	flag.StringVar(&args.outputPath, "output", "", "output path")
-	flag.StringVar(&args.packageBase, "package-base", "", "package base name (e.g. github.com/foo/bar)")
+	flag.StringVar(&args.insidePkg, "inside-package", "", "output path is inside current package")
 	flag.StringVar(&args.singlePkg, "single-package", "", "all types to same package")
 	flag.Parse()
 	if len(flag.Args()) == 0 {

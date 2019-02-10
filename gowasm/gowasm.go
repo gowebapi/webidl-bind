@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -21,6 +22,7 @@ const fileTemplInput = `
 package {{.Package}}
 
 import "syscall/js"
+@IMPORT@
 
 // ReleasableApiResource is used to release underlaying
 // allocated resources.
@@ -41,20 +43,40 @@ func unused(value interface{}) {
 	// TODO remove this method
 }
 
+type Union struct {
+	Value js.Value
+}
+
+func (u *Union) JSValue() js.Value {
+	return u.Value
+}
+
+func UnionFromJS(value js.Value) * Union {
+	return & Union{Value: value}
+}
+
 {{end}}
 `
 
 var fileTempl = template.Must(template.New("file").Parse(fileTemplInput))
 
+// Data in header evaluation
 type fileData struct {
 	Package string
 }
 
 type writeFn func(dst io.Writer, in types.Type) error
 
+type Source struct {
+	Package string
+	name    string
+	Content []byte
+}
+
 // WriteSource is create source code files.
 // returns map["path/filename"]"file content"
-func WriteSource(conv *types.Convert) (map[string][]byte, error) {
+func WriteSource(conv *types.Convert) ([]*Source, error) {
+	types.TransformBasic = pkgMgr.transformPackageName
 	target := make(map[string]*bytes.Buffer)
 	var err error
 	for _, e := range conv.Enums {
@@ -80,22 +102,37 @@ func WriteSource(conv *types.Convert) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret := make(map[string][]byte)
-	for k, v := range target {
-		low := strings.ToLower(k)
-		filename := fmt.Sprintf("%s/%s.go", low, low)
-		content := v.Bytes()
+	ret := make([]*Source, 0)
+	for pkg, buffer := range target {
+		content := buffer.Bytes()
+		content = insertImportLines(pkg, content)
 		content = sourceCodeRemoveEmptyLines(content)
 		if source, err := format.Source(content); err == nil {
 			content = source
 		} else {
 			// we just print this error to get an output file that we
 			// later can correct and fix the bug
-			fmt.Fprintf(os.Stderr, "error:%s:unable to format output source code: %s\n", filename, err)
+			fmt.Fprintf(os.Stderr, "error:%s:unable to format output source code: %s\n", pkg, err)
 		}
-		wasmFile := fmt.Sprintf("%s/%s_js_wasm.go", low, low)
-		ret[wasmFile], ret[filename] = createMultieOSLib(content)
+		wasm, desktop := createMultieOSLib(content)
+		base := strings.ToLower(shortPackageName(pkg))
+		ret = append(ret, &Source{
+			Package: pkg,
+			name:    base + ".go",
+			Content: desktop,
+		})
+		ret = append(ret, &Source{
+			Package: pkg,
+			name:    base + "_js_wasm.go",
+			Content: wasm,
+		})
 	}
+	sort.Slice(ret, func(i, j int) bool {
+		if ret[i].Package == ret[j].Package {
+			return ret[i].name < ret[j].name
+		}
+		return ret[i].Package < ret[j].Package
+	})
 	return ret, nil
 }
 
@@ -103,6 +140,7 @@ func writeType(value types.Type, target map[string]*bytes.Buffer, conv writeFn, 
 	if err != nil {
 		return err
 	}
+	pkgMgr.setPackageName(value)
 	dst, err := getTarget(value, target)
 	if err != nil {
 		return err
@@ -122,22 +160,12 @@ func getTarget(value types.Type, target map[string]*bytes.Buffer) (*bytes.Buffer
 	dst = &bytes.Buffer{}
 	target[pkg] = dst
 	data := fileData{
-		Package: pkg,
+		Package: shortPackageName(pkg),
 	}
 	if err := fileTempl.ExecuteTemplate(dst, "header", data); err != nil {
 		return nil, err
 	}
 	return dst, nil
-}
-
-func FormatPkg(filename string) string {
-	value := filepath.Base(filename)
-	idx := strings.Index(value, ".")
-	if idx != -1 {
-		return value[0:idx]
-	}
-	value = strings.ToLower(value)
-	return value
 }
 
 // sourceCodeRemoveEmptyLines will remove empty lines
@@ -187,4 +215,31 @@ func createMultieOSLib(content []byte) (wasm, others []byte) {
 	others = bytes.Replace(content, oldImport, newImport, 1)
 	others = bytes.Replace(others, oldTag, newTag, 1)
 	return
+}
+
+func insertImportLines(pkg string, content []byte) []byte {
+	file := pkgMgr.packages[pkg]
+	lines := file.importLines()
+	fmt.Println("DEBUG:", pkg, lines)
+	return bytes.Replace(content, []byte("@IMPORT@"), []byte(lines), 1)
+}
+
+func (src *Source) Filename(insidePkg string) (string, bool) {
+	full := filepath.Join(src.Package, src.name)
+	if insidePkg == "" {
+		return full, true
+	}
+	limit := insidePkg
+	if !strings.HasSuffix(limit, "/") {
+		limit = limit + "/"
+	} else {
+		insidePkg = insidePkg[0 : len(insidePkg)-1]
+	}
+	if src.Package == insidePkg {
+		return src.name, true
+	}
+	if strings.HasPrefix(src.Package, limit) {
+		return full[len(limit):], true
+	}
+	return full, false
 }
