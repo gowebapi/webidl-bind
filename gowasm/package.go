@@ -66,7 +66,7 @@ func (t *packageManager) setPackageName(typ types.Type) {
 	t.transformActive = false
 	basic := typ.Basic()
 	pkg := basic.Package
-	fmt.Println("current type", pkg, "->", basic.Def, basic.Idl)
+	// fmt.Println("current type", pkg, "->", basic.Def, basic.Idl)
 	t.transformActive = true
 	current, ok := t.packages[pkg]
 	if !ok {

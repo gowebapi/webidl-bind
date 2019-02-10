@@ -48,7 +48,6 @@ func {{.Type.Def}}FromJS(_value js.Value) {{.Type.Def}} {
 var callbackTempl = template.Must(template.New("callback").Parse(callbackTmplInput))
 
 type callbackData struct {
-	CB        *types.Callback
 	Type      *types.TypeInfo
 	Return    *types.TypeInfo
 	VoidRet   bool
@@ -61,7 +60,6 @@ type callbackData struct {
 func writeCallback(dst io.Writer, value types.Type) error {
 	cb := value.(*types.Callback)
 	data := &callbackData{
-		CB:      cb,
 		InOut:   setupInOutWasmData(cb.Parameters, "args[%d]", "_p%d"),
 		VoidRet: types.IsVoid(cb.Return),
 	}

@@ -220,7 +220,6 @@ func createMultieOSLib(content []byte) (wasm, others []byte) {
 func insertImportLines(pkg string, content []byte) []byte {
 	file := pkgMgr.packages[pkg]
 	lines := file.importLines()
-	fmt.Println("DEBUG:", pkg, lines)
 	return bytes.Replace(content, []byte("@IMPORT@"), []byte(lines), 1)
 }
 
