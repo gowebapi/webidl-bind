@@ -28,7 +28,6 @@ var args struct {
 }
 
 var errStop = errors.New("too many errors")
-var currentFilename string
 
 func main() {
 	if msg := parseArgs(); msg != "" {
@@ -115,7 +114,6 @@ func run() error {
 }
 
 func processFile(filename string, conv *types.Convert, setup *types.Setup) error {
-	currentFilename = filename
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -125,16 +123,17 @@ func processFile(filename string, conv *types.Convert, setup *types.Setup) error
 	if len(trouble) > 0 {
 		sort.SliceStable(trouble, func(i, j int) bool { return trouble[i].Line < trouble[j].Line })
 		for _, e := range trouble {
-			failing(e.NodeBase(), e.Message)
+			ref := types.Ref{Filename: filename, Line: e.Line}
+			failing(&ref, e.Message)
 		}
 		return errStop
 	}
 
 	setup.Package = gowasm.FormatPkg(filename, args.singlePkg)
+	setup.Filename = filename
 	if err := conv.Process(file, setup); err != nil {
 		return err
 	}
-	currentFilename = "<unknown file>"
 	return nil
 }
 
@@ -178,25 +177,29 @@ func tryCompileResult(folders []string) error {
 	return nil
 }
 
-func failing(base *ast.Base, format string, args ...interface{}) {
-	dst := os.Stderr
-	fmt.Fprint(dst, "error:", currentFilename, ":")
-	if base != nil {
-		fmt.Fprint(dst, base.Line, ":")
+func failing(ref types.GetRef, format string, args ...interface{}) {
+	source := ""
+	if ref != nil {
+		where := ref.SourceReference()
+		source = where.String() + ":"
 	}
+	dst := os.Stderr
+	fmt.Fprint(dst, "error:", source)
 	fmt.Fprintf(dst, format, args...)
 	fmt.Fprint(dst, "\n")
 }
 
-func warning(base *ast.Base, format string, values ...interface{}) {
+func warning(ref types.GetRef, format string, values ...interface{}) {
 	if !args.warnings {
 		return
 	}
-	dst := os.Stderr
-	fmt.Fprint(dst, "warning:", currentFilename, ":")
-	if base != nil {
-		fmt.Fprint(dst, base.Line, ":")
+	source := ""
+	if ref != nil {
+		where := ref.SourceReference()
+		source = where.String() + ":"
 	}
+	dst := os.Stderr
+	fmt.Fprint(dst, "warning:", source)
 	fmt.Fprintf(dst, format, values...)
 	fmt.Fprint(dst, "\n")
 }

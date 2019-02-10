@@ -85,7 +85,7 @@ var ignoredVarAnnotations = map[string]bool{
 func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 	ret := &Interface{
 		standardType: standardType{
-			base:        in.NodeBase(),
+			ref:         createRef(in, t),
 			needRelease: false,
 		},
 		basic:        fromIdlToTypeName(t.main.setup.Package, in.Name, "interface"),
@@ -122,13 +122,14 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 		}
 	}
 	for _, a := range in.Annotations {
+		ref := createRef(a, t)
 		if a.Name == "Constructor" {
-			t.assertTrue(a.Value == "", a, "constructor shall have parameters, not A=B")
-			t.assertTrue(len(a.Values) == 0, a, "constructor shall have parameters, not A=(a,b,c)")
+			t.assertTrue(a.Value == "", ref, "constructor shall have parameters, not A=B")
+			t.assertTrue(len(a.Values) == 0, ref, "constructor shall have parameters, not A=(a,b,c)")
 			params := t.convertParams(a.Parameters)
 			ret.Constructor = &IfMethod{
 				nameAndLink: nameAndLink{
-					base: a.NodeBase(),
+					ref:  ref,
 					name: fromIdlToMethodName("New_" + ret.basic.Idl),
 				},
 				Static: true,
@@ -139,36 +140,38 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 		} else if a.Name == "OnGlobalScope" {
 			ret.Global = true
 		} else if _, f := ignoredInterfaceAnnotation[a.Name]; !f {
-			t.warning(a, "unsupported interface annotation '%s'", a.Name)
+			t.warning(ref, "unsupported interface annotation '%s'", a.Name)
 		}
 	}
 	return ret, in.Partial
 }
 
 func (conv *extractTypes) convertInterfaceConst(in *ast.Member) *IfConst {
-	conv.assertTrue(len(in.Annotations) == 0, in, "const: unsupported annotation")
-	conv.assertTrue(len(in.Parameters) == 0, in, "const: unsupported parameters")
-	conv.assertTrue(in.Specialization == "", in, "const: unsupported specialization")
-	conv.assertTrue(in.Init != nil, in, "const: missing default value")
+	ref := createRef(in, conv)
+	conv.assertTrue(len(in.Annotations) == 0, ref, "const: unsupported annotation")
+	conv.assertTrue(len(in.Parameters) == 0, ref, "const: unsupported parameters")
+	conv.assertTrue(in.Specialization == "", ref, "const: unsupported specialization")
+	conv.assertTrue(in.Init != nil, ref, "const: missing default value")
 
 	value := ""
 	if basic, ok := in.Init.(*ast.BasicLiteral); ok {
 		value = basic.Value
 	} else {
-		conv.failing(in, "const: unsupported default value")
+		conv.failing(ref, "const: unsupported default value")
 	}
 	return &IfConst{
 		nameAndLink: nameAndLink{
-			base: in.NodeBase(),
+			ref:  ref,
 			name: fromIdlToMethodName(in.Name),
 		},
 		Src:   in,
-		Type:  convertType(in.Type),
+		Type:  convertType(in.Type,conv ),
 		Value: value,
 	}
 }
 
 func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
+	ref := createRef(in, conv)
 	for _, a := range in.Annotations {
 		if _, f := ignoredVarAnnotations[a.Name]; f {
 			continue
@@ -177,58 +180,61 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 		case "TreatNullAs":
 			// only for DOMString
 			if a.Value != "EmptyString" {
-				conv.failing(in, "for TreatNullAs, only TreatNullAs=EmptyString is allowed according to specification")
+				conv.failing(ref, "for TreatNullAs, only TreatNullAs=EmptyString is allowed according to specification")
 			}
-			conv.warning(in, "unhandled TreatNullAs (null should be an empty string)")
+			conv.warning(ref, "unhandled TreatNullAs (null should be an empty string)")
 		default:
-			conv.warning(a, "unhandled variable annotation '%s'", a.Name)
+			ref = createRef(a, conv)
+			conv.warning(ref, "unhandled variable annotation '%s'", a.Name)
 		}
 	}
-	conv.assertTrue(len(in.Parameters) == 0, in, "var: unsupported parameters")
-	conv.warningTrue(in.Specialization == "", in, "var: unsupported specialization")
-	conv.assertTrue(in.Init == nil, in, "var: unsupported default value")
-	conv.assertTrue(!in.Required, in, "var: unsupported required attribute")
+	conv.assertTrue(len(in.Parameters) == 0, ref, "var: unsupported parameters")
+	conv.warningTrue(in.Specialization == "", ref, "var: unsupported specialization")
+	conv.assertTrue(in.Init == nil, ref, "var: unsupported default value")
+	conv.assertTrue(!in.Required, ref, "var: unsupported required attribute")
 	// parser.Dump(os.Stdout, in)
 
 	return &IfVar{
 		nameAndLink: nameAndLink{
-			base: in.NodeBase(),
+			ref:  ref,
 			name: fromIdlToMethodName(in.Name),
 		},
 		Src:      in,
-		Type:     convertType(in.Type),
+		Type:     convertType(in.Type,conv ),
 		Static:   in.Static,
 		Readonly: in.Readonly,
 	}
 }
 
 func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
+	ref := createRef(in, conv)
 	if in.Name == "" {
 		if in.Specialization != "" {
-			conv.warning(in, "skipping method, no support for specialization '%s'", in.Specialization)
+			conv.warning(ref, "skipping method, no support for specialization '%s'", in.Specialization)
 		} else {
-			conv.failing(in, "empty method name")
+			conv.failing(ref, "empty method name")
 		}
 		return nil
 	}
-	conv.warningTrue(in.Specialization == "", in, "method: unsupported specialization (need to be implemented)")
-	conv.assertTrue(in.Init == nil, in, "method: unsupported default value")
-	conv.assertTrue(!in.Required, in, "method: unsupported required tag")
+	conv.warningTrue(in.Specialization == "", ref, "method: unsupported specialization (need to be implemented)")
+	conv.assertTrue(in.Init == nil, ref, "method: unsupported default value")
+	conv.assertTrue(!in.Required, ref, "method: unsupported required tag")
 	// TODO add support for method annotations
 	for _, a := range in.Annotations {
 		if _, f := ignoredMethodAnnotation[a.Name]; f {
 			continue
 		}
-		conv.warning(a, "unsupported method annotation '%s'", a.Name)
+		aref := createRef(a, conv)
+		conv.warning(aref, "unsupported method annotation '%s'", a.Name)
 	}
 
 	return &IfMethod{
 		nameAndLink: nameAndLink{
-			base: in.NodeBase(),
+			ref:  ref,
 			name: fromIdlToMethodName(in.Name),
 		},
 		Src:    in,
-		Return: convertType(in.Type),
+		Return: convertType(in.Type,conv ),
 		Static: in.Static,
 		Params: conv.convertParams(in.Parameters),
 	}

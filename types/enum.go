@@ -26,10 +26,11 @@ type EnumValue struct {
 }
 
 func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
-	t.assertTrue(len(in.Annotations) == 0, in, "unsupported annotation")
+	ref := createRef(in, t)
+	t.assertTrue(len(in.Annotations) == 0, ref, "unsupported annotation")
 	ret := &Enum{
 		standardType: standardType{
-			base:        in.NodeBase(),
+			ref:         ref,
 			needRelease: false,
 		},
 		basic:  fromIdlToTypeName(t.main.setup.Package, in.Name, "enum"),
@@ -53,7 +54,7 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 				},
 			})
 		} else {
-			t.failing(in, "unsupported literal: %T: %#V", v, v)
+			t.failing(ref, "unsupported literal: %T: %#V", v, v)
 		}
 	}
 	return ret

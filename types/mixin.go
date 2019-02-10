@@ -9,6 +9,7 @@ import (
 type mixin struct {
 	source *ast.Mixin
 	Name   string
+	ref    *Ref
 
 	Consts       []*IfConst
 	Vars         []*IfVar
@@ -25,12 +26,14 @@ type includes struct {
 	Name string
 	// Source points to a mixin
 	Source string
+	ref    *Ref
 }
 
 func (t *extractTypes) convertMixin(in *ast.Mixin) (*mixin, bool) {
 	ret := &mixin{
 		source: in,
 		Name:   in.Name,
+		ref:    createRef(in, t),
 	}
 	for _, raw := range in.Members {
 		mi, ok := raw.(*ast.Member)
@@ -59,7 +62,8 @@ func (t *extractTypes) convertMixin(in *ast.Mixin) (*mixin, bool) {
 		}
 	}
 	for _, a := range in.Annotations {
-		t.warning(a, "unsupported interface annotation '%s'", a.Name)
+		aref := createRef(a, t)
+		t.warning(aref, "unsupported interface annotation '%s'", a.Name)
 	}
 	return ret, in.Partial
 }
@@ -69,6 +73,7 @@ func (t *extractTypes) convertIncludes(in *ast.Includes) *includes {
 		source: in,
 		Name:   in.Name,
 		Source: in.Source,
+		ref:    createRef(in, t),
 	}
 	return ret
 }
@@ -81,10 +86,10 @@ func (t *mixin) merge(m *mixin, conv *Convert) {
 	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
 }
 
-func (t *mixin) NodeBase() *ast.Base {
-	return t.source.NodeBase()
+func (t *mixin) SourceReference() *Ref {
+	return t.ref
 }
 
-func (t *includes) NodeBase() *ast.Base {
-	return t.source.NodeBase()
+func (t *includes) SourceReference() *Ref {
+	return t.ref
 }

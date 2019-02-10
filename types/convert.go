@@ -27,17 +27,7 @@ var TransformBasic = func(t TypeRef, basic BasicInfo) BasicInfo {
 
 type Type interface {
 	TypeRef
-	ast.Node
-
-	// 	Phase1(r *Resources)
-	// 	Phase2()
-
-	// CalculateTypeDef()
-
-	// 	// static attributes etc in interfaces
-	// 	ExtractSubTypes() []Type
-	// 	Phase3()
-	// 	WriteTo() error
+	GetRef
 
 	// key to use in Convert.Types
 	key() string
@@ -67,10 +57,11 @@ type Convert struct {
 	setup     *Setup
 }
 
-type UserMsgFn func(base *ast.Base, format string, args ...interface{})
+type UserMsgFn func(ref GetRef, format string, args ...interface{})
 
 type Setup struct {
 	Package        string
+	Filename       string
 	Warning, Error UserMsgFn
 }
 
@@ -204,35 +195,35 @@ func (t *Convert) addMixin(m *mixin) {
 	t.mixin[m.Name] = m
 }
 
-func (t *Convert) registerTypeName(ref ast.Node, name string) {
-	if _, f := t.Types[name]; f {
-		t.failing(ref, "type '%s' already exist", name)
+func (t *Convert) registerTypeName(ref GetRef, name string) {
+	if other, f := t.Types[name]; f {
+		t.failing(ref, "type '%s' already exist at %s", name, other.SourceReference())
 		return
 	}
-	if _, f := t.mixin[name]; f {
-		t.failing(ref, "type '%s' already exist.", name)
+	if other, f := t.mixin[name]; f {
+		t.failing(ref, "type '%s' already exist at %s", name, other.SourceReference())
 		return
 	}
 }
 
-func (t *Convert) failing(base ast.Node, format string, args ...interface{}) {
-	t.setup.Error(base.NodeBase(), format, args...)
+func (t *Convert) failing(ref GetRef, format string, args ...interface{}) {
+	t.setup.Error(ref, format, args...)
 	t.HaveError = true
 }
 
-func (t *Convert) warning(base ast.Node, format string, args ...interface{}) {
-	t.setup.Warning(base.NodeBase(), format, args...)
+func (t *Convert) warning(ref GetRef, format string, args ...interface{}) {
+	t.setup.Warning(ref, format, args...)
 }
 
-func (t *Convert) assertTrue(test bool, node ast.Node, format string, args ...interface{}) {
+func (t *Convert) assertTrue(test bool, ref GetRef, format string, args ...interface{}) {
 	if !test {
-		t.failing(node, format, args...)
+		t.failing(ref, format, args...)
 	}
 }
 
-func (t *Convert) warningTrue(test bool, node ast.Node, format string, args ...interface{}) {
+func (t *Convert) warningTrue(test bool, ref GetRef, format string, args ...interface{}) {
 	if !test {
-		t.warning(node, format, args...)
+		t.warning(ref, format, args...)
 	}
 }
 
@@ -311,18 +302,18 @@ func (t *extractTypes) Typedef(value *ast.Typedef) bool {
 	return false
 }
 
-func (t *extractTypes) failing(node ast.Node, format string, args ...interface{}) {
-	t.main.failing(node, format, args...)
+func (t *extractTypes) failing(ref GetRef, format string, args ...interface{}) {
+	t.main.failing(ref, format, args...)
 }
 
-func (t *extractTypes) warning(node ast.Node, format string, args ...interface{}) {
-	t.main.warning(node, format, args...)
+func (t *extractTypes) warning(ref GetRef, format string, args ...interface{}) {
+	t.main.warning(ref, format, args...)
 }
 
-func (t *extractTypes) assertTrue(test bool, node ast.Node, format string, args ...interface{}) {
-	t.main.assertTrue(test, node, format, args...)
+func (t *extractTypes) assertTrue(test bool, ref GetRef, format string, args ...interface{}) {
+	t.main.assertTrue(test, ref, format, args...)
 }
 
-func (t *extractTypes) warningTrue(test bool, node ast.Node, format string, args ...interface{}) {
-	t.main.warningTrue(test, node, format, args...)
+func (t *extractTypes) warningTrue(test bool, ref GetRef, format string, args ...interface{}) {
+	t.main.warningTrue(test, ref, format, args...)
 }

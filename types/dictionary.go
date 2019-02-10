@@ -23,11 +23,12 @@ type DictMember struct {
 }
 
 func (t *extractTypes) convertDictionary(in *ast.Dictionary) (*Dictionary, bool) {
-	t.assertTrue(len(in.Annotations) == 0, in, "unsupported annotations")
-	// t.assertTrue(in.Inherits == "", in, "unsupported dictionary inherites of %s", in.Inherits)
+	ref := createRef(in, t)
+	t.assertTrue(len(in.Annotations) == 0, ref, "unsupported annotations")
+	// t.assertTrue(in.Inherits == "", ref , "unsupported dictionary inherites of %s", in.Inherits)
 	ret := &Dictionary{
 		standardType: standardType{
-			base:        in.NodeBase(),
+			ref:         ref,
 			needRelease: false,
 		},
 		basic:  fromIdlToTypeName(t.main.setup.Package, in.Name, "dictionary"),
@@ -41,26 +42,28 @@ func (t *extractTypes) convertDictionary(in *ast.Dictionary) (*Dictionary, bool)
 }
 
 func (conv *extractTypes) convertDictMember(in *ast.Member) *DictMember {
-	conv.assertTrue(!in.Readonly, in, "read only not allowed")
-	conv.assertTrue(in.Attribute, in, "must be an attribute")
-	conv.assertTrue(!in.Static, in, "static is not allowed")
-	conv.assertTrue(!in.Const, in, "const is not allowed")
-	conv.assertTrue(len(in.Parameters) == 0, in, "parameters on member is not allowed (or not supported)")
-	conv.assertTrue(len(in.Specialization) == 0, in, "specialization on member is not allowed (or not supported)")
-	conv.warningTrue(!in.Required, in, "required value not implemented yet, report this as a bug :)")
+	ref := createRef(in, conv)
+	conv.assertTrue(!in.Readonly, ref, "read only not allowed")
+	conv.assertTrue(in.Attribute, ref, "must be an attribute")
+	conv.assertTrue(!in.Static, ref, "static is not allowed")
+	conv.assertTrue(!in.Const, ref, "const is not allowed")
+	conv.assertTrue(len(in.Parameters) == 0, ref, "parameters on member is not allowed (or not supported)")
+	conv.assertTrue(len(in.Specialization) == 0, ref, "specialization on member is not allowed (or not supported)")
+	conv.warningTrue(!in.Required, ref, "required value not implemented yet, report this as a bug :)")
 	for _, a := range in.Annotations {
-		conv.warning(a, "dictionary member: annotation '%s' is not supported", a.Name)
+		ref := createRef(a, conv)
+		conv.warning(ref, "dictionary member: annotation '%s' is not supported", a.Name)
 	}
 	if in.Init != nil {
-		conv.warning(in, "dictionary: default value for dictionary not implemented yet")
+		conv.warning(ref, "dictionary: default value for dictionary not implemented yet")
 		// parser.Dump(os.Stdout, in)
 	}
 	return &DictMember{
 		nameAndLink: nameAndLink{
-			base: in.NodeBase(),
+			ref:  createRef(in, conv),
 			name: fromIdlToMethodName(in.Name),
 		},
-		Type:     convertType(in.Type),
+		Type:     convertType(in.Type, conv),
 		Required: in.Required,
 	}
 }

@@ -24,7 +24,8 @@ type TypeRef interface {
 
 const BuiltInPackage = "<built-in>"
 
-func convertType(in ast.Type) TypeRef {
+func convertType(in ast.Type, exrType *extractTypes) TypeRef {
+	ref := createRef(in, exrType)
 	var ret TypeRef
 	switch in := in.(type) {
 	case *ast.TypeName:
@@ -58,12 +59,12 @@ func convertType(in ast.Type) TypeRef {
 		case "USVString":
 			ret = newPrimitiveType(in.Name, "string", "String", false, false)
 		default:
-			ret = newTypeNameRef(in)
+			ret = newTypeNameRef(in, ref)
 		}
 	case *ast.AnyType:
 		ret = newAnyType()
 	case *ast.SequenceType:
-		elem := convertType(in.Elem)
+		elem := convertType(in.Elem, exrType)
 		if primitive, ok := elem.(*PrimitiveType); ok {
 			if primitive.supportTypedArray {
 				ret = newTypedArrayType(primitive)
@@ -77,13 +78,13 @@ func convertType(in ast.Type) TypeRef {
 	case *ast.ParametrizedType:
 		var elems []TypeRef
 		for _, e := range in.Elems {
-			elems = append(elems, convertType(e))
+			elems = append(elems, convertType(e, exrType))
 		}
-		ret = newParametrizedType(in, in.Name, elems)
+		ret = newParametrizedType(in, in.Name, elems, ref)
 	case *ast.UnionType:
-		ret = newUnionType(in)
+		ret = newUnionType(in, exrType)
 	case *ast.NullableType:
-		inner := convertType(in.Type)
+		inner := convertType(in.Type, exrType)
 		ret = newNullableType(inner)
 	}
 	if ret == nil {
@@ -222,6 +223,7 @@ func (t *nullableType) NeedRelease() bool {
 
 // ParametrizedType is e.g. "Promise<any>"
 type ParametrizedType struct {
+	*Ref
 	in        *ast.ParametrizedType
 	ParamName string
 	Elems     []TypeRef
@@ -230,12 +232,13 @@ type ParametrizedType struct {
 
 var _ TypeRef = &ParametrizedType{}
 
-func newParametrizedType(in *ast.ParametrizedType, name string, elems []TypeRef) *ParametrizedType {
+func newParametrizedType(in *ast.ParametrizedType, name string, elems []TypeRef, ref *Ref) *ParametrizedType {
 	// what types are parameterized? only Promise or is there more?
 	if name != "Promise" && name != "FrozenArray" {
 		panic("parameterized type name: " + name)
 	}
 	return &ParametrizedType{
+		Ref:       ref,
 		in:        in,
 		ParamName: name,
 		Elems:     elems,
@@ -264,7 +267,7 @@ func (t *ParametrizedType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	if real, f := conv.Types[candidate]; f {
 		t.Type = real.link(conv, inuse)
 	} else {
-		conv.failing(t.in, "reference to unknown type '%s' (%s)", candidate, t.in.Name)
+		conv.failing(t, "reference to unknown type '%s' (%s)", candidate, t.in.Name)
 		return t
 	}
 	return t
@@ -434,15 +437,17 @@ func (t *TypedArrayType) NeedRelease() bool {
 }
 
 type typeNameRef struct {
+	*Ref
 	in         *ast.TypeName
 	Underlying TypeRef
 }
 
 var _ TypeRef = &typeNameRef{}
 
-func newTypeNameRef(in *ast.TypeName) *typeNameRef {
+func newTypeNameRef(in *ast.TypeName, ref *Ref) *typeNameRef {
 	return &typeNameRef{
-		in: in,
+		in:  in,
+		Ref: ref,
 	}
 }
 
@@ -461,7 +466,7 @@ func (t *typeNameRef) link(conv *Convert, inuse inuseLogic) TypeRef {
 		t.Underlying = real.link(conv, inuse)
 		return t.Underlying
 	} else {
-		conv.failing(t.in, "reference to unknown type '%s' (%s)", candidate, t.in.Name)
+		conv.failing(t, "reference to unknown type '%s' (%s)", candidate, t.in.Name)
 		return t
 	}
 }
@@ -477,6 +482,7 @@ func (t *typeNameRef) NeedRelease() bool {
 
 type UnionType struct {
 	in    *ast.UnionType
+	ref   *Ref
 	name  string
 	Types []TypeRef
 	basic BasicInfo
@@ -485,10 +491,10 @@ type UnionType struct {
 
 var _ TypeRef = &UnionType{}
 
-func newUnionType(in *ast.UnionType) *UnionType {
-	ret := &UnionType{in: in}
+func newUnionType(in *ast.UnionType, exrTypes *extractTypes) *UnionType {
+	ret := &UnionType{in: in, ref: createRef(in, exrTypes)}
 	for _, t := range in.Types {
-		ret.Types = append(ret.Types, convertType(t))
+		ret.Types = append(ret.Types, convertType(t, exrTypes))
 	}
 	return ret
 }

@@ -19,12 +19,12 @@ func (t *extractTypes) convertCallback(in *ast.Callback) *Callback {
 	params := t.convertParams(in.Parameters)
 	ret := &Callback{
 		standardType: standardType{
-			base:        in.NodeBase(),
+			ref:         createRef(in, t),
 			needRelease: false,
 		},
 		basic:      fromIdlToTypeName(t.main.setup.Package, in.Name, "callback"),
 		source:     in,
-		Return:     convertType(in.Return),
+		Return:     convertType(in.Return, t),
 		Parameters: params,
 	}
 	return ret

@@ -2,6 +2,7 @@
 package types
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -66,14 +67,24 @@ type MethodName struct {
 	Internal string
 }
 
+// Reference in input file
+type Ref struct {
+	Filename string
+	Line     int
+}
+
+type GetRef interface {
+	SourceReference() *Ref
+}
+
 type standardType struct {
-	base        *ast.Base
+	ref         *Ref
 	needRelease bool
 	inuse       bool
 }
 
 type nameAndLink struct {
-	base *ast.Base
+	ref  *Ref
 	name MethodName
 }
 
@@ -194,27 +205,42 @@ func IsVoid(t TypeRef) bool {
 	return isVoid
 }
 
-func (t *nameAndLink) NodeBase() *ast.Base {
-	return t.base
+func createRef(in ast.Node, et *extractTypes) *Ref {
+	return &Ref{
+		Filename: et.main.setup.Filename,
+		Line:     in.NodeBase().Line,
+	}
+}
+
+func (t *nameAndLink) SourceReference() *Ref {
+	return t.ref
 }
 
 func (t *nameAndLink) Name() *MethodName {
 	return &t.name
 }
 
-func (t *standardType) NeedRelease() bool {
-	return t.needRelease
+func (t *Ref) SourceReference() *Ref {
+	return t
 }
 
-func (t *standardType) NodeBase() *ast.Base {
-	return t.base
+func (t *Ref) String() string {
+	return fmt.Sprintf("%s:%d", t.Filename, t.Line)
+}
+
+func (t *standardType) NeedRelease() bool {
+	return t.needRelease
 }
 
 func (t *standardType) InUse() bool {
 	return t.inuse
 }
 
-func (t *inuseLogic) push(name string, ref ast.Node, conv *Convert) bool {
+func (t *standardType) SourceReference() *Ref {
+	return t.ref
+}
+
+func (t *inuseLogic) push(name string, ref GetRef, conv *Convert) bool {
 	_, ret := (*t)[name]
 	if ret {
 		conv.failing(ref, "circular typedef chain: %s: ", name)

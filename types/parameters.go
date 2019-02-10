@@ -6,6 +6,7 @@ import (
 
 type Parameter struct {
 	in       *ast.Parameter
+	ref      *Ref
 	Type     TypeRef
 	Optional bool
 	Variadic bool
@@ -22,12 +23,14 @@ func (t *extractTypes) convertParams(list []*ast.Parameter) []*Parameter {
 }
 
 func (t *extractTypes) convertParam(in *ast.Parameter) *Parameter {
-	t.warningTrue(len(in.Annotations) == 0, in, "parameter: unsupported annotation")
+	ref := createRef(in, t)
+	t.warningTrue(len(in.Annotations) == 0, ref, "parameter: unsupported annotation")
 	name := getIdlName(in.Name)
 	return &Parameter{
 		in:       in,
+		ref:      ref,
 		Name:     fixLangName(toCamelCase(name, false)),
-		Type:     convertType(in.Type),
+		Type:     convertType(in.Type, t),
 		Optional: in.Optional,
 		Variadic: in.Variadic,
 	}

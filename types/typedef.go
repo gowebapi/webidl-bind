@@ -18,15 +18,16 @@ var _ Type = &typeDef{}
 func (t *extractTypes) convertTypeDef(in *ast.Typedef) *typeDef {
 	ret := typeDef{
 		standardType: standardType{
-			base:        in.NodeBase(),
+			ref:         createRef(in, t),
 			needRelease: false,
 		},
 		basic: fromIdlToTypeName("", in.Name, "typedef"),
-		Type:  convertType(in.Type),
+		Type:  convertType(in.Type, t),
 		name:  in.Name,
 	}
 	for _, a := range in.Annotations {
-		t.warning(a, "typedef: unsupported annotation '%s'", a.Name)
+		aref := createRef(a, t)
+		t.warning(aref, "typedef: unsupported annotation '%s'", a.Name)
 	}
 	return &ret
 }
@@ -45,7 +46,7 @@ func (t *typeDef) key() string {
 }
 
 func (t *typeDef) link(conv *Convert, inuse inuseLogic) TypeRef {
-	if inuse.push(t.name, t.base, conv) {
+	if inuse.push(t.name, t, conv) {
 		t.Type = t.Type.link(conv, inuse)
 		inuse.pop(t.name)
 		return t.Type
