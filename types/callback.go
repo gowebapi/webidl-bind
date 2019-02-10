@@ -31,7 +31,7 @@ func (t *extractTypes) convertCallback(in *ast.Callback) *Callback {
 }
 
 func (t *Callback) Basic() BasicInfo {
-	return t.basic
+	return TransformBasic(t, t.basic)
 }
 
 func (t *Callback) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -56,7 +56,7 @@ func (t *Callback) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *Callback) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	info, typ := newTypeInfo(t.basic, nullable, option, variadic, false, true, false), t
+	info, typ := newTypeInfo(t.Basic(), nullable, option, variadic, false, true, false), t
 	info.Input = "*js.Callback"
 	info.Pointer = true
 	return info, typ

@@ -66,7 +66,7 @@ func (conv *extractTypes) convertDictMember(in *ast.Member) *DictMember {
 }
 
 func (t *Dictionary) Basic() BasicInfo {
-	return t.basic
+	return TransformBasic(t, t.basic)
 }
 
 func (t *Dictionary) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -104,7 +104,7 @@ func (t *Dictionary) NeedRelease() bool {
 }
 
 func (t *Dictionary) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, variadic, true, false, false), t
+	return newTypeInfo(t.Basic(), nullable, option, variadic, true, false, false), t
 }
 
 func (t *Dictionary) SetBasic(basic BasicInfo) {

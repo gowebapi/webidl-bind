@@ -13,6 +13,18 @@ var (
 	ErrStop = errors.New("too many errors")
 )
 
+// handle this as global variables is not ideal. However,
+// the usage of Basic type inside all templates make it
+// a lot of work. The issue will highlight it self if
+// we are using multple go routines.
+
+// TransformBasic is used to make modification to BasicInfo
+// structure when it's returned from all types. Main usage
+// is to change package name references when query for a type.
+var TransformBasic = func(t TypeRef, basic BasicInfo) BasicInfo {
+	return basic
+}
+
 type Type interface {
 	TypeRef
 	ast.Node

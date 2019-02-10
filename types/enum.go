@@ -59,7 +59,7 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 }
 
 func (t *Enum) Basic() BasicInfo {
-	return t.basic
+	return TransformBasic(t, t.basic)
 }
 
 func (t *Enum) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -76,7 +76,7 @@ func (t *Enum) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *Enum) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, variadic, false, false, false), t
+	return newTypeInfo(t.Basic(), nullable, option, variadic, false, false, false), t
 }
 
 func (t *Enum) SetBasic(basic BasicInfo) {

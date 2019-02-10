@@ -235,7 +235,7 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 }
 
 func (t *Interface) Basic() BasicInfo {
-	return t.basic
+	return TransformBasic(t, t.basic)
 }
 
 func (t *Interface) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -295,7 +295,7 @@ func (t *Interface) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *Interface) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	info = newTypeInfo(t.basic, nullable, option, variadic, true, t.Callback, false)
+	info = newTypeInfo(t.Basic(), nullable, option, variadic, true, t.Callback, false)
 	if t.Callback {
 		info.Input = "*" + info.InOut + "Value"
 	}

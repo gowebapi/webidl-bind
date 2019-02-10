@@ -22,7 +22,7 @@ type TypeRef interface {
 	NeedRelease() bool
 }
 
-const builtInPackage = "<built-in>"
+const BuiltInPackage = "<built-in>"
 
 func convertType(in ast.Type) TypeRef {
 	var ret TypeRef
@@ -118,12 +118,12 @@ func newAnyType() *AnyType {
 func (t *AnyType) Basic() BasicInfo {
 	ret := BasicInfo{
 		Idl:      "any",
-		Package:  builtInPackage,
+		Package:  BuiltInPackage,
 		Def:      "js.Value",
 		Internal: "<any>",
 		Template: "any",
 	}
-	return ret
+	return TransformBasic(t, ret)
 }
 
 func (t *AnyType) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -225,7 +225,7 @@ type ParametrizedType struct {
 	in        *ast.ParametrizedType
 	ParamName string
 	Elems     []TypeRef
-	basic     BasicInfo
+	Type      TypeRef
 }
 
 var _ TypeRef = &ParametrizedType{}
@@ -235,7 +235,6 @@ func newParametrizedType(in *ast.ParametrizedType, name string, elems []TypeRef)
 	if name != "Promise" && name != "FrozenArray" {
 		panic("parameterized type name: " + name)
 	}
-
 	return &ParametrizedType{
 		in:        in,
 		ParamName: name,
@@ -244,7 +243,9 @@ func newParametrizedType(in *ast.ParametrizedType, name string, elems []TypeRef)
 }
 
 func (t *ParametrizedType) Basic() BasicInfo {
-	return t.basic
+	basic := t.Type.Basic()
+	basic.Template = "parametrized"
+	return basic
 }
 
 func (t *ParametrizedType) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -258,18 +259,19 @@ func (t *ParametrizedType) link(conv *Convert, inuse inuseLogic) TypeRef {
 		t.Elems[i] = t.Elems[i].link(conv, inner)
 		// names = append(names, t.Elems[i].Basic().Idl)
 	}
-	t.basic = BasicInfo{
-		Idl:      t.ParamName,
-		Package:  "",
-		Def:      toCamelCase(t.ParamName, true),
-		Internal: toCamelCase(t.ParamName, false),
-		Template: "parametrized",
+
+	candidate := getIdlName(t.ParamName)
+	if real, f := conv.Types[candidate]; f {
+		t.Type = real.link(conv, inuse)
+	} else {
+		conv.failing(t.in, "reference to unknown type '%s' (%s)", candidate, t.in.Name)
+		return t
 	}
 	return t
 }
 
 func (t *ParametrizedType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, variadic, true, false, false), t
+	return newTypeInfo(t.Basic(), nullable, option, variadic, true, false, false), t
 }
 
 func (t *ParametrizedType) NeedRelease() bool {
@@ -309,13 +311,14 @@ func newPrimitiveType(idl, lang, method string, cast, sta bool) *PrimitiveType {
 }
 
 func (t *PrimitiveType) Basic() BasicInfo {
-	return BasicInfo{
+	basic := BasicInfo{
 		Idl:      t.Idl,
-		Package:  builtInPackage,
+		Package:  BuiltInPackage,
 		Def:      t.Lang,
 		Internal: "<primitive-internal-name>",
 		Template: "primitive",
 	}
+	return TransformBasic(t, basic)
 }
 
 func (t *PrimitiveType) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -342,7 +345,7 @@ func newSequenceType(elem TypeRef) *SequenceType {
 		Elem: elem,
 		basic: BasicInfo{
 			Idl:      "idl-sequence",
-			Package:  builtInPackage,
+			Package:  BuiltInPackage,
 			Def:      "def-sequence",
 			Internal: "internal-sequence",
 			Template: "sequence",
@@ -352,7 +355,17 @@ func newSequenceType(elem TypeRef) *SequenceType {
 }
 
 func (t *SequenceType) Basic() BasicInfo {
-	return t.basic
+	value := t.basic
+	eb := t.Elem.Basic()
+	_, prim := t.Elem.(*PrimitiveType)
+	_, enum := t.Elem.(*Enum)
+	_, cb := t.Elem.(*Callback)
+	if prim || enum || cb {
+		value.Def = "[]" + eb.Def
+	} else {
+		value.Def = "[]*" + eb.Def
+	}
+	return TransformBasic(t, value)
 }
 
 func (t *SequenceType) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -368,21 +381,11 @@ func (t *SequenceType) link(conv *Convert, inuse inuseLogic) TypeRef {
 		// error
 		return t
 	}
-
-	eb := t.Elem.Basic()
-	_, prim := t.Elem.(*PrimitiveType)
-	_, enum := t.Elem.(*Enum)
-	_, cb := t.Elem.(*Callback)
-	if prim || enum || cb {
-		t.basic.Def = "[]" + eb.Def
-	} else {
-		t.basic.Def = "[]*" + eb.Def
-	}
 	return t
 }
 
 func (t *SequenceType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, variadic, false, false, false), t
+	return newTypeInfo(t.Basic(), nullable, option, variadic, false, false, false), t
 }
 
 func (t *SequenceType) NeedRelease() bool {
@@ -401,7 +404,7 @@ func newTypedArrayType(primitive *PrimitiveType) *TypedArrayType {
 		Elem: primitive,
 		basic: BasicInfo{
 			Idl:      "typed-array",
-			Package:  builtInPackage,
+			Package:  BuiltInPackage,
 			Def:      "js.Value",
 			Internal: "typed-array",
 			Template: "typedarray",
@@ -410,7 +413,7 @@ func newTypedArrayType(primitive *PrimitiveType) *TypedArrayType {
 }
 
 func (t *TypedArrayType) Basic() BasicInfo {
-	return t.basic
+	return TransformBasic(t, t.basic)
 }
 
 func (t *TypedArrayType) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -423,7 +426,7 @@ func (t *TypedArrayType) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *TypedArrayType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, variadic, false, false, false), t
+	return newTypeInfo(t.Basic(), nullable, option, variadic, false, false, false), t
 }
 
 func (t *TypedArrayType) NeedRelease() bool {
@@ -491,7 +494,7 @@ func newUnionType(in *ast.UnionType) *UnionType {
 }
 
 func (t *UnionType) Basic() BasicInfo {
-	return t.basic
+	return TransformBasic(t, t.basic)
 }
 
 func (t *UnionType) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -515,7 +518,7 @@ func (t *UnionType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	t.name = strings.Join(names, "")
 	t.basic = BasicInfo{
 		Idl:      t.name + "Union",
-		Package:  builtInPackage,
+		Package:  BuiltInPackage,
 		Def:      t.name + "Union",
 		Internal: "union" + t.name,
 		Template: "union",
@@ -524,7 +527,7 @@ func (t *UnionType) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *UnionType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.basic, nullable, option, variadic, true, false, false), t
+	return newTypeInfo(t.Basic(), nullable, option, variadic, true, false, false), t
 }
 
 func (t *UnionType) NeedRelease() bool {
@@ -553,13 +556,14 @@ func newVoidType(in *ast.TypeName) *voidType {
 }
 
 func (t *voidType) Basic() BasicInfo {
-	return BasicInfo{
+	basic := BasicInfo{
 		Idl:      "void",
-		Package:  builtInPackage,
+		Package:  BuiltInPackage,
 		Def:      "",
 		Internal: "void",
 		Template: "void",
 	}
+	return TransformBasic(t, basic)
 }
 
 func (t *voidType) DefaultParam() (info *TypeInfo, inner TypeRef) {
