@@ -76,12 +76,22 @@ func enumSuffix(cb *types.Enum, value string) {
 }
 
 var interfaceProperties = map[string]func(inf *types.Interface, value string){
-	"constPrefix": interfaceConstPrefix,
-	"constSuffix": interfaceConstSuffix,
-	"name":        interfaceName,
-	"package":     interfacePackage,
+	"constPrefix":     interfaceConstPrefix,
+	"constSuffix":     interfaceConstSuffix,
+	"constructorName": interfaceConstructorName,
+	"name":            interfaceName,
+	"package":         interfacePackage,
 }
 var interfacePropertyNames = []string{}
+
+func interfaceConstructorName(inf *types.Interface, value string) {
+	if inf.Constructor == nil {
+		// TODO add failure here
+		return
+	}
+	name := inf.Constructor.Name()
+	name.Def = value
+}
 
 func interfaceConstPrefix(inf *types.Interface, value string) {
 	inf.ConstPrefix = value

@@ -108,3 +108,4 @@ Interfaces have following properites
 |.name|type output name|idl type name in public access format|
 |.constPrefix|a prefix added to all type constants|empty|
 |.constSuffix|a suffix added to all type constants|interface name|
+|.constructorName|name of constructor|"New" + instance name|
