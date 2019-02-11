@@ -1,0 +1,27 @@
+// callback interfaces
+
+typedef long int;
+typedef (A or B) union;
+
+callback interface Foo1 {
+    const DOMString test1 = 2;
+
+    void test2(long b, long c);
+};
+
+callback interface Foo2 {
+
+    boolean test3(DOMString a, any b, union c, long d, A e, B f);
+
+};
+
+callback interface Foo3 {
+    void test1(DOMString a);
+    int test2(int b);
+    boolean test3(boolean c);
+    any test4(any d);
+};
+
+interface A { };
+interface B { };
+enum C { "hello", "world"};

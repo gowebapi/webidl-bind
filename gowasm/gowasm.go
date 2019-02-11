@@ -76,6 +76,9 @@ type Source struct {
 // WriteSource is create source code files.
 // returns map["path/filename"]"file content"
 func WriteSource(conv *types.Convert) ([]*Source, error) {
+	oldTB := types.TransformBasic
+	restoreTB := func() { types.TransformBasic = oldTB }
+	defer restoreTB()
 	types.TransformBasic = pkgMgr.transformPackageName
 	target := make(map[string]*bytes.Buffer)
 	var err error

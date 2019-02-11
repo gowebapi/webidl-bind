@@ -248,10 +248,10 @@ func ( t * {{.If.Basic.Def}}Value ) allocate{{.Name.Def}} () js.Callback {
 	{{end}}
 	{{if eq (len .If.Method) 1}}
 		if t.function != nil {
-			{{if not .IsVoidReturn}}_returned={{end}} t.function ( {{range $idx, $value := .To.ParamList}} _p{{$idx}} {{if ge $idx 1}},{{end}} {{end}} )
+			{{if not .IsVoidReturn}}_returned={{end}} t.function ( {{range $idx, $value := .To.ParamList}} {{if ge $idx 1}},{{end}} _p{{$idx}} {{end}} )
 		} else {
 	{{end}}
-		{{if not .IsVoidReturn}}_returned={{end}} t.impl.{{.Name.Def}} ( {{range $idx, $value := .To.ParamList}} _p{{$idx}} {{if ge $idx 1}},{{end}} {{end}} )
+		{{if not .IsVoidReturn}}_returned={{end}} t.impl.{{.Name.Def}} ( {{range $idx, $value := .To.ParamList}} {{if ge $idx 1}},{{end}} _p{{$idx}} {{end}} )
 	{{if eq (len .If.Method) 1}}
 		}
 	{{end}}
@@ -270,11 +270,11 @@ func ( t * {{.If.Basic.Def}}Value ) allocate{{.Name.Def}} () js.Callback {
 func (_this * {{.If.Basic.Def}}Value ) {{.Name.Def}} ( {{.To.Params}} ) ( {{.ReturnList}} ) {
 	{{if eq (len .If.Method) 1 }}
 		if _this.function != nil {
-			{{if not .IsVoidReturn}}return {{end}} _this.function ( {{range $idx, $value := .To.ParamList}} {{$value.Name}} {{if ge $idx 1}},{{end}} {{end}} )
+			{{if not .IsVoidReturn}}return {{end}} _this.function ( {{range $idx, $value := .To.ParamList}} {{if ge $idx 1}},{{end}} {{$value.Name}} {{end}} )
 		}
 	{{end}}
 	if _this.impl != nil {
-		{{if not .IsVoidReturn}}return {{end}} _this.impl. {{.Name.Def}} ( {{range $idx, $value := .To.ParamList}} {{$value.Name}} {{if ge $idx 1}},{{end}} {{end}} )
+		{{if not .IsVoidReturn}}return {{end}} _this.impl. {{.Name.Def}} ( {{range $idx, $value := .To.ParamList}} {{if ge $idx 1}},{{end}} {{$value.Name}} {{end}} )
 	}
 	var (
 		_args {{.ArgVar}} 

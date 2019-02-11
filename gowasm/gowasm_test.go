@@ -20,9 +20,9 @@ func TestEnum(t *testing.T) {
 	standardSetupTest("enum", t)
 }
 
-// func TestCallbackInterface(t *testing.T) {
-// 	standardSetupTest("callinf", t)
-// }
+func TestCallbackInterface(t *testing.T) {
+	standardSetupTest("callinf", t)
+}
 
 func standardSetupTest(name string, t *testing.T) {
 	idl := fmt.Sprintf("testdata/%s/%s.idl", name, name)
