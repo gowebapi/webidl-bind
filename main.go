@@ -14,9 +14,6 @@ import (
 	"github.com/gowebapi/webidlgenerator/gowasm"
 	"github.com/gowebapi/webidlgenerator/transform"
 	"github.com/gowebapi/webidlgenerator/types"
-
-	"github.com/gowebapi/webidlparser/ast"
-	"github.com/gowebapi/webidlparser/parser"
 )
 
 var args struct {
@@ -70,10 +67,7 @@ func run() error {
 			}
 		}
 	}
-	if err := conv.EvaluateInput(); err != nil {
-		return err
-	}
-	if err := conv.EvaluateOutput(); err != nil {
+	if err := conv.Evaluate(); err != nil {
 		return err
 	}
 	if err := trans.Execute(conv); err != nil {
@@ -114,24 +108,9 @@ func run() error {
 }
 
 func processFile(filename string, conv *types.Convert, setup *types.Setup) error {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-	file := parser.Parse(string(content))
-	trouble := ast.GetAllErrorNodes(file)
-	if len(trouble) > 0 {
-		sort.SliceStable(trouble, func(i, j int) bool { return trouble[i].Line < trouble[j].Line })
-		for _, e := range trouble {
-			ref := types.Ref{Filename: filename, Line: e.Line}
-			failing(&ref, e.Message)
-		}
-		return errStop
-	}
-
 	setup.Package = gowasm.FormatPkg(filename, args.singlePkg)
 	setup.Filename = filename
-	if err := conv.Process(file, setup); err != nil {
+	if err := conv.Load(setup); err != nil {
 		return err
 	}
 	return nil

@@ -3,7 +3,9 @@ package types
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"sort"
 
 	"github.com/gowebapi/webidlparser/ast"
 	"github.com/gowebapi/webidlparser/parser"
@@ -73,17 +75,28 @@ func NewConvert() *Convert {
 	}
 }
 
-func (t *Convert) Process(file *ast.File, setup *Setup) error {
+// Load is reading a file from disc and Process it
+func (t *Convert) Load(setup *Setup) error {
+	content, err := ioutil.ReadFile(setup.Filename)
+	if err != nil {
+		return err
+	}
+	return t.Parse(content, setup)
+}
+
+// ParseTest is parsing a text and Process it
+func (t *Convert) Parse(content []byte, setup *Setup) error {
 	t.setup = setup
-	// * process the file
-	// * create a type map
-
-	// 1 phase:
-	// * do basic validation, e.g. enum annotation
-
-	// 2 phase:
-	// * nest type expansion
-
+	file := parser.Parse(string(content))
+	trouble := ast.GetAllErrorNodes(file)
+	if len(trouble) > 0 {
+		sort.SliceStable(trouble, func(i, j int) bool { return trouble[i].Line < trouble[j].Line })
+		for _, e := range trouble {
+			ref := Ref{Filename: setup.Filename, Line: e.Line}
+			t.failing(&ref, e.Message)
+		}
+		return ErrStop
+	}
 	list := extractTypes{main: t}
 	ast.Accept(file, &list)
 	if t.HaveError {
@@ -92,9 +105,10 @@ func (t *Convert) Process(file *ast.File, setup *Setup) error {
 	return nil
 }
 
-// EvaluateInput is doing verification on input IDL according
-// to WebIDL specification
-func (conv *Convert) EvaluateInput() error {
+// Evaluate is doing verification on input IDL according
+// to WebIDL specification. It also expand types, like removing
+// typedef etc.
+func (conv *Convert) Evaluate() error {
 	if conv.processPartialAndMixin(); conv.HaveError {
 		return ErrStop
 	}
@@ -166,15 +180,6 @@ func (conv *Convert) processPartialAndMixin() {
 	// sort members
 	// evaluate inherits?
 
-}
-
-// EvaluateOutput is doing evaluation of output that might be needed
-//for the output language
-func (t *Convert) EvaluateOutput() error {
-	if t.HaveError {
-		return ErrStop
-	}
-	return nil
 }
 
 func (t *Convert) add(v Type) {
