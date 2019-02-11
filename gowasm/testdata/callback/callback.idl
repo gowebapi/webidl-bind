@@ -1,0 +1,63 @@
+
+
+typedef long int;
+
+callback Test1 = void ();
+
+callback Test2 = void (int a, DOMString b);
+
+callback Test3 = int (int a, DOMString b);
+
+callback Test4 = Foo (Foo a);
+
+callback Test5 = Bar (Foo a, Bar b, Bar c);
+
+/*
+callback Test6 = void(int ...a);
+
+callback Test7 = void(any ...b);
+
+callback Test8 = int (DOMString a, DOMString b, int ...c);
+
+callback Test9 = boolean (int a, Bar ...b);
+
+callback Test10 = Bar (Bar a, Baz ...c);
+
+callback Test11 = DOMString (Bar a, Foo ...c);
+
+callback Test12 = Bar (Bar a, union ...c);
+
+callback Test13 = any (any ...b);
+
+typedef (int or DOMString or Foo) union;
+callback Test14 = union (boolean ...b);
+*/
+
+dictionary Bar {
+    int a;
+    int b;
+};
+
+enum Baz {
+    "hello",
+    "world"
+};
+
+interface Foo {
+    attribute Test1 test1;
+    attribute Test2 test2;
+    attribute Test3 test3;
+    attribute Test4 test4;
+    attribute Test5 test5;
+    /*
+    attribute Test6 test6;
+    attribute Test7 test7;
+    attribute Test8 test8;
+    attribute Test9 test9;
+    attribute Test10 test10;
+    attribute Test11 test11;
+    attribute Test12 test12;
+    attribute Test13 test13;
+    attribute Test14 test14;
+    */
+};

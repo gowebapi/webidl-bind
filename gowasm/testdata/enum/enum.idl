@@ -1,0 +1,14 @@
+
+enum Foo {
+	"hello",
+	"world"
+};
+
+enum Bar {
+
+};
+
+interface Test {
+	attribute Foo hello1;
+	attribute Bar hello2;
+};
