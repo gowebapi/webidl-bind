@@ -79,8 +79,8 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.Type.Input))
 			data.Required = append(data.Required, mo)
 		}
-		mo.fromIn, mo.fromOut = setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl), setupVarName("out%d", idx, mo.Name.Def)
-		mo.toIn, mo.toOut = setupVarName("_this.@name@", idx, mo.Name.Def), setupVarName("value%d", idx, mo.Name.Def)
+		mo.fromIn, mo.fromOut = setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl, false), setupVarName("out%d", idx, mo.Name.Def, false)
+		mo.toIn, mo.toOut = setupVarName("_this.@name@", idx, mo.Name.Def, false), setupVarName("value%d", idx, mo.Name.Def, false)
 		from.WriteString(inoutParamStart(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
 		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
 		from.WriteString(inoutParamEnd(mo.Type, "", inoutFromTmpl))

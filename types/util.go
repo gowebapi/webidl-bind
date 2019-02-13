@@ -40,6 +40,9 @@ type TypeInfo struct {
 	// Output define type out from a method
 	Output string
 
+	// OutputInner is the inner type of a variadic
+	OutputInner string
+
 	// Pointer is true if InOut is a pointer type
 	Pointer bool
 
@@ -163,6 +166,7 @@ func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePt
 		InOut:       basic.Def,
 		Input:       basic.Def,
 		Output:      basic.Def,
+		OutputInner: basic.Def,
 		NeedRelease: release,
 		Pointer:     (nullable || option || pointer) && !disablePtr,
 		Nullable:    nullable,
@@ -173,11 +177,12 @@ func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePt
 		t.InOut = "*" + t.InOut
 		t.Input = "*" + t.Input
 		t.Output = "*" + t.Output
+		t.OutputInner = "*" + t.OutputInner
 	}
 	if variadic {
-		t.Def = "..." + t.Def
 		t.InOut = "..." + t.InOut
 		t.Input = "..." + t.Input
+		t.Output = "[]" + t.Output
 	}
 	return t
 }

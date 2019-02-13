@@ -141,6 +141,7 @@ func (t *AnyType) Param(nullable, option, variadic bool) (info *TypeInfo, inner 
 		InOut:       "js.Value",
 		Input:       "js.Value",
 		Output:      "js.Value",
+		OutputInner: "js.Value",
 		Pointer:     false,
 		NeedRelease: false,
 		Nullable:    false,
@@ -151,6 +152,7 @@ func (t *AnyType) Param(nullable, option, variadic bool) (info *TypeInfo, inner 
 		ret.Def = "..." + ret.Def
 		ret.InOut = "..." + ret.InOut
 		ret.Input = "..." + ret.Input
+		ret.Output = "[]" + ret.Output
 	}
 	return ret, t
 }
@@ -586,6 +588,7 @@ func (t *voidType) Param(nullable, option, variadic bool) (info *TypeInfo, inner
 		InOut:       "",
 		Input:       "",
 		Output:      "",
+		OutputInner: "",
 		NeedRelease: false,
 		Nullable:    false,
 		Option:      false,

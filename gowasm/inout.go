@@ -74,7 +74,7 @@ const inoutFromTmplInput = `
 {{define "start"}}
 	var (
 	{{range .ParamList}}
-		{{.Out}} {{.Info.InOut}} // javascript: {{.Info.Idl}} {{.Name}}
+		{{.Out}} {{.Info.Output}} // javascript: {{.Info.Idl}} {{.Name}}
 	{{end}}
 	)
 {{end}}
@@ -120,6 +120,14 @@ const inoutFromTmplInput = `
 		__array{{.Idx}}[__idx] = __out
 	}
 	{{.Out}} = {{if .Info.Pointer}} & {{end}} __array{{.Idx}}
+{{end}}
+{{define "type-variadic"}}
+	{{.Out}} = make( {{.Info.Output}} , 0, len( {{.In}} ))
+	for _, __in := range {{.In}} {
+		var __out {{.Info.OutputInner}}
+		{{.Inner}}
+		{{.Out}} = append({{.Out}}, __out)
+	} 
 {{end}}
 `
 
@@ -174,15 +182,19 @@ func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 		po := inoutParam{
 			Name:  pi.Name,
 			Param: pi,
-			In:    setupVarName(in, idx, pi.Name),
-			Out:   setupVarName(out, idx, pi.Name),
+			In:    setupVarName(in, idx, pi.Name, pi.Variadic),
+			Out:   setupVarName(out, idx, pi.Name, pi.Variadic),
+		}
+		out := po.Out
+		if pi.Variadic {
+			out = setupVarName(out, idx, pi.Name, false) + "..."
 		}
 		po.Info, po.Type = pi.Type.Param(false, pi.Optional, pi.Variadic)
 		po.Tmpl = po.Info.Template
 		releaseHdl = releaseHdl || pi.Type.NeedRelease()
 		paramList = append(paramList, po)
 		paramTextList = append(paramTextList, fmt.Sprint(pi.Name, " ", po.Info.Input))
-		allout = append(allout, po.Out)
+		allout = append(allout, out)
 	}
 	return &inoutData{
 		ParamList:  paramList,
@@ -198,8 +210,8 @@ func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
 	po := inoutParam{
 		Name:  pi.Name,
 		Param: pi,
-		In:    setupVarName(in, idx, pi.Name),
-		Out:   setupVarName(out, idx, pi.Name),
+		In:    setupVarName(in, idx, pi.Name, pi.Variadic),
+		Out:   setupVarName(out, idx, pi.Name, pi.Variadic),
 	}
 	po.Info, po.Type = pi.Type.Param(false, pi.Optional, pi.Variadic)
 	po.Tmpl = po.Info.Template
@@ -220,8 +232,13 @@ func setupInOutWasmForType(t types.TypeRef, name, in, out string) *inoutData {
 	return setupInOutWasmForOne(&pi, in, out)
 }
 
-func setupVarName(value string, idx int, name string) string {
+func setupVarName(value string, idx int, name string, variadic bool) string {
 	value = strings.Replace(value, "@name@", name, -1)
+	if variadic {
+		value = strings.Replace(value, "@variadicSlice@", ":", -1)
+	} else {
+		value = strings.Replace(value, "@variadicSlice@", "", -1)
+	}
 	count := strings.Count(value, "%")
 	switch count {
 	case 0:
@@ -256,7 +273,7 @@ func writeInOutLoop(data *inoutData, assign string, tmpl *template.Template, dst
 		if _, err := io.WriteString(dst, code); err != nil {
 			return err
 		}
-		av := setupVarName(assign, idx, p.Name)
+		av := setupVarName(assign, idx, p.Name, false)
 		end := inoutParamEnd(p.Info, av, tmpl)
 		if _, err := io.WriteString(dst, end); err != nil {
 			return err

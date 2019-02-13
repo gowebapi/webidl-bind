@@ -24,20 +24,23 @@ func TestCallbackInterface(t *testing.T) {
 	standardSetupTest("callinf", t)
 }
 
-func standardSetupTest(name string, t *testing.T) {
+func standardSetupTest(name string, t *testing.T) *types.Convert {
 	idl := fmt.Sprintf("testdata/%s/%s.idl", name, name)
 	actual := fmt.Sprintf("testdata/%s/%s.go", name, name)
-	simpleTest(idl, name, actual, t)
+	return simpleTest(idl, name, actual, t)
 }
 
-func simpleTest(idl, pkg, actual string, t *testing.T) {
+func simpleTest(idl, pkg, actual string, t *testing.T) *types.Convert {
 	if conv := loadFile(idl, pkg, t); conv != nil {
 		if src, err := WriteSource(conv); err != nil {
 			t.Error(err)
 		} else {
 			compareResult(actual, src, t)
 		}
+		return conv
 	}
+	t.Fail()
+	return nil
 }
 
 func loadFile(filename string, pkg string, t *testing.T) *types.Convert {
@@ -80,7 +83,7 @@ func compareResult(expectedFile string, actual []*Source, t *testing.T) {
 		}
 		tested++
 		assert.True(t, include)
-		assert.Equal(t, expexted, src.Content)
+		assert.True(t, bytes.Equal(expexted, src.Content))
 		if !bytes.Equal(expexted, src.Content) {
 			if err := ioutil.WriteFile(expectedFile, src.Content, 0664); err != nil {
 				t.Log(err)

@@ -12,7 +12,6 @@ callback Test4 = Foo (Foo a);
 
 callback Test5 = Bar (Foo a, Bar b, Bar c);
 
-/*
 callback Test6 = void(int ...a);
 
 callback Test7 = void(any ...b);
@@ -31,7 +30,8 @@ callback Test13 = any (any ...b);
 
 typedef (int or DOMString or Foo) union;
 callback Test14 = union (boolean ...b);
-*/
+
+callback Test15 = Foo (any c, Foo ...d);
 
 dictionary Bar {
     int a;
@@ -59,5 +59,5 @@ interface Foo {
     attribute Test12 test12;
     attribute Test13 test13;
     attribute Test14 test14;
-    */
+    attribute Test15 test15;
 };

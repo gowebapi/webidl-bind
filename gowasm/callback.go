@@ -60,7 +60,7 @@ type callbackData struct {
 func writeCallback(dst io.Writer, value types.Type) error {
 	cb := value.(*types.Callback)
 	data := &callbackData{
-		InOut:   setupInOutWasmData(cb.Parameters, "args[%d]", "_p%d"),
+		InOut:   setupInOutWasmData(cb.Parameters, "args[%d@variadicSlice@]", "_p%d"),
 		VoidRet: types.IsVoid(cb.Return),
 	}
 	data.ArgVar = calculateMethodArgsSize(data.InOut)
