@@ -8,20 +8,33 @@ import (
 	"github.com/gowebapi/webidlgenerator/types"
 )
 
+// Transform is main transformation control
 type Transform struct {
-	All    map[string]*onType
+	// All is all changes on a single types.Type.
+	All map[string]*onType
+
+	// Global contains global actions that is changing
+	// on multiple types.Type at once.
 	Global []*onType
+
+	// errors is number of errors currently printed
 	errors int
 }
 
+// ref is input source code reference
 type ref struct {
 	Filename string
 	Line     int
 }
 
+// onType is the changes on a single types.Type
 type onType struct {
-	Name    string
-	Ref     ref
+	// Name of the type
+	Name string
+	// Ref is input source reference
+	Ref ref
+
+	// Actions is the changes that will take place
 	Actions []action
 }
 
@@ -46,6 +59,7 @@ func (t *Transform) Execute(conv *types.Convert) error {
 	return nil
 }
 
+// executeFiles is doing the global changes on multiple types.
 func (t *Transform) executeFiles(conv *types.Convert) {
 	all := t.calcGlobalCmd()
 	if t.errors > 0 {
@@ -61,6 +75,7 @@ func (t *Transform) executeFiles(conv *types.Convert) {
 	}
 }
 
+// executeTypes is execute the changes on singlar type
 func (t *Transform) executeTypes(conv *types.Convert) {
 	for name, change := range t.All {
 		value, ok := conv.Types[name]
@@ -68,6 +83,13 @@ func (t *Transform) executeTypes(conv *types.Convert) {
 			t.messageError(change.Ref, "reference to unknown type '%s'", name)
 			continue
 		}
+		cg := groupName(change.Ref.Filename)
+		sg := groupName(value.SourceReference().Filename)
+		if cg != sg {
+			t.messageError(change.Ref, "is changing output side of group. %s vs %s. type defined in %s",
+				cg, sg, value.SourceReference())
+		}
+
 		t.executeOnType(value, change, name)
 		if t.errors > 10 {
 			break
@@ -202,4 +224,15 @@ func (t *Transform) calcGlobalCmd() map[string]*onType {
 		}
 	}
 	return ret
+}
+
+// groupName is common name takes from a filename
+func groupName(input string) string {
+	if idx := strings.LastIndex(input, "/"); idx != -1 {
+		input = input[idx+1:]
+	}
+	if idx := strings.Index(input, "."); idx != -1 {
+		input = input[0:idx]
+	}
+	return input
 }
