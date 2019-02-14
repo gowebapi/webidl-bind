@@ -39,6 +39,8 @@ type Type interface {
 	InUse() bool
 
 	SetBasic(basic BasicInfo)
+
+	TypeID() TypeID
 }
 
 type Convert struct {
@@ -65,6 +67,20 @@ type Setup struct {
 	Package        string
 	Filename       string
 	Warning, Error UserMsgFn
+}
+
+type TypeID int
+
+const (
+	TypeInterface TypeID = iota
+	TypeEnum
+	TypeCallback
+	TypeDictionary
+	TypeTypeDef
+)
+
+func (id TypeID) IsPublic() bool {
+	return id != TypeTypeDef
 }
 
 func NewConvert() *Convert {

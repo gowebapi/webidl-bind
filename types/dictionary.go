@@ -113,3 +113,8 @@ func (t *Dictionary) Param(nullable, option, variadic bool) (info *TypeInfo, inn
 func (t *Dictionary) SetBasic(basic BasicInfo) {
 	t.basic = basic
 }
+
+
+func (t *Dictionary) TypeID() TypeID {
+	return TypeDictionary
+}

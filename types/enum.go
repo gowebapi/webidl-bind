@@ -81,6 +81,10 @@ func (t *Enum) Param(nullable, option, variadic bool) (info *TypeInfo, inner Typ
 	return newTypeInfo(t.Basic(), nullable, option, variadic, false, false, false), t
 }
 
+func (t *Enum) TypeID() TypeID {
+	return TypeEnum
+}
+
 func (t *Enum) SetBasic(basic BasicInfo) {
 	t.basic = basic
 }

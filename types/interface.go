@@ -327,3 +327,8 @@ func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
 	t.Method = append(t.Method, m.Method...)
 	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
 }
+
+
+func (t *Interface) TypeID() TypeID {
+	return TypeInterface
+}

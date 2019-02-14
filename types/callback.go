@@ -65,3 +65,7 @@ func (t *Callback) Param(nullable, option, variadic bool) (info *TypeInfo, inner
 func (t *Callback) SetBasic(basic BasicInfo) {
 	t.basic = basic
 }
+
+func (t *Callback) TypeID() TypeID {
+	return TypeCallback
+}

@@ -69,3 +69,7 @@ func (t *typeDef) Param(nullable, option, variadic bool) (info *TypeInfo, inner 
 func (t *typeDef) SetBasic(basic BasicInfo) {
 	panic("not supported for this type")
 }
+
+func (t *typeDef) TypeID() TypeID {
+	return TypeTypeDef 
+}
