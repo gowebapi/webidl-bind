@@ -198,11 +198,11 @@ func (p *parser) tryRegexpLine(line string) (action, bool) {
 }
 
 func (p *parser) messageError(format string, args ...interface{}) {
-	messageError(p.ref, format, args...)
+	printMessageError(p.ref, format, args...)
 	p.errors++
 }
 
-func messageError(ref ref, format string, args ...interface{}) {
+func printMessageError(ref ref, format string, args ...interface{}) {
 	text := fmt.Sprintf(format, args...)
 	fmt.Fprintf(os.Stderr, "error:%s:%d:%s\n", ref.Filename, ref.Line, text)
 }

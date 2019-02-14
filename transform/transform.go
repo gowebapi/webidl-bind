@@ -164,7 +164,7 @@ func (t *Transform) evalIfProcess(value types.Type, a action, what matchType) bo
 }
 
 func (t *Transform) messageError(ref ref, format string, args ...interface{}) {
-	messageError(ref, format, args...)
+	printMessageError(ref, format, args...)
 	t.errors++
 }
 
