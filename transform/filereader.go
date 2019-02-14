@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -17,6 +18,16 @@ type parser struct {
 	errors      int
 	packageName string
 }
+
+type matchType int
+
+const (
+	matchAll matchType = iota
+	matchInterface
+	matchEnum
+	matchCallback
+	matchDictionary
+)
 
 func (t *Transform) Load(filename, packageName string) error {
 	all, err := ioutil.ReadFile(filename)
@@ -55,12 +66,17 @@ func (p *parser) processFile(content []byte) error {
 		}
 		if p.tryNewType(line) {
 			continue
-		}
-		if p.ontype == nil {
-			p.messageError("invalid command, no type have stared")
+		} else if action, ok := p.tryRegexpLine(line); ok {
+			if action != nil {
+				p.ontype.Actions = append(p.ontype.Actions, action)
+			}
 			continue
 		}
-		if p.tryEqualCommand(line) {
+
+		if action, ok := p.tryEqualCommand(line); ok {
+			if action != nil {
+				p.ontype.Actions = append(p.ontype.Actions, action)
+			}
 			continue
 		}
 		// unknown command
@@ -97,34 +113,88 @@ func (p *parser) tryNewType(line string) bool {
 	return true
 }
 
-func (p *parser) tryEqualCommand(line string) bool {
+func (p *parser) tryEqualCommand(line string) (action, bool) {
 	idx := strings.Index(line, "=")
 	if idx == -1 {
-		return false
+		return nil, false
 	}
 	onwhat := strings.TrimSpace(line[:idx])
 	value := strings.TrimSpace(line[idx+1:])
 	if len(onwhat) == 0 || len(value) == 0 {
 		p.messageError("invalid equal syntax")
-		return true
+		return nil, true
 	}
 	if value == "\"\"" {
 		value = ""
 	}
+	var ret action
 	if strings.HasPrefix(onwhat, ".") {
-		p.ontype.Actions = append(p.ontype.Actions, &property{
+		ret = &property{
 			Name:  onwhat[1:],
 			Value: value,
 			Ref:   p.ref,
-		})
+		}
 	} else {
-		p.ontype.Actions = append(p.ontype.Actions, &rename{
+		ret = &rename{
 			Name:  onwhat,
 			Value: value,
 			Ref:   p.ref,
-		})
+		}
 	}
-	return true
+	return ret, true
+}
+
+func (p *parser) tryRegexpLine(line string) (action, bool) {
+	if !strings.HasPrefix(line, "@on ") {
+		return nil, false
+	}
+	typ := matchAll
+	line = strings.TrimSpace(line[3:])
+	switch {
+	case strings.HasPrefix(line, "interface "):
+		typ = matchInterface
+	case strings.HasPrefix(line, "enum "):
+		typ = matchEnum
+	case strings.HasPrefix(line, "callback "):
+		typ = matchCallback
+	case strings.HasPrefix(line, "dictionary "):
+		typ = matchDictionary
+	}
+	if typ != matchAll {
+		line = strings.TrimSpace(strings.SplitN(line, " ", 2)[1])
+	}
+	commands := strings.SplitN(line, ":", 2)
+	if len(commands) != 2 {
+		p.messageError("unable to find ':'")
+		return nil, true
+	}
+	match := strings.TrimSpace(commands[0])
+	// removing ""
+	if !strings.HasPrefix(match, "\"") || !strings.HasSuffix(match, "\"") {
+		p.messageError("expected to find expression inside \"xxx\"")
+		return nil, true
+	}
+	match = match[1 : len(match)-1]
+	// parsing remaning part
+	if action, ok := p.tryEqualCommand(commands[1]); ok {
+		if action != nil {
+			reg, err := regexp.Compile(match)
+			if err != nil {
+				p.messageError("unable to parse regexp: %s", err)
+				return nil, true
+			}
+			return &globalRegExp{
+				Match: reg,
+				What:  action,
+				Type:  typ,
+				Ref:   p.ref,
+			}, true
+		}
+		p.messageError("unable to decode command on global regexp")
+		return nil, true
+	}
+	p.messageError("invalid global expexp line")
+	return nil, true
 }
 
 func (p *parser) messageError(format string, args ...interface{}) {

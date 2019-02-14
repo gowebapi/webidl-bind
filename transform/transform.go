@@ -56,7 +56,7 @@ func (t *Transform) executeFiles(conv *types.Convert) {
 			continue
 		}
 		if change, f := all[item.Basic().Package]; f {
-			t.executeOnType(item, change)
+			t.executeOnType(item, change, "<file>")
 		}
 	}
 }
@@ -64,18 +64,18 @@ func (t *Transform) executeFiles(conv *types.Convert) {
 func (t *Transform) executeTypes(conv *types.Convert) {
 	for name, change := range t.All {
 		value, ok := conv.Types[name]
-		if !ok {
+		if !ok || !value.TypeID().IsPublic() {
 			t.messageError(change.Ref, "reference to unknown type '%s'", name)
 			continue
 		}
-		t.executeOnType(value, change)
+		t.executeOnType(value, change, name)
 		if t.errors > 10 {
 			break
 		}
 	}
 }
 
-func (t *Transform) executeOnType(value types.Type, change *onType) {
+func (t *Transform) executeOnType(value types.Type, change *onType, name string) {
 	switch value := value.(type) {
 	case *types.Interface:
 		t.processInterface(value, change)
@@ -86,20 +86,24 @@ func (t *Transform) executeOnType(value types.Type, change *onType) {
 	case *types.Enum:
 		t.processEnum(value, change)
 	default:
-		panic(fmt.Sprintf("unknown type %T", value))
+		panic(fmt.Sprintf("%s is unknown type %T", name, value))
 	}
 }
 
 func (t *Transform) processCallback(instance *types.Callback, change *onType) {
 	// execution
 	for _, a := range change.Actions {
-		a.ExecuteCallback(instance, t)
+		if t.evalIfProcess(instance, a, matchCallback) {
+			a.ExecuteCallback(instance, t)
+		}
 	}
 }
 
 func (t *Transform) processDictionary(instance *types.Dictionary, change *onType) {
 	for _, a := range change.Actions {
-		a.ExecuteDictionary(instance, t)
+		if t.evalIfProcess(instance, a, matchDictionary) {
+			a.ExecuteDictionary(instance, t)
+		}
 	}
 }
 
@@ -113,7 +117,9 @@ func (t *Transform) processEnum(instance *types.Enum, change *onType) {
 
 	// execution
 	for _, a := range change.Actions {
-		a.ExecuteEnum(instance, values, t)
+		if t.evalIfProcess(instance, a, matchEnum) {
+			a.ExecuteEnum(instance, values, t)
+		}
 	}
 }
 
@@ -138,8 +144,23 @@ func (t *Transform) processInterface(instance *types.Interface, change *onType) 
 
 	// execution
 	for _, a := range change.Actions {
-		a.ExecuteInterface(instance, values, t)
+		if t.evalIfProcess(instance, a, matchInterface) {
+			a.ExecuteInterface(instance, values, t)
+		}
 	}
+}
+
+func (t *Transform) evalIfProcess(value types.Type, a action, what matchType) bool {
+	name := value.Basic().Idl
+	if match, found := a.(*globalRegExp); found {
+		if match.Type != matchAll && match.Type != what {
+			return false
+		}
+		if !match.Match.MatchString(name) {
+			return false
+		}
+	}
+	return true
 }
 
 func (t *Transform) messageError(ref ref, format string, args ...interface{}) {
@@ -147,6 +168,8 @@ func (t *Transform) messageError(ref ref, format string, args ...interface{}) {
 	t.errors++
 }
 
+// go over input files and sort actions according to
+// "package" name and what actions to run.
 func (t *Transform) calcGlobalCmd() map[string]*onType {
 	all := make(map[string][]*onType)
 	for _, file := range t.Global {
@@ -166,8 +189,9 @@ func (t *Transform) calcGlobalCmd() map[string]*onType {
 		for _, item := range list {
 			for _, a := range item.Actions {
 				if !a.IsGlobal() {
-					t.messageError(item.Ref, "invalid global command. valid are: %s",
+					t.messageError(a.Reference(), "invalid global command. valid are: %s",
 						strings.Join(globalPropertyNames, ", "))
+					panic(fmt.Sprintf("%T", a))
 				}
 			}
 			out = append(out, item.Actions...)
