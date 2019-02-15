@@ -51,6 +51,7 @@ const inoutToTmplInput = `
 {{define "type-any"}}    {{.Out}} := {{.In}} {{end}}
 {{define "type-typedarray"}} {{.Out}} := {{.In}} {{end}}
 {{define "type-parametrized"}}	{{.Out}} := {{.In}}.JSValue() {{end}}
+{{define "type-rawjs"}}    {{.Out}} := {{.In}} {{end}}
 
 {{define "type-sequence"}} 
 	{{.Out}} := js.Global().Get("Array").New(len( {{if .Info.Pointer}}*{{end}} {{.In}} ))
@@ -109,6 +110,7 @@ const inoutFromTmplInput = `
 {{define "type-typedarray"}} {{.Out}} = {{.In}} {{end}}
 {{define "type-parametrized"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-dictionary"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
+{{define "type-rawjs"}}    {{.Out}} = {{.In}} {{end}}
 
 {{define "type-sequence"}}
 	__length{{.Idx}} := {{.In}}.Length()

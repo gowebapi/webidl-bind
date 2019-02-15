@@ -77,6 +77,7 @@ type rename struct {
 
 type renameTarget interface {
 	Name() *types.MethodName
+	SetType(value types.TypeRef) string
 }
 
 func (t *rename) ExecuteCallback(instance *types.Callback, trans *Transform) {
@@ -141,4 +142,42 @@ func (t *globalRegExp) ExecuteEnum(value *types.Enum, targets map[string]renameT
 
 func (t *globalRegExp) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, trans *Transform) {
 	t.What.ExecuteInterface(value, targets, trans)
+}
+
+type changeType struct {
+	Name  string
+	RawJS string
+	Ref   ref
+}
+
+func (t *changeType) IsGlobal() bool {
+	return false
+}
+
+func (t changeType) Reference() ref {
+	return t.Ref
+}
+
+func (t *changeType) ExecuteCallback(instance *types.Callback, trans *Transform) {
+	trans.messageError(t.Ref, "type change in callback in not yet implmented")
+}
+
+func (t *changeType) ExecuteDictionary(value *types.Dictionary, trans *Transform) {
+	trans.messageError(t.Ref, "type change in dictionary in not yet implmented")
+}
+
+func (t *changeType) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, trans *Transform) {
+	trans.messageError(t.Ref, "type change for enum is not supported")
+}
+
+func (t *changeType) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, trans *Transform) {
+	on, found := targets[t.Name]
+	if !found {
+		trans.messageError(t.Ref, "unknown reference")
+		return
+	}
+	raw := types.NewRawJSType()
+	if msg := on.SetType(raw); msg != "" {
+		trans.messageError(t.Ref, "type change error: %s", msg)
+	}
 }

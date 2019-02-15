@@ -165,7 +165,7 @@ func (conv *extractTypes) convertInterfaceConst(in *ast.Member) *IfConst {
 			name: fromIdlToMethodName(in.Name),
 		},
 		Src:   in,
-		Type:  convertType(in.Type,conv ),
+		Type:  convertType(in.Type, conv),
 		Value: value,
 	}
 }
@@ -200,7 +200,7 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 			name: fromIdlToMethodName(in.Name),
 		},
 		Src:      in,
-		Type:     convertType(in.Type,conv ),
+		Type:     convertType(in.Type, conv),
 		Static:   in.Static,
 		Readonly: in.Readonly,
 	}
@@ -234,7 +234,7 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 			name: fromIdlToMethodName(in.Name),
 		},
 		Src:    in,
-		Return: convertType(in.Type,conv ),
+		Return: convertType(in.Type, conv),
 		Static: in.Static,
 		Params: conv.convertParams(in.Parameters),
 	}
@@ -328,7 +328,19 @@ func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
 	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
 }
 
-
 func (t *Interface) TypeID() TypeID {
 	return TypeInterface
+}
+
+func (t *IfConst) SetType(value TypeRef) string {
+	return "const can't change type"
+}
+
+func (t *IfVar) SetType(value TypeRef) string {
+	t.Type = value
+	return ""
+}
+
+func (t *IfMethod) SetType(value TypeRef) string {
+	return "method can't change type"
 }

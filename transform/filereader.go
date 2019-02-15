@@ -72,6 +72,12 @@ func (p *parser) processFile(content []byte) error {
 			}
 			continue
 		}
+		if action, ok := p.tryChangeTypeCmd(line); ok {
+			if action != nil {
+				p.ontype.Actions = append(p.ontype.Actions, action)
+			}
+			continue
+		}
 
 		if action, ok := p.tryEqualCommand(line); ok {
 			if action != nil {
@@ -195,6 +201,41 @@ func (p *parser) tryRegexpLine(line string) (action, bool) {
 	}
 	p.messageError("invalid global expexp line")
 	return nil, true
+}
+
+// tryChangeTypeCmd is parsing "@changetype" lines
+func (p *parser) tryChangeTypeCmd(line string) (action, bool) {
+	split := strings.Split(line, " ")
+	if len(split) == 0 || split[0] != "@changetype" {
+		return nil, false
+	}
+	var method, typ string
+	for _, s := range split[1:] {
+		if s == "" {
+			continue
+		}
+		if method == "" {
+			method = s
+		} else if typ == "" {
+			typ = s
+		} else {
+			p.messageError("invalid syntax")
+			return nil, true
+		}
+	}
+	if typ == "" {
+		p.messageError("invalid syntax")
+		return nil, true
+	} else if typ != "rawjs" {
+		p.messageError("invalid type, valid are 'rawjs")
+		return nil, true
+	}
+	ret := changeType{
+		Name:  method,
+		RawJS: typ,
+		Ref:   p.ref,
+	}
+	return &ret, true
 }
 
 func (p *parser) messageError(format string, args ...interface{}) {

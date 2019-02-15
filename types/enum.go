@@ -92,3 +92,7 @@ func (t *Enum) SetBasic(basic BasicInfo) {
 func (t *EnumValue) Name() *MethodName {
 	return &t.MethodName
 }
+
+func (t *EnumValue) SetType(value TypeRef) string {
+	return "enum values can't change type"
+}

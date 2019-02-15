@@ -338,6 +338,44 @@ func (t *PrimitiveType) Param(nullable, option, variadic bool) (info *TypeInfo, 
 	return newTypeInfo(t.Basic(), nullable, option, variadic, false, false, false), t
 }
 
+// RawJSType used when no conversion should take place and
+// the raw underlying js.Value should be returned or inserted
+// instead
+type RawJSType struct {
+}
+
+var _ TypeRef = &RawJSType{}
+
+func NewRawJSType() *RawJSType {
+	return &RawJSType{}
+}
+
+func (t *RawJSType) Basic() BasicInfo {
+	return BasicInfo{
+		Idl:      "<rawjs>",
+		Def:      "js.Value",
+		Internal: "js.Value",
+		Package:  BuiltInPackage,
+		Template: "rawjs",
+	}
+}
+
+func (t *RawJSType) DefaultParam() (info *TypeInfo, inner TypeRef) {
+	return t.Param(false, false, false)
+}
+
+func (t *RawJSType) link(conv *Convert, inuse inuseLogic) TypeRef {
+	return t
+}
+
+func (t *RawJSType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
+	return newTypeInfo(t.Basic(), nullable, option, variadic, false, false, false), t
+}
+
+func (t *RawJSType) NeedRelease() bool {
+	return false
+}
+
 type SequenceType struct {
 	Elem  TypeRef
 	basic BasicInfo
