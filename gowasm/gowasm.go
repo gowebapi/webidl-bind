@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
+	"go/parser"
+	"go/token"
 	"io"
 	"os"
 	"path/filepath"
@@ -22,7 +24,8 @@ const fileTemplInput = `
 package {{.Package}}
 
 import "syscall/js"
-@IMPORT@
+
+// @IMPORT@
 
 // ReleasableApiResource is used to release underlaying
 // allocated resources.
@@ -73,6 +76,16 @@ type Source struct {
 	Content []byte
 }
 
+var reservedGoKeywords = map[string]bool{
+	"make":   true,
+	"nil":    true,
+	"int":    true,
+	"uint":   true,
+	"string": true,
+	"len":    true,
+	"iota":   true,
+}
+
 // WriteSource is create source code files.
 // returns map["path/filename"]"file content"
 func WriteSource(conv *types.Convert) ([]*Source, error) {
@@ -108,8 +121,11 @@ func WriteSource(conv *types.Convert) ([]*Source, error) {
 	ret := make([]*Source, 0)
 	for pkg, buffer := range target {
 		content := buffer.Bytes()
-		content = insertImportLines(pkg, content)
 		content = sourceCodeRemoveEmptyLines(content)
+		if content, err = insertImportLines(pkg, content); err != nil {
+			fmt.Fprintf(os.Stderr, "error:%s:unable to remove unused imports from source code: %s\n", pkg, err)
+
+		}
 		if source, err := format.Source(content); err == nil {
 			content = source
 		} else {
@@ -220,10 +236,37 @@ func createMultieOSLib(content []byte) (wasm, others []byte) {
 	return
 }
 
-func insertImportLines(pkg string, content []byte) []byte {
+func insertImportLines(pkg string, content []byte) ([]byte, error) {
+	// first we extract all unresolved symbols to find out
+	// what import lines that is actually is used. there is
+	// logic bug in the current import type detector. for
+	// some types that is changes to by the type system to
+	// a more generic, like callback -> js.Func, generate
+	// an import line to that callback type. this is very
+	// hard to write a proper detector as we need to do
+	// template inspection if returned TypeInfo.Input is used
+	// etc. the code below is simply trying to figure out
+	// what imports are really used and just include those.
+	removeImports := true
+	names := make(map[string]struct{})
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "", content, parser.DeclarationErrors)
+	if err == nil {
+		for _, unres := range f.Unresolved {
+			if _, f := reservedGoKeywords[unres.Name]; !f {
+				names[unres.Name] = struct{}{}
+			}
+		}
+	} else {
+		removeImports = false
+	}
+
+	// then we are writing the import lines
 	file := pkgMgr.packages[pkg]
-	lines := file.importLines()
-	return bytes.Replace(content, []byte("@IMPORT@"), []byte(lines), 1)
+	lines := file.importLines(names, removeImports)
+	lines = lines + "\n" + file.importInfo()
+	content = bytes.Replace(content, []byte("// @IMPORT@"), []byte(lines), 1)
+	return content, err
 }
 
 func (src *Source) Filename(insidePkg string) (string, bool) {

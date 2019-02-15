@@ -3,6 +3,7 @@ package gowasm
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/gowebapi/webidlgenerator/types"
@@ -20,6 +21,7 @@ type packageFile struct {
 	name    string
 	imports map[string]*packageImport
 	used    map[string]string
+	types   map[string]struct{}
 }
 
 type packageImport struct {
@@ -59,6 +61,7 @@ func (t *packageManager) transformPackageName(typ types.TypeRef, basic types.Bas
 		imp := t.currentPackage.get(pkg)
 		basic.Def = imp.shortName + "." + basic.Def
 	}
+	t.currentPackage.types[basic.Def] = struct{}{}
 	return basic
 }
 
@@ -74,6 +77,7 @@ func (t *packageManager) setPackageName(typ types.Type) {
 			name:    pkg,
 			imports: make(map[string]*packageImport),
 			used:    make(map[string]string),
+			types:   make(map[string]struct{}),
 		}
 		t.packages[pkg] = current
 	}
@@ -101,9 +105,12 @@ func (t *packageFile) get(name string) *packageImport {
 	return imp
 }
 
-func (file *packageFile) importLines() string {
+func (file *packageFile) importLines(valid map[string]struct{}, remove bool) string {
 	lines := make([]string, 0)
 	for _, imp := range file.imports {
+		if _, found := valid[imp.shortName]; !found && remove {
+			continue
+		}
 		cur, prefix := shortPackageName(imp.fullName), ""
 		if cur != imp.shortName {
 			prefix = imp.shortName
@@ -111,6 +118,20 @@ func (file *packageFile) importLines() string {
 		lines = append(lines, fmt.Sprintf("import %s \"%s\"", prefix, imp.fullName))
 	}
 	return strings.Join(lines, "\n")
+}
+
+func (file *packageFile) importInfo() string {
+	lines := []string{}
+	for k := range file.types {
+		if strings.Contains(k, ".") {
+			lines = append(lines, "// "+k)
+		}
+	}
+	sort.Strings(lines)
+	out := []string{"// using following types:"}
+	out = append(out, lines...)
+	out = append(out, "\n")
+	return strings.Join(out, "\n")
 }
 
 // get the last part of a package name
