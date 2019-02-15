@@ -25,7 +25,9 @@ type property struct {
 
 func (t *property) ExecuteCallback(instance *types.Callback, trans *Transform) {
 	if f, ok := callbackProperties[t.Name]; ok {
-		f(instance, t.Value)
+		if msg := f(instance, t.Value); msg != "" {
+			trans.messageError(t.Ref, msg)
+		}
 	} else {
 		trans.messageError(t.Ref, "unknown property '%s', valid are: %s",
 			t.Name, strings.Join(callbackPropertyNames, ", "))
@@ -34,7 +36,9 @@ func (t *property) ExecuteCallback(instance *types.Callback, trans *Transform) {
 
 func (t *property) ExecuteDictionary(instance *types.Dictionary, trans *Transform) {
 	if f, ok := dictionaryProperties[t.Name]; ok {
-		f(instance, t.Value)
+		if msg := f(instance, t.Value); msg != "" {
+			trans.messageError(t.Ref, msg)
+		}
 	} else {
 		trans.messageError(t.Ref, "unknown property '%s', valid are: %s",
 			t.Name, strings.Join(dictionaryPropertyNames, ", "))
@@ -43,16 +47,20 @@ func (t *property) ExecuteDictionary(instance *types.Dictionary, trans *Transfor
 
 func (t *property) ExecuteEnum(instance *types.Enum, targets map[string]renameTarget, trans *Transform) {
 	if f, ok := enumProperties[t.Name]; ok {
-		f(instance, t.Value)
+		if msg := f(instance, t.Value); msg != "" {
+			trans.messageError(t.Ref, msg)
+		}
 	} else {
 		trans.messageError(t.Ref, "unknown property '%s', valid are: %s",
 			t.Name, strings.Join(enumPropertyNames, ", "))
 	}
 }
 
-func (t *property) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, trans *Transform) {
+func (t *property) ExecuteInterface(instance *types.Interface, targets map[string]renameTarget, trans *Transform) {
 	if f, ok := interfaceProperties[t.Name]; ok {
-		f(value, t.Value)
+		if msg := f(instance, t.Value); msg != "" {
+			trans.messageError(t.Ref, msg)
+		}
 	} else {
 		trans.messageError(t.Ref, "unknown property '%s', valid are: %s",
 			t.Name, strings.Join(interfacePropertyNames, ", "))

@@ -2,6 +2,7 @@ package transform
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/gowebapi/webidlgenerator/types"
 )
@@ -11,43 +12,49 @@ var globalProperties = map[string]bool{
 }
 var globalPropertyNames = []string{}
 
-var callbackProperties = map[string]func(cb *types.Callback, value string){
+var callbackProperties = map[string]func(cb *types.Callback, value string) string{
 	"name":    callbackName,
 	"package": callbackPackage,
 }
 var callbackPropertyNames = []string{}
 
-func callbackName(cb *types.Callback, value string) {
+func callbackName(cb *types.Callback, value string) string {
 	b := cb.Basic()
 	b.Def = value
 	cb.SetBasic(b)
+	return ""
 }
 
-func callbackPackage(cb *types.Callback, value string) {
+func callbackPackage(cb *types.Callback, value string) string {
+	msg := verifyPackageName(value)
 	b := cb.Basic()
 	b.Package = value
 	cb.SetBasic(b)
+	return msg
 }
 
-var dictionaryProperties = map[string]func(cb *types.Dictionary, value string){
+var dictionaryProperties = map[string]func(cb *types.Dictionary, value string) string{
 	"name":    dictionaryName,
 	"package": dictionaryPackage,
 }
 var dictionaryPropertyNames = []string{}
 
-func dictionaryName(cb *types.Dictionary, value string) {
+func dictionaryName(cb *types.Dictionary, value string) string {
 	b := cb.Basic()
 	b.Def = value
 	cb.SetBasic(b)
+	return ""
 }
 
-func dictionaryPackage(cb *types.Dictionary, value string) {
+func dictionaryPackage(cb *types.Dictionary, value string) string {
+	msg := verifyPackageName(value)
 	b := cb.Basic()
 	b.Package = value
 	cb.SetBasic(b)
+	return msg
 }
 
-var enumProperties = map[string]func(cb *types.Enum, value string){
+var enumProperties = map[string]func(cb *types.Enum, value string) string{
 	"name":    enumName,
 	"package": enumPackage,
 	"prefix":  enumPrefix,
@@ -55,27 +62,32 @@ var enumProperties = map[string]func(cb *types.Enum, value string){
 }
 var enumPropertyNames = []string{}
 
-func enumName(cb *types.Enum, value string) {
+func enumName(cb *types.Enum, value string) string {
 	b := cb.Basic()
 	b.Def = value
 	cb.SetBasic(b)
+	return ""
 }
 
-func enumPackage(cb *types.Enum, value string) {
+func enumPackage(cb *types.Enum, value string) string {
+	msg := verifyPackageName(value)
 	b := cb.Basic()
 	b.Package = value
 	cb.SetBasic(b)
+	return msg
 }
 
-func enumPrefix(cb *types.Enum, value string) {
+func enumPrefix(cb *types.Enum, value string) string {
 	cb.Prefix = value
+	return ""
 }
 
-func enumSuffix(cb *types.Enum, value string) {
+func enumSuffix(cb *types.Enum, value string) string {
 	cb.Suffix = value
+	return ""
 }
 
-var interfaceProperties = map[string]func(inf *types.Interface, value string){
+var interfaceProperties = map[string]func(inf *types.Interface, value string) string{
 	"constPrefix":     interfaceConstPrefix,
 	"constSuffix":     interfaceConstSuffix,
 	"constructorName": interfaceConstructorName,
@@ -84,33 +96,45 @@ var interfaceProperties = map[string]func(inf *types.Interface, value string){
 }
 var interfacePropertyNames = []string{}
 
-func interfaceConstructorName(inf *types.Interface, value string) {
+func interfaceConstructorName(inf *types.Interface, value string) string {
 	if inf.Constructor == nil {
-		// TODO add failure here
-		return
+		return "interface doesn't have any constructor"
 	}
 	name := inf.Constructor.Name()
 	name.Def = value
+	return ""
 }
 
-func interfaceConstPrefix(inf *types.Interface, value string) {
+func interfaceConstPrefix(inf *types.Interface, value string) string {
 	inf.ConstPrefix = value
+	return ""
 }
 
-func interfaceConstSuffix(inf *types.Interface, value string) {
+func interfaceConstSuffix(inf *types.Interface, value string) string {
 	inf.ConstSuffix = value
+	return ""
 }
 
-func interfaceName(inf *types.Interface, value string) {
+func interfaceName(inf *types.Interface, value string) string {
 	b := inf.Basic()
 	b.Def = value
 	inf.SetBasic(b)
+	return ""
 }
 
-func interfacePackage(inf *types.Interface, value string) {
+func interfacePackage(inf *types.Interface, value string) string {
+	msg := verifyPackageName(value)
 	b := inf.Basic()
 	b.Package = value
 	inf.SetBasic(b)
+	return msg
+}
+
+func verifyPackageName(value string) string {
+	if strings.HasSuffix(value, "/") {
+		return "invalid package name"
+	}
+	return ""
 }
 
 func init() {
