@@ -105,7 +105,7 @@ func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
 	{{if not .IsVoidReturn}}_returned :={{end}} _method.Invoke( _args[0:_end]... )
 {{end}}
 {{define "static-method-end"}}
-	{{if not .IsVoidReturn}}_result = value{{end}}
+	{{if not .IsVoidReturn}}_result = _converted{{end}}
 	{{if .To.ReleaseHdl}}_release = _releaseList{{end}}
 	return
 }
