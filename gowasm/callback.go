@@ -10,13 +10,19 @@ import (
 const callbackTmplInput = `
 {{define "start"}}
 // callback: {{.Type.Idl}}
-type {{.Type.Def}} func ({{.ParamLine}}) {{.Return.InOut}}
+type {{.Type.Def}}Func func ({{.ParamLine}}) {{.Return.InOut}}
 
-func {{.Type.Def}}ToJS(callback {{.Type.Def}} ) *js.Func {
+// {{.Type.Def}} is a javascript function type. 
+// 
+// Call Release() when done to release resouces
+// allocated to this type.
+type {{.Type.Def}} js.Func
+
+func {{.Type.Def}}ToJS(callback {{.Type.Def}}Func ) * {{.Type.Def}} {
 	if callback == nil {
 		return nil
 	}
-	ret := js.FuncOf(func (this js.Value, args []js.Value) interface{} {
+	ret := {{.Type.Def}} (js.FuncOf(func (this js.Value, args []js.Value) interface{} {
 {{end}}
 	
 {{define "middle-1"}}
@@ -29,11 +35,11 @@ func {{.Type.Def}}ToJS(callback {{.Type.Def}} ) *js.Func {
 			// returning no return value
 			return nil
 		{{end}}
-})
-return &ret
+	}))
+	return &ret
 }
 
-func {{.Type.Def}}FromJS(_value js.Value) {{.Type.Def}} {
+func {{.Type.Def}}FromJS(_value js.Value) {{.Type.Output}} {
 	return func( {{.ParamLine}} ) ( {{if len .Return.InOut}}_result{{end}} {{.Return.InOut}} ) {
 		var (
 			_args {{.ArgVar}} 

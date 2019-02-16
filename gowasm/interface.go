@@ -74,7 +74,7 @@ func Set{{.Name.Def}} ( value {{.Type.Input}} ) {{.Ret}} {
 // {{.Name.Def}} returning attribute '{{.Name.Idl}}' with
 // type {{.Type.Def}} (idl: {{.Type.Idl}}).
 func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.Output}} {
-	var ret {{.Type.InOut}}
+	var ret {{.Type.Output}}
 	value := _this.Value_JS.Get("{{.Name.Idl}}")
 	{{.From}}
 	return ret
