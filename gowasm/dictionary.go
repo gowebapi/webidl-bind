@@ -29,7 +29,8 @@ func (_this * {{.Dict.Basic.Def}} ) JSValue() js.Value {
 // {{.Dict.Basic.Def}}FromJS is allocating a new 
 // {{.Dict.Basic.Def}} object and copy all values from
 // input javascript object
-func {{.Dict.Basic.Def}}FromJS(input js.Value) {{.Type.InOut}} {
+func {{.Dict.Basic.Def}}FromJS(value js.Wrapper) {{.Type.InOut}} {
+	input := value.JSValue()
 	var out {{.Dict.Basic.Def}}
 	{{.From}}
 	return {{if .Type.Pointer}}&{{end}} out

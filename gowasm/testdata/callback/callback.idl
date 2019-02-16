@@ -49,7 +49,6 @@ interface Foo {
     attribute Test3 test3;
     attribute Test4 test4;
     attribute Test5 test5;
-    /*
     attribute Test6 test6;
     attribute Test7 test7;
     attribute Test8 test8;

@@ -126,8 +126,9 @@ func (_this *Test) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// TestFromJS is casting a js.Value into Test.
-func TestFromJS(input js.Value) *Test {
+// TestFromJS is casting a js.Wrapper into Test.
+func TestFromJS(value js.Wrapper) *Test {
+	input := value.JSValue()
 	if input.Type() == js.TypeNull {
 		return nil
 	}

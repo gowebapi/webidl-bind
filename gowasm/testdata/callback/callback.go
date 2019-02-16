@@ -770,7 +770,8 @@ func (_this *Bar) JSValue() js.Value {
 // BarFromJS is allocating a new
 // Bar object and copy all values from
 // input javascript object
-func BarFromJS(input js.Value) *Bar {
+func BarFromJS(value js.Wrapper) *Bar {
+	input := value.JSValue()
 	var out Bar
 	var (
 		out0 int // javascript: long {a A a}
@@ -793,8 +794,9 @@ func (_this *Foo) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// FooFromJS is casting a js.Value into Foo.
-func FooFromJS(input js.Value) *Foo {
+// FooFromJS is casting a js.Wrapper into Foo.
+func FooFromJS(value js.Wrapper) *Foo {
+	input := value.JSValue()
 	if input.Type() == js.TypeNull {
 		return nil
 	}

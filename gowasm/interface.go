@@ -27,8 +27,9 @@ func (_this *{{.Type.Def}}) JSValue() js.Value {
 }
 {{end}}
 
-// {{.Type.Def}}FromJS is casting a js.Value into {{.Type.Def}}.
-func {{.Type.Def}}FromJS(input js.Value) {{.Type.InOut}} {
+// {{.Type.Def}}FromJS is casting a js.Wrapper into {{.Type.Def}}.
+func {{.Type.Def}}FromJS(value js.Wrapper) {{.Type.InOut}} {
+	input := value.JSValue()
 	{{if .Type.Pointer}}
 	if input.Type() == js.TypeNull {
 		return nil
@@ -220,13 +221,14 @@ func New{{.Type.Def}}Func( f func( {{(index .Methods 0).To.Params}} ) ( {{(index
 // {{.Type.Def}}FromJS is taking an javascript object that reference to a 
 // callback interface and return a corresponding interface that can be used
 // to invoke on that element.
-func {{.Type.Def}}FromJS(value js.Value) * {{.Type.Def}}Value {
-	if value.Type() == js.TypeObject {
-		return &{{.Type.Def}}Value { Value: value }
+func {{.Type.Def}}FromJS(value js.Wrapper) * {{.Type.Def}}Value {
+	input := value.JSValue()
+	if input.Type() == js.TypeObject {
+		return &{{.Type.Def}}Value { Value: input }
 	}
 	{{if (len .Methods) 1}}
-	if value.Type() == js.TypeFunction {
-		return &{{.Type.Def}}Value { Value: value, useInvoke: true }
+	if input.Type() == js.TypeFunction {
+		return &{{.Type.Def}}Value { Value: input, useInvoke: true }
 	}
 	{{else}}
 		// note: have no support for functions, method count: {{len .Methods}}

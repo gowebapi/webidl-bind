@@ -97,12 +97,13 @@ func NewFoo1Func(f func(b int, c int)) *Foo1Value {
 // Foo1FromJS is taking an javascript object that reference to a
 // callback interface and return a corresponding interface that can be used
 // to invoke on that element.
-func Foo1FromJS(value js.Value) *Foo1Value {
-	if value.Type() == js.TypeObject {
-		return &Foo1Value{Value: value}
+func Foo1FromJS(value js.Wrapper) *Foo1Value {
+	input := value.JSValue()
+	if input.Type() == js.TypeObject {
+		return &Foo1Value{Value: input}
 	}
-	if value.Type() == js.TypeFunction {
-		return &Foo1Value{Value: value, useInvoke: true}
+	if input.Type() == js.TypeFunction {
+		return &Foo1Value{Value: input, useInvoke: true}
 	}
 	panic("unsupported type")
 }
@@ -207,12 +208,13 @@ func NewFoo2Func(f func(a string, b js.Value, c *Union, d int, e *A, f *B) (_res
 // Foo2FromJS is taking an javascript object that reference to a
 // callback interface and return a corresponding interface that can be used
 // to invoke on that element.
-func Foo2FromJS(value js.Value) *Foo2Value {
-	if value.Type() == js.TypeObject {
-		return &Foo2Value{Value: value}
+func Foo2FromJS(value js.Wrapper) *Foo2Value {
+	input := value.JSValue()
+	if input.Type() == js.TypeObject {
+		return &Foo2Value{Value: input}
 	}
-	if value.Type() == js.TypeFunction {
-		return &Foo2Value{Value: value, useInvoke: true}
+	if input.Type() == js.TypeFunction {
+		return &Foo2Value{Value: input, useInvoke: true}
 	}
 	panic("unsupported type")
 }
@@ -340,12 +342,13 @@ func NewFoo3(callback Foo3) *Foo3Value {
 // Foo3FromJS is taking an javascript object that reference to a
 // callback interface and return a corresponding interface that can be used
 // to invoke on that element.
-func Foo3FromJS(value js.Value) *Foo3Value {
-	if value.Type() == js.TypeObject {
-		return &Foo3Value{Value: value}
+func Foo3FromJS(value js.Wrapper) *Foo3Value {
+	input := value.JSValue()
+	if input.Type() == js.TypeObject {
+		return &Foo3Value{Value: input}
 	}
-	if value.Type() == js.TypeFunction {
-		return &Foo3Value{Value: value, useInvoke: true}
+	if input.Type() == js.TypeFunction {
+		return &Foo3Value{Value: input, useInvoke: true}
 	}
 	panic("unsupported type")
 }
@@ -489,8 +492,9 @@ func (_this *A) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// AFromJS is casting a js.Value into A.
-func AFromJS(input js.Value) *A {
+// AFromJS is casting a js.Wrapper into A.
+func AFromJS(value js.Wrapper) *A {
+	input := value.JSValue()
 	if input.Type() == js.TypeNull {
 		return nil
 	}
@@ -509,8 +513,9 @@ func (_this *B) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// BFromJS is casting a js.Value into B.
-func BFromJS(input js.Value) *B {
+// BFromJS is casting a js.Wrapper into B.
+func BFromJS(value js.Wrapper) *B {
+	input := value.JSValue()
 	if input.Type() == js.TypeNull {
 		return nil
 	}
