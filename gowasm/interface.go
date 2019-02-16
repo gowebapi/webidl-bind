@@ -159,7 +159,7 @@ type {{.Type.Def}}Value struct {
 	// Value is the underlying javascript object{{if .If.FunctionCB}} or function{{end}}.
 	Value     js.Value
 	// Functions is the underlying function objects that is allocated for the interface callback
-	Functions [ {{len .Methods}} ] js.Callback
+	Functions [ {{len .Methods}} ] js.Func
 
 	// Go interface to invoke
 	impl      {{.Type.Def}}
@@ -237,8 +237,8 @@ func {{.Type.Def}}FromJS(value js.Value) * {{.Type.Def}}Value {
 {{end}}
 
 {{define "callback-allocate-start"}}
-func ( t * {{.If.Basic.Def}}Value ) allocate{{.Name.Def}} () js.Callback {
-	return js.NewCallback(func (args []js.Value) {
+func ( t * {{.If.Basic.Def}}Value ) allocate{{.Name.Def}} () js.Func {
+	return js.FuncOf(func (this js.Value, args []js.Value) interface{} {
 
 {{end}}
 
@@ -259,8 +259,10 @@ func ( t * {{.If.Basic.Def}}Value ) allocate{{.Name.Def}} () js.Callback {
 
 {{define "callback-allocate-end"}}
 		{{if not .IsVoidReturn}}
-			unused(_converted)
-			panic("go 1.11 does provice anyway to return values in callbacks")
+			return _converted
+		{{else}}
+			// returning no return value
+			return nil
 		{{end}}
 	})
 }

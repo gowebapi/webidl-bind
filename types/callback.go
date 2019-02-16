@@ -57,7 +57,7 @@ func (t *Callback) link(conv *Convert, inuse inuseLogic) TypeRef {
 
 func (t *Callback) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	info, typ := newTypeInfo(t.Basic(), nullable, option, variadic, false, true, false), t
-	info.Input = "*js.Callback"
+	info.Input = "*js.Func"
 	info.Pointer = true
 	return info, typ
 }

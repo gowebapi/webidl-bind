@@ -12,18 +12,25 @@ const callbackTmplInput = `
 // callback: {{.Type.Idl}}
 type {{.Type.Def}} func ({{.ParamLine}}) {{.Return.InOut}}
 
-func {{.Type.Def}}ToJS(callback {{.Type.Def}} ) *js.Callback {
+func {{.Type.Def}}ToJS(callback {{.Type.Def}} ) *js.Func {
 	if callback == nil {
 		return nil
 	}
-	ret := js.NewCallback(func (args []js.Value) {
+	ret := js.FuncOf(func (this js.Value, args []js.Value) interface{} {
 {{end}}
 	
-{{define "middle"}}
-		// TODO: return value
-		callback({{.InOut.AllOut}})
-	})
-	return &ret
+{{define "middle-1"}}
+		{{if not .VoidRet}} _returned := {{end}} callback({{.InOut.AllOut}})
+{{end}}
+{{define "middle-2"}}
+		{{if not .VoidRet}}
+			return _converted
+		{{else}}
+			// returning no return value
+			return nil
+		{{end}}
+})
+return &ret
 }
 
 func {{.Type.Def}}FromJS(_value js.Value) {{.Type.Def}} {
@@ -73,7 +80,16 @@ func writeCallback(dst io.Writer, value types.Type) error {
 	if err := writeInOutFromWasm(data.InOut, "", dst); err != nil {
 		return err
 	}
-	if err := callbackTempl.ExecuteTemplate(dst, "middle", data); err != nil {
+	if err := callbackTempl.ExecuteTemplate(dst, "middle-1", data); err != nil {
+		return err
+	}
+	if !data.VoidRet {
+		result := setupInOutWasmForType(cb.Return, "", "_returned", "_converted")
+		if err := writeInOutToWasm(result, "", dst); err != nil {
+			return err
+		}
+	}
+	if err := callbackTempl.ExecuteTemplate(dst, "middle-2", data); err != nil {
 		return err
 	}
 	fromjs := setupInOutWasmData(cb.Parameters, "@name@", "_p%d")

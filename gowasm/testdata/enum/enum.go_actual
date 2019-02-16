@@ -6,6 +6,8 @@ package enum
 
 import js "github.com/gowebapi/webapi/core/failjs"
 
+// using following types:
+
 // ReleasableApiResource is used to release underlaying
 // allocated resources.
 type ReleasableApiResource interface {

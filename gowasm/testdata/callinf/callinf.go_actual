@@ -6,6 +6,8 @@ package callinf
 
 import js "github.com/gowebapi/webapi/core/failjs"
 
+// using following types:
+
 // ReleasableApiResource is used to release underlaying
 // allocated resources.
 type ReleasableApiResource interface {
@@ -50,7 +52,7 @@ type Foo1Value struct {
 	// Value is the underlying javascript object or function.
 	Value js.Value
 	// Functions is the underlying function objects that is allocated for the interface callback
-	Functions [1]js.Callback
+	Functions [1]js.Func
 	// Go interface to invoke
 	impl      Foo1
 	function  func(b int, c int)
@@ -105,8 +107,8 @@ func Foo1FromJS(value js.Value) *Foo1Value {
 	panic("unsupported type")
 }
 
-func (t *Foo1Value) allocateTest2() js.Callback {
-	return js.NewCallback(func(args []js.Value) {
+func (t *Foo1Value) allocateTest2() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		var (
 			_p0 int // javascript: long b
 			_p1 int // javascript: long c
@@ -118,6 +120,8 @@ func (t *Foo1Value) allocateTest2() js.Callback {
 		} else {
 			t.impl.Test2(_p0, _p1)
 		}
+		// returning no return value
+		return nil
 	})
 }
 
@@ -158,7 +162,7 @@ type Foo2Value struct {
 	// Value is the underlying javascript object or function.
 	Value js.Value
 	// Functions is the underlying function objects that is allocated for the interface callback
-	Functions [1]js.Callback
+	Functions [1]js.Func
 	// Go interface to invoke
 	impl      Foo2
 	function  func(a string, b js.Value, c *Union, d int, e *A, f *B) (_result bool)
@@ -213,8 +217,8 @@ func Foo2FromJS(value js.Value) *Foo2Value {
 	panic("unsupported type")
 }
 
-func (t *Foo2Value) allocateTest3() js.Callback {
-	return js.NewCallback(func(args []js.Value) {
+func (t *Foo2Value) allocateTest3() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		var (
 			_p0 string   // javascript: DOMString a
 			_p1 js.Value // javascript: any b
@@ -236,8 +240,7 @@ func (t *Foo2Value) allocateTest3() js.Callback {
 			_returned = t.impl.Test3(_p0, _p1, _p2, _p3, _p4, _p5)
 		}
 		_converted := _returned
-		unused(_converted)
-		panic("go 1.11 does provice anyway to return values in callbacks")
+		return _converted
 	})
 }
 
@@ -299,7 +302,7 @@ type Foo3Value struct {
 	// Value is the underlying javascript object or function.
 	Value js.Value
 	// Functions is the underlying function objects that is allocated for the interface callback
-	Functions [4]js.Callback
+	Functions [4]js.Func
 	// Go interface to invoke
 	impl Foo3
 }
@@ -347,18 +350,20 @@ func Foo3FromJS(value js.Value) *Foo3Value {
 	panic("unsupported type")
 }
 
-func (t *Foo3Value) allocateTest1() js.Callback {
-	return js.NewCallback(func(args []js.Value) {
+func (t *Foo3Value) allocateTest1() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		var (
 			_p0 string // javascript: DOMString a
 		)
 		_p0 = (args[0]).String()
 		t.impl.Test1(_p0)
+		// returning no return value
+		return nil
 	})
 }
 
-func (t *Foo3Value) allocateTest2() js.Callback {
-	return js.NewCallback(func(args []js.Value) {
+func (t *Foo3Value) allocateTest2() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		var (
 			_p0 int // javascript: long b
 		)
@@ -366,13 +371,12 @@ func (t *Foo3Value) allocateTest2() js.Callback {
 		var _returned int
 		_returned = t.impl.Test2(_p0)
 		_converted := _returned
-		unused(_converted)
-		panic("go 1.11 does provice anyway to return values in callbacks")
+		return _converted
 	})
 }
 
-func (t *Foo3Value) allocateTest3() js.Callback {
-	return js.NewCallback(func(args []js.Value) {
+func (t *Foo3Value) allocateTest3() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		var (
 			_p0 bool // javascript: boolean c
 		)
@@ -380,13 +384,12 @@ func (t *Foo3Value) allocateTest3() js.Callback {
 		var _returned bool
 		_returned = t.impl.Test3(_p0)
 		_converted := _returned
-		unused(_converted)
-		panic("go 1.11 does provice anyway to return values in callbacks")
+		return _converted
 	})
 }
 
-func (t *Foo3Value) allocateTest4() js.Callback {
-	return js.NewCallback(func(args []js.Value) {
+func (t *Foo3Value) allocateTest4() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		var (
 			_p0 js.Value // javascript: any d
 		)
@@ -394,8 +397,7 @@ func (t *Foo3Value) allocateTest4() js.Callback {
 		var _returned js.Value
 		_returned = t.impl.Test4(_p0)
 		_converted := _returned
-		unused(_converted)
-		panic("go 1.11 does provice anyway to return values in callbacks")
+		return _converted
 	})
 }
 
