@@ -115,9 +115,12 @@ func (file *packageFile) importLines(valid map[string]struct{}, remove bool) str
 		if cur != imp.shortName {
 			prefix = imp.shortName
 		}
-		lines = append(lines, fmt.Sprintf("import %s \"%s\"", prefix, imp.fullName))
+		lines = append(lines, fmt.Sprintf("%s \"%s\"", prefix, imp.fullName))
 	}
-	return strings.Join(lines, "\n")
+	if len(lines) == 0 {
+		return "\n"
+	}
+	return "import (\n" + strings.Join(lines, "\n") + "\n)\n"
 }
 
 func (file *packageFile) importInfo() string {
