@@ -44,7 +44,7 @@ func (this {{.Basic.Def}} ) Value() string {
 
 // {{.Basic.Def}}FromJS is converting a javascript value into
 // a {{.Basic.Def}} enum value.
-func {{.Basic.Def}}FromJS(value js.Value) {{.DefaultParam.InOut}} {
+func {{.Basic.Def}}FromJS(value js.Value) {{.DefaultParam.Output}} {
 	key := value.String()
 	conv, ok := {{.Basic.Internal}}FromWasmTable[key]
 	if !ok {

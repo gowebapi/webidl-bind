@@ -75,7 +75,7 @@ const inoutFromTmplInput = `
 {{define "start"}}
 	var (
 	{{range .ParamList}}
-		{{.Out}} {{.Info.Output}} // javascript: {{.Info.Idl}} {{.Name}}
+		{{.Out}} {{.Info.Var}} // javascript: {{.Info.Idl}} {{.Name}}
 	{{end}}
 	)
 {{end}}
@@ -116,7 +116,7 @@ const inoutFromTmplInput = `
 	__length{{.Idx}} := {{.In}}.Length()
 	__array{{.Idx}} := make( {{.Info.Def}} , __length{{.Idx}}, __length{{.Idx}} )
 	for __idx := 0; __idx < __length{{.Idx}} ; __idx++ {
-		var __out {{.InnerInfo.InOut}}
+		var __out {{.InnerInfo.Var}}
 		__in := {{.In}}.Index(__idx)
 		{{.Inner}}
 		__array{{.Idx}}[__idx] = __out
@@ -126,7 +126,7 @@ const inoutFromTmplInput = `
 {{define "type-variadic"}}
 	{{.Out}} = make( {{.Info.Output}} , 0, len( {{.In}} ))
 	for _, __in := range {{.In}} {
-		var __out {{.Info.OutputInner}}
+		var __out {{.Info.VarInner}}
 		{{.Inner}}
 		{{.Out}} = append({{.Out}}, __out)
 	} 

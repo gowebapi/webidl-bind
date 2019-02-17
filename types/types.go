@@ -138,10 +138,10 @@ func (t *AnyType) link(conv *Convert, inuse inuseLogic) TypeRef {
 func (t *AnyType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	ret := &TypeInfo{
 		BasicInfo:   t.Basic(),
-		InOut:       "js.Value",
 		Input:       "js.Value",
 		Output:      "js.Value",
-		OutputInner: "js.Value",
+		Var:         "js.Value",
+		VarInner:    "js.Value",
 		Pointer:     false,
 		NeedRelease: false,
 		Nullable:    false,
@@ -149,8 +149,7 @@ func (t *AnyType) Param(nullable, option, variadic bool) (info *TypeInfo, inner 
 		Variadic:    variadic,
 	}
 	if variadic {
-		ret.Def = "..." + ret.Def
-		ret.InOut = "..." + ret.InOut
+		ret.Var = "[]" + ret.Var
 		ret.Input = "..." + ret.Input
 		ret.Output = "[]" + ret.Output
 	}
@@ -623,10 +622,10 @@ func (t *voidType) link(conv *Convert, inuse inuseLogic) TypeRef {
 func (t *voidType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	return &TypeInfo{
 		BasicInfo:   t.Basic(),
-		InOut:       "",
 		Input:       "",
 		Output:      "",
-		OutputInner: "",
+		Var:       "",
+		VarInner: "",
 		NeedRelease: false,
 		Nullable:    false,
 		Option:      false,

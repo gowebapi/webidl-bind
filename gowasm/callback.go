@@ -10,7 +10,7 @@ import (
 const callbackTmplInput = `
 {{define "start"}}
 // callback: {{.Type.Idl}}
-type {{.Type.Def}}Func func ({{.ParamLine}}) {{.Return.InOut}}
+type {{.Type.Def}}Func func ({{.ParamLine}}) {{.Return.Input}}
 
 // {{.Type.Def}} is a javascript function type. 
 // 
@@ -40,7 +40,7 @@ func {{.Type.Def}}ToJS(callback {{.Type.Def}}Func ) * {{.Type.Def}} {
 }
 
 func {{.Type.Def}}FromJS(_value js.Value) {{.Type.Output}} {
-	return func( {{.ParamLine}} ) ( {{if len .Return.InOut}}_result{{end}} {{.Return.InOut}} ) {
+	return func( {{.ParamLine}} ) ( {{if len .Return.Input}}_result{{end}} {{.Return.Input}} ) {
 		var (
 			_args {{.ArgVar}} 
 			_end int 

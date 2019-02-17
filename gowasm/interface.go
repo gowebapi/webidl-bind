@@ -28,7 +28,7 @@ func (_this *{{.Type.Def}}) JSValue() js.Value {
 {{end}}
 
 // {{.Type.Def}}FromJS is casting a js.Wrapper into {{.Type.Def}}.
-func {{.Type.Def}}FromJS(value js.Wrapper) {{.Type.InOut}} {
+func {{.Type.Def}}FromJS(value js.Wrapper) {{.Type.Output}} {
 	input := value.JSValue()
 	{{if .Type.Pointer}}
 	if input.Type() == js.TypeNull {

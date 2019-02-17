@@ -303,7 +303,7 @@ func (t *Interface) link(conv *Convert, inuse inuseLogic) TypeRef {
 func (t *Interface) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	info = newTypeInfo(t.Basic(), nullable, option, variadic, true, t.Callback, false)
 	if t.Callback {
-		info.Input = "*" + info.InOut + "Value"
+		info.Input = "*" + info.Input + "Value"
 	}
 	return info, t
 }

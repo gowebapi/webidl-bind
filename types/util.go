@@ -31,17 +31,17 @@ type BasicInfo struct {
 type TypeInfo struct {
 	BasicInfo
 
-	// InOut is method input and output variable type, e.g. *Foo
-	InOut string
-
-	// Input defined type into a method
+	// Input is method parameter type
 	Input string
 
 	// Output define type out from a method
 	Output string
 
-	// OutputInner is the inner type of a variadic
-	OutputInner string
+	// Var used in variable definition
+	Var string
+
+	// VarInner is the inner type of a variadic
+	VarInner string
 
 	// Pointer is true if InOut is a pointer type
 	Pointer bool
@@ -163,10 +163,10 @@ func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePt
 	}
 	t := &TypeInfo{
 		BasicInfo:   basic,
-		InOut:       basic.Def,
 		Input:       basic.Def,
 		Output:      basic.Def,
-		OutputInner: basic.Def,
+		Var:         basic.Def,
+		VarInner:    basic.Def,
 		NeedRelease: release,
 		Pointer:     (nullable || option || pointer) && !disablePtr,
 		Nullable:    nullable,
@@ -174,13 +174,13 @@ func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePt
 		Variadic:    variadic,
 	}
 	if t.Pointer {
-		t.InOut = "*" + t.InOut
 		t.Input = "*" + t.Input
 		t.Output = "*" + t.Output
-		t.OutputInner = "*" + t.OutputInner
+		t.Var = "*" + t.Var
+		t.VarInner = "*" + t.VarInner
 	}
 	if variadic {
-		t.InOut = "..." + t.InOut
+		t.Var = "[]" + t.Var
 		t.Input = "..." + t.Input
 		t.Output = "[]" + t.Output
 	}
