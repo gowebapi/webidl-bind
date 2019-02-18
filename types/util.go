@@ -205,6 +205,16 @@ func toCamelCase(in string, upper bool) string {
 	return out
 }
 
+func IsString(t TypeRef) bool {
+	p, ok := t.(*PrimitiveType)
+	if ok {
+		if p.Lang == "string" {
+			return true
+		}
+	}
+	return false
+}
+
 func IsVoid(t TypeRef) bool {
 	_, isVoid := t.(*voidType)
 	return isVoid

@@ -43,7 +43,7 @@ func {{.Type.Def}}FromJS(value js.Wrapper) {{.Type.Output}} {
 {{end}}
 
 {{define "const-var"}}
-	const {{.If.ConstPrefix}}{{.Const.Name.Def}}{{.If.ConstSuffix}} {{.Info.Def}} = {{.Const.Value}}
+	const {{.If.ConstPrefix}}{{.Const.Name.Def}}{{.If.ConstSuffix}} {{.Info.Def}} = {{.Value}}
 {{end}}
 
 {{define "get-static-attribute"}}
@@ -226,7 +226,7 @@ func {{.Type.Def}}FromJS(value js.Wrapper) * {{.Type.Def}}Value {
 	if input.Type() == js.TypeObject {
 		return &{{.Type.Def}}Value { Value: input }
 	}
-	{{if (len .Methods) 1}}
+	{{if eq (len .Methods) 1}}
 	if input.Type() == js.TypeFunction {
 		return &{{.Type.Def}}Value { Value: input, useInvoke: true }
 	}
@@ -432,12 +432,17 @@ func writeInterfaceConst(vars []*types.IfConst, main *types.Interface, dst io.Wr
 			Type  types.TypeRef
 			Info  *types.TypeInfo
 			If    *types.Interface
+			Value string
 		}{
 			Const: a,
 			Idx:   idx,
 			If:    main,
+			Value: a.Value,
 		}
 		data.Info, data.Type = a.Type.DefaultParam()
+		if types.IsString(data.Type) {
+			data.Value = "\"" + data.Value + "\""
+		}
 		if err := interfaceTmpl.ExecuteTemplate(dst, "const-var", data); err != nil {
 			return err
 		}

@@ -5,6 +5,7 @@ typedef (A or B) union;
 
 callback interface Foo1 {
     const DOMString test1 = 2;
+    const long test3 = 3;
 
     void test2(long b, long c);
 };
