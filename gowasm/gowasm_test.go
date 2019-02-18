@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -36,6 +38,8 @@ func simpleTest(idl, pkg, actual string, t *testing.T) *types.Convert {
 			t.Error(err)
 		} else {
 			compareResult(actual, src, t)
+			folder := filepath.Dir(idl)
+			tryCompileResult(folder, t)
 		}
 		return conv
 	}
@@ -85,10 +89,27 @@ func compareResult(expectedFile string, actual []*Source, t *testing.T) {
 		assert.True(t, include)
 		assert.True(t, bytes.Equal(expexted, src.Content))
 		if !bytes.Equal(expexted, src.Content) {
+			t.Log("saving file", expectedFile)
 			if err := ioutil.WriteFile(expectedFile, src.Content, 0664); err != nil {
 				t.Log(err)
 			}
 		}
 	}
 	assert.Equal(t, 1, tested)
+}
+
+func tryCompileResult(folder string, t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	p := exec.Command("go", "build", "-i")
+	p.Dir = folder
+	// p.Stdout = os.Stdout
+	// p.Stderr = os.Stderr
+	p.Stdout = &stdout
+	p.Stderr = &stderr
+	t.Logf("running '%s' in folder %s\n", strings.Join(p.Args, " "), folder)
+	if err := p.Run(); err != nil {
+		t.Error("command failed", err)
+		t.Error(stdout.String())
+		t.Error(stderr.String())
+	}
 }
