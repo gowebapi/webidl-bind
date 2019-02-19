@@ -683,7 +683,7 @@ func Test12FromJS(_value js.Value) Test12Func {
 }
 
 // callback: Test13
-type Test13Func func(b []js.Value) js.Value
+type Test13Func func(b []js.Value) interface{}
 
 // Test13 is a javascript function type.
 //
@@ -713,7 +713,7 @@ func Test13ToJS(callback Test13Func) *Test13 {
 }
 
 func Test13FromJS(_value js.Value) Test13Func {
-	return func(b []js.Value) (_result js.Value) {
+	return func(b []js.Value) (_result interface{}) {
 		var (
 			_args []interface{} = make([]interface{}, 0+len(b))
 			_end  int
@@ -841,7 +841,7 @@ func Test15FromJS(_value js.Value) Test15Func {
 }
 
 // callback: Test16
-type Test16Func func(a js.Value, b js.Value) js.Value
+type Test16Func func(a js.Value, b js.Value) interface{}
 
 // Test16 is a javascript function type.
 //
@@ -870,7 +870,7 @@ func Test16ToJS(callback Test16Func) *Test16 {
 }
 
 func Test16FromJS(_value js.Value) Test16Func {
-	return func(a js.Value, b js.Value) (_result js.Value) {
+	return func(a js.Value, b js.Value) (_result interface{}) {
 		var (
 			_args [2]interface{}
 			_end  int

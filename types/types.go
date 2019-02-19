@@ -120,7 +120,7 @@ func (t *AnyType) Basic() BasicInfo {
 	ret := BasicInfo{
 		Idl:      "any",
 		Package:  BuiltInPackage,
-		Def:      "js.Value",
+		Def:      "Any",
 		Internal: "<any>",
 		Template: "any",
 	}
@@ -138,9 +138,9 @@ func (t *AnyType) link(conv *Convert, inuse inuseLogic) TypeRef {
 func (t *AnyType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
 	ret := &TypeInfo{
 		BasicInfo:   t.Basic(),
-		Input:       "js.Value",
-		VarIn:       "js.Value",
-		VarInInner:  "js.Value",
+		Input:       "interface{}",
+		VarIn:       "interface{}",
+		VarInInner:  "interface{}",
 		Output:      "js.Value",
 		VarOut:      "js.Value",
 		VarOutInner: "js.Value",

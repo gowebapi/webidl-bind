@@ -61,7 +61,7 @@ func FooFromJS(value js.Wrapper) *Foo {
 }
 
 // Test4 returning attribute 'test4' with
-// type js.Value (idl: any).
+// type Any (idl: any).
 func Test4() js.Value {
 	var ret js.Value
 	_klass := js.Global().Get("Foo")
@@ -71,14 +71,14 @@ func Test4() js.Value {
 }
 
 // Test4 returning attribute 'test4' with
-// type js.Value (idl: any).
-func SetTest4(value js.Value) {
+// type Any (idl: any).
+func SetTest4(value interface{}) {
 	_klass := js.Global().Get("Foo")
 	input := value
 	_klass.Set("test4", input)
 }
 
-func Test2(a js.Value, b ...js.Value) (_result js.Value) {
+func Test2(a interface{}, b ...interface{}) (_result js.Value) {
 	_klass := js.Global().Get("Foo")
 	_method := _klass.Get("test2")
 	var (
@@ -103,7 +103,7 @@ func Test2(a js.Value, b ...js.Value) (_result js.Value) {
 }
 
 // Test3 returning attribute 'test3' with
-// type js.Value (idl: any).
+// type Any (idl: any).
 func (_this *Foo) Test3() js.Value {
 	var ret js.Value
 	value := _this.Value_JS.Get("test3")
@@ -112,13 +112,13 @@ func (_this *Foo) Test3() js.Value {
 }
 
 // SetTest3 setting attribute 'test3' with
-// type js.Value (idl: any).
-func (_this *Foo) SetTest3(value js.Value) {
+// type Any (idl: any).
+func (_this *Foo) SetTest3(value interface{}) {
 	input := value
 	_this.Value_JS.Set("test3", input)
 }
 
-func (_this *Foo) Test1(a js.Value, b ...js.Value) (_result js.Value) {
+func (_this *Foo) Test1(a interface{}, b ...interface{}) (_result js.Value) {
 	var (
 		_args []interface{} = make([]interface{}, 1+len(b))
 		_end  int
@@ -319,7 +319,7 @@ func Foo3FromJS(value js.Wrapper) *Foo3 {
 }
 
 // Test9 returning attribute 'test9' with
-// type []js.Value (idl: sequence<any>).
+// type []Any (idl: sequence<any>).
 func Test9() []js.Value {
 	var ret []js.Value
 	_klass := js.Global().Get("Foo3")
@@ -337,8 +337,8 @@ func Test9() []js.Value {
 }
 
 // Test9 returning attribute 'test9' with
-// type []js.Value (idl: sequence<any>).
-func SetTest9(value []js.Value) {
+// type []Any (idl: sequence<any>).
+func SetTest9(value []interface{}) {
 	_klass := js.Global().Get("Foo3")
 	input := js.Global().Get("Array").New(len(value))
 	for __idx, __seq_in := range value {
@@ -348,7 +348,7 @@ func SetTest9(value []js.Value) {
 	_klass.Set("test9", input)
 }
 
-func Test8(a []js.Value, b ...[]js.Value) (_result []js.Value) {
+func Test8(a []interface{}, b ...[]interface{}) (_result []js.Value) {
 	_klass := js.Global().Get("Foo3")
 	_method := _klass.Get("test8")
 	var (
@@ -389,7 +389,7 @@ func Test8(a []js.Value, b ...[]js.Value) (_result []js.Value) {
 }
 
 // Test3 returning attribute 'test3' with
-// type []js.Value (idl: sequence<any>).
+// type []Any (idl: sequence<any>).
 func (_this *Foo3) Test3() []js.Value {
 	var ret []js.Value
 	value := _this.Value_JS.Get("test3")
@@ -406,8 +406,8 @@ func (_this *Foo3) Test3() []js.Value {
 }
 
 // SetTest3 setting attribute 'test3' with
-// type []js.Value (idl: sequence<any>).
-func (_this *Foo3) SetTest3(value []js.Value) {
+// type []Any (idl: sequence<any>).
+func (_this *Foo3) SetTest3(value []interface{}) {
 	input := js.Global().Get("Array").New(len(value))
 	for __idx, __seq_in := range value {
 		__seq_out := __seq_in
@@ -416,7 +416,7 @@ func (_this *Foo3) SetTest3(value []js.Value) {
 	_this.Value_JS.Set("test3", input)
 }
 
-func (_this *Foo3) Test1(a []js.Value, b ...[]js.Value) (_result []js.Value) {
+func (_this *Foo3) Test1(a []interface{}, b ...[]interface{}) (_result []js.Value) {
 	var (
 		_args []interface{} = make([]interface{}, 1+len(b))
 		_end  int

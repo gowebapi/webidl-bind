@@ -19,7 +19,7 @@ const inoutToTmplInput = `
 
 {{define "param-start"}}
 	{{if .Optional}}
-		{{if .AnyType}}
+		{{if and .AnyType (not .UseIn)}}
 			if {{.In}}.Type() != js.TypeUndefined {
 		{{else}}
 			if {{.In}} != nil {
