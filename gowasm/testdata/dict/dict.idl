@@ -1,0 +1,11 @@
+
+dictionary Test1 {
+	long a;
+	any b;
+	sequence<long> c;
+	sequence<any> d;
+};
+
+interface Foo {
+	attribute Test1 test1;
+};

@@ -33,6 +33,8 @@ callback Test14 = union (boolean ...b);
 
 callback Test15 = Foo (any c, Foo ...d);
 
+callback Test16 = any (any a, optional any b);
+
 dictionary Bar {
     int a;
     int b;
@@ -59,4 +61,5 @@ interface Foo {
     attribute Test13 test13;
     attribute Test14 test14;
     attribute Test15 test15;
+    attribute Test16 test16;
 };

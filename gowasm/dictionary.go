@@ -14,7 +14,7 @@ const dictionaryTmplInput = `
 {{define "header"}}
 // dictionary: {{.Dict.Basic.Idl}}
 type {{.Dict.Basic.Def}} struct {
-{{range .Members}}   {{.Name.Def}} {{.Type.Var}}
+{{range .Members}}   {{.Name.Def}} {{.Type.VarOut}}
 {{end}}
 }
 
@@ -80,19 +80,19 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.Type.Input))
 			data.Required = append(data.Required, mo)
 		}
-		mo.fromIn, mo.fromOut = setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl, false), setupVarName("out%d", idx, mo.Name.Def, false)
+		mo.fromIn, mo.fromOut = setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl, false), setupVarName("value%d", idx, mo.Name.Def, false)
 		mo.toIn, mo.toOut = setupVarName("_this.@name@", idx, mo.Name.Def, false), setupVarName("value%d", idx, mo.Name.Def, false)
-		from.WriteString(inoutParamStart(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
-		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, inoutFromTmpl))
+		from.WriteString(inoutParamStart(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, useOut, inoutFromTmpl))
+		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, useOut, inoutFromTmpl))
 		from.WriteString(inoutParamEnd(mo.Type, "", inoutFromTmpl))
-		from.WriteString(fmt.Sprintf("\n\tout.%s = out%d\n", mo.Name.Def, idx))
-		to.WriteString(inoutParamStart(mo.Ref, mo.Type, mo.toOut, mo.toIn, idx, inoutToTmpl))
-		to.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.toOut, mo.toIn, idx, inoutToTmpl))
+		from.WriteString(fmt.Sprintf("\n\tout.%s = value%d\n", mo.Name.Def, idx))
+		to.WriteString(inoutParamStart(mo.Ref, mo.Type, mo.toOut, mo.toIn, idx, useOut, inoutToTmpl))
+		to.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.toOut, mo.toIn, idx, useOut, inoutToTmpl))
 		to.WriteString(inoutParamEnd(mo.Type, "", inoutToTmpl))
 		to.WriteString(fmt.Sprintf("\n\tout.Set(\"%s\", value%d)\n", mi.Name().Idl, idx))
 	}
-	varFrom := inoutDictionaryVariableStart(data, true, inoutFromTmpl)
-	varTo := inoutDictionaryVariableStart(data, false, inoutToTmpl)
+	varFrom := inoutDictionaryVariableStart(data, useOut, inoutFromTmpl)
+	varTo := inoutDictionaryVariableStart(data, useOut, inoutToTmpl)
 	data.ReqParamLine = strings.Join(reqParam, ", ")
 	data.From, data.To = varFrom+from.String(), varTo+to.String()
 

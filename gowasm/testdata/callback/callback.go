@@ -306,7 +306,7 @@ func Test5FromJS(_value js.Value) Test5Func {
 }
 
 // callback: Test6
-type Test6Func func(a ...int)
+type Test6Func func(a []int)
 
 // Test6 is a javascript function type.
 //
@@ -328,7 +328,7 @@ func Test6ToJS(callback Test6Func) *Test6 {
 			__out = (__in).Int()
 			_p0 = append(_p0, __out)
 		}
-		callback(_p0...)
+		callback(_p0)
 		// returning no return value
 		return nil
 	}))
@@ -336,7 +336,7 @@ func Test6ToJS(callback Test6Func) *Test6 {
 }
 
 func Test6FromJS(_value js.Value) Test6Func {
-	return func(a ...int) {
+	return func(a []int) {
 		var (
 			_args []interface{} = make([]interface{}, 0+len(a))
 			_end  int
@@ -352,7 +352,7 @@ func Test6FromJS(_value js.Value) Test6Func {
 }
 
 // callback: Test7
-type Test7Func func(b ...js.Value)
+type Test7Func func(b []js.Value)
 
 // Test7 is a javascript function type.
 //
@@ -374,7 +374,7 @@ func Test7ToJS(callback Test7Func) *Test7 {
 			__out = __in
 			_p0 = append(_p0, __out)
 		}
-		callback(_p0...)
+		callback(_p0)
 		// returning no return value
 		return nil
 	}))
@@ -382,7 +382,7 @@ func Test7ToJS(callback Test7Func) *Test7 {
 }
 
 func Test7FromJS(_value js.Value) Test7Func {
-	return func(b ...js.Value) {
+	return func(b []js.Value) {
 		var (
 			_args []interface{} = make([]interface{}, 0+len(b))
 			_end  int
@@ -398,7 +398,7 @@ func Test7FromJS(_value js.Value) Test7Func {
 }
 
 // callback: Test8
-type Test8Func func(a string, b string, c ...int) int
+type Test8Func func(a string, b string, c []int) int
 
 // Test8 is a javascript function type.
 //
@@ -424,7 +424,7 @@ func Test8ToJS(callback Test8Func) *Test8 {
 			__out = (__in).Int()
 			_p2 = append(_p2, __out)
 		}
-		_returned := callback(_p0, _p1, _p2...)
+		_returned := callback(_p0, _p1, _p2)
 		_converted := _returned
 		return _converted
 	}))
@@ -432,7 +432,7 @@ func Test8ToJS(callback Test8Func) *Test8 {
 }
 
 func Test8FromJS(_value js.Value) Test8Func {
-	return func(a string, b string, c ...int) (_result int) {
+	return func(a string, b string, c []int) (_result int) {
 		var (
 			_args []interface{} = make([]interface{}, 2+len(c))
 			_end  int
@@ -459,7 +459,7 @@ func Test8FromJS(_value js.Value) Test8Func {
 }
 
 // callback: Test9
-type Test9Func func(a int, b ...*Bar) bool
+type Test9Func func(a int, b []*Bar) bool
 
 // Test9 is a javascript function type.
 //
@@ -483,7 +483,7 @@ func Test9ToJS(callback Test9Func) *Test9 {
 			__out = BarFromJS(__in)
 			_p1 = append(_p1, __out)
 		}
-		_returned := callback(_p0, _p1...)
+		_returned := callback(_p0, _p1)
 		_converted := _returned
 		return _converted
 	}))
@@ -491,7 +491,7 @@ func Test9ToJS(callback Test9Func) *Test9 {
 }
 
 func Test9FromJS(_value js.Value) Test9Func {
-	return func(a int, b ...*Bar) (_result bool) {
+	return func(a int, b []*Bar) (_result bool) {
 		var (
 			_args []interface{} = make([]interface{}, 1+len(b))
 			_end  int
@@ -515,7 +515,7 @@ func Test9FromJS(_value js.Value) Test9Func {
 }
 
 // callback: Test10
-type Test10Func func(a *Bar, c ...Baz) *Bar
+type Test10Func func(a *Bar, c []Baz) *Bar
 
 // Test10 is a javascript function type.
 //
@@ -539,7 +539,7 @@ func Test10ToJS(callback Test10Func) *Test10 {
 			__out = BazFromJS(__in)
 			_p1 = append(_p1, __out)
 		}
-		_returned := callback(_p0, _p1...)
+		_returned := callback(_p0, _p1)
 		_converted := _returned.JSValue()
 		return _converted
 	}))
@@ -547,7 +547,7 @@ func Test10ToJS(callback Test10Func) *Test10 {
 }
 
 func Test10FromJS(_value js.Value) Test10Func {
-	return func(a *Bar, c ...Baz) (_result *Bar) {
+	return func(a *Bar, c []Baz) (_result *Bar) {
 		var (
 			_args []interface{} = make([]interface{}, 1+len(c))
 			_end  int
@@ -571,7 +571,7 @@ func Test10FromJS(_value js.Value) Test10Func {
 }
 
 // callback: Test11
-type Test11Func func(a *Bar, c ...*Foo) string
+type Test11Func func(a *Bar, c []*Foo) string
 
 // Test11 is a javascript function type.
 //
@@ -595,7 +595,7 @@ func Test11ToJS(callback Test11Func) *Test11 {
 			__out = FooFromJS(__in)
 			_p1 = append(_p1, __out)
 		}
-		_returned := callback(_p0, _p1...)
+		_returned := callback(_p0, _p1)
 		_converted := _returned
 		return _converted
 	}))
@@ -603,7 +603,7 @@ func Test11ToJS(callback Test11Func) *Test11 {
 }
 
 func Test11FromJS(_value js.Value) Test11Func {
-	return func(a *Bar, c ...*Foo) (_result string) {
+	return func(a *Bar, c []*Foo) (_result string) {
 		var (
 			_args []interface{} = make([]interface{}, 1+len(c))
 			_end  int
@@ -627,7 +627,7 @@ func Test11FromJS(_value js.Value) Test11Func {
 }
 
 // callback: Test12
-type Test12Func func(a *Bar, c ...*Union) *Bar
+type Test12Func func(a *Bar, c []*Union) *Bar
 
 // Test12 is a javascript function type.
 //
@@ -651,7 +651,7 @@ func Test12ToJS(callback Test12Func) *Test12 {
 			__out = UnionFromJS(__in)
 			_p1 = append(_p1, __out)
 		}
-		_returned := callback(_p0, _p1...)
+		_returned := callback(_p0, _p1)
 		_converted := _returned.JSValue()
 		return _converted
 	}))
@@ -659,7 +659,7 @@ func Test12ToJS(callback Test12Func) *Test12 {
 }
 
 func Test12FromJS(_value js.Value) Test12Func {
-	return func(a *Bar, c ...*Union) (_result *Bar) {
+	return func(a *Bar, c []*Union) (_result *Bar) {
 		var (
 			_args []interface{} = make([]interface{}, 1+len(c))
 			_end  int
@@ -683,7 +683,7 @@ func Test12FromJS(_value js.Value) Test12Func {
 }
 
 // callback: Test13
-type Test13Func func(b ...js.Value) js.Value
+type Test13Func func(b []js.Value) js.Value
 
 // Test13 is a javascript function type.
 //
@@ -705,7 +705,7 @@ func Test13ToJS(callback Test13Func) *Test13 {
 			__out = __in
 			_p0 = append(_p0, __out)
 		}
-		_returned := callback(_p0...)
+		_returned := callback(_p0)
 		_converted := _returned
 		return _converted
 	}))
@@ -713,7 +713,7 @@ func Test13ToJS(callback Test13Func) *Test13 {
 }
 
 func Test13FromJS(_value js.Value) Test13Func {
-	return func(b ...js.Value) (_result js.Value) {
+	return func(b []js.Value) (_result js.Value) {
 		var (
 			_args []interface{} = make([]interface{}, 0+len(b))
 			_end  int
@@ -734,7 +734,7 @@ func Test13FromJS(_value js.Value) Test13Func {
 }
 
 // callback: Test14
-type Test14Func func(b ...bool) *Union
+type Test14Func func(b []bool) *Union
 
 // Test14 is a javascript function type.
 //
@@ -756,7 +756,7 @@ func Test14ToJS(callback Test14Func) *Test14 {
 			__out = (__in).Bool()
 			_p0 = append(_p0, __out)
 		}
-		_returned := callback(_p0...)
+		_returned := callback(_p0)
 		_converted := _returned.JSValue()
 		return _converted
 	}))
@@ -764,7 +764,7 @@ func Test14ToJS(callback Test14Func) *Test14 {
 }
 
 func Test14FromJS(_value js.Value) Test14Func {
-	return func(b ...bool) (_result *Union) {
+	return func(b []bool) (_result *Union) {
 		var (
 			_args []interface{} = make([]interface{}, 0+len(b))
 			_end  int
@@ -785,7 +785,7 @@ func Test14FromJS(_value js.Value) Test14Func {
 }
 
 // callback: Test15
-type Test15Func func(c js.Value, d ...*Foo) *Foo
+type Test15Func func(c js.Value, d []*Foo) *Foo
 
 // Test15 is a javascript function type.
 //
@@ -809,7 +809,7 @@ func Test15ToJS(callback Test15Func) *Test15 {
 			__out = FooFromJS(__in)
 			_p1 = append(_p1, __out)
 		}
-		_returned := callback(_p0, _p1...)
+		_returned := callback(_p0, _p1)
 		_converted := _returned.JSValue()
 		return _converted
 	}))
@@ -817,7 +817,7 @@ func Test15ToJS(callback Test15Func) *Test15 {
 }
 
 func Test15FromJS(_value js.Value) Test15Func {
-	return func(c js.Value, d ...*Foo) (_result *Foo) {
+	return func(c js.Value, d []*Foo) (_result *Foo) {
 		var (
 			_args []interface{} = make([]interface{}, 1+len(d))
 			_end  int
@@ -835,6 +835,59 @@ func Test15FromJS(_value js.Value) Test15Func {
 			_converted *Foo // javascript: Foo
 		)
 		_converted = FooFromJS(_returned)
+		_result = _converted
+		return
+	}
+}
+
+// callback: Test16
+type Test16Func func(a js.Value, b js.Value) js.Value
+
+// Test16 is a javascript function type.
+//
+// Call Release() when done to release resouces
+// allocated to this type.
+type Test16 js.Func
+
+func Test16ToJS(callback Test16Func) *Test16 {
+	if callback == nil {
+		return nil
+	}
+	ret := Test16(js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		var (
+			_p0 js.Value // javascript: any a
+			_p1 js.Value // javascript: any b
+		)
+		_p0 = args[0]
+		if len(args) > 1 {
+			_p1 = args[1]
+		}
+		_returned := callback(_p0, _p1)
+		_converted := _returned
+		return _converted
+	}))
+	return &ret
+}
+
+func Test16FromJS(_value js.Value) Test16Func {
+	return func(a js.Value, b js.Value) (_result js.Value) {
+		var (
+			_args [2]interface{}
+			_end  int
+		)
+		_p0 := a
+		_args[0] = _p0
+		_end++
+		if b.Type() != js.TypeUndefined {
+			_p1 := b
+			_args[1] = _p1
+			_end++
+		}
+		_returned := _value.Invoke(_args[0:_end]...)
+		var (
+			_converted js.Value // javascript: any
+		)
+		_converted = _returned
 		_result = _converted
 		return
 	}
@@ -864,13 +917,13 @@ func BarFromJS(value js.Wrapper) *Bar {
 	input := value.JSValue()
 	var out Bar
 	var (
-		out0 int // javascript: long {a A a}
-		out1 int // javascript: long {b B b}
+		value0 int // javascript: long {a A a}
+		value1 int // javascript: long {b B b}
 	)
-	out0 = (input.Get("a")).Int()
-	out.A = out0
-	out1 = (input.Get("b")).Int()
-	out.B = out1
+	value0 = (input.Get("a")).Int()
+	out.A = value0
+	value1 = (input.Get("b")).Int()
+	out.B = value1
 	return &out
 }
 
@@ -1223,4 +1276,26 @@ func (_this *Foo) SetTest15(value *Test15) {
 	}
 	input := __callback14
 	_this.Value_JS.Set("test15", input)
+}
+
+// Test16 returning attribute 'test16' with
+// type Test16 (idl: Test16).
+func (_this *Foo) Test16() Test16Func {
+	var ret Test16Func
+	value := _this.Value_JS.Get("test16")
+	ret = Test16FromJS(value)
+	return ret
+}
+
+// SetTest16 setting attribute 'test16' with
+// type Test16 (idl: Test16).
+func (_this *Foo) SetTest16(value *Test16) {
+	var __callback15 js.Value
+	if value != nil {
+		__callback15 = (*value).Value
+	} else {
+		__callback15 = js.Null()
+	}
+	input := __callback15
+	_this.Value_JS.Set("test16", input)
 }

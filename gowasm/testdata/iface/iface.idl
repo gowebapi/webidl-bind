@@ -1,0 +1,21 @@
+
+interface Foo {
+	any test1(any a, any ...b);
+	static any test2(any a, any ...b);
+	attribute any test3;
+	static attribute any test4;
+};
+
+interface Foo2 {
+	sequence<long> test1(sequence<long> a, sequence<long> ...b);
+	static sequence<long> test6(sequence<long> a, sequence<long> ...b);
+	attribute sequence<long> test3;
+	static attribute sequence<long> test7;
+};
+
+interface Foo3 {
+	sequence<any> test1(sequence<any> a, sequence<any> ...b);
+	static sequence<any> test8(sequence<any> a, sequence<any> ...b);
+	attribute sequence<any> test3;
+	static attribute sequence<any> test9;
+};

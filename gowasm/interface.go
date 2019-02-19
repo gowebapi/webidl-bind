@@ -359,18 +359,18 @@ func writeInterface(dst io.Writer, input types.Type) error {
 	if err := writeInterfaceVars(value.StaticVars, value, "get-static-attribute", "set-static-attribute", dst); err != nil {
 		return err
 	}
-	if err := writeInterfaceMethods(value.StaticMethod, value, "static-method", dst); err != nil {
+	if err := writeInterfaceMethods(value.StaticMethod, value, "static-method", useIn, dst); err != nil {
 		return err
 	}
 	if value.Constructor != nil {
-		if err := writeInterfaceMethod(value.Constructor, value, "constructor", dst); err != nil {
+		if err := writeInterfaceMethod(value.Constructor, value, "constructor", useIn, dst); err != nil {
 			return err
 		}
 	}
 	if err := writeInterfaceVars(value.Vars, value, "get-object-attribute", "set-object-attribute", dst); err != nil {
 		return err
 	}
-	if err := writeInterfaceMethods(value.Method, value, "object-method", dst); err != nil {
+	if err := writeInterfaceMethods(value.Method, value, "object-method", useIn, dst); err != nil {
 		return err
 	}
 	return nil
@@ -384,7 +384,7 @@ func writeCallbackInterface(value *types.Interface, dst io.Writer) error {
 	// first we setup method information
 	methods := []*interfaceMethod{}
 	for _, m := range value.Method {
-		to := setupInOutWasmData(m.Params, "args[%d]", "_p%d")
+		to := setupInOutWasmData(m.Params, "args[%d]", "_p%d", useOut)
 		retLang, retList, isVoid := calculateMethodReturn(m.Return, to.ReleaseHdl)
 		in := &interfaceMethod{
 			Name:         *m.Name(),
@@ -418,7 +418,7 @@ func writeCallbackInterface(value *types.Interface, dst io.Writer) error {
 			return err
 		}
 	}
-	if err := writeInterfaceMethods(value.Method, value, "callback-invoke", dst); err != nil {
+	if err := writeInterfaceMethods(value.Method, value, "callback-invoke", useOut, dst); err != nil {
 		return err
 	}
 	return nil
@@ -457,12 +457,12 @@ func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set str
 		if a.Type.NeedRelease() {
 			ret = "(_release ReleasableApiResource)"
 		}
-		from := inoutParamStart(ref, typ, "ret", "value", idx, inoutFromTmpl)
-		from += inoutGetToFromWasm(ref, typ, "ret", "value", idx, inoutFromTmpl)
+		from := inoutParamStart(ref, typ, "ret", "value", idx, useOut, inoutFromTmpl)
+		from += inoutGetToFromWasm(ref, typ, "ret", "value", idx, useOut, inoutFromTmpl)
 		from += inoutParamEnd(typ, "", inoutFromTmpl)
-		to := inoutParamStart(ref, typ, "input", "value", idx, inoutToTmpl)
-		to += inoutGetToFromWasm(ref, typ, "input", "value", idx, inoutToTmpl)
-		to += inoutParamStart(ref, typ, "input", "value", idx, inoutToTmpl)
+		to := inoutParamStart(ref, typ, "input", "value", idx, useIn, inoutToTmpl)
+		to += inoutGetToFromWasm(ref, typ, "input", "value", idx, useIn, inoutToTmpl)
+		to += inoutParamEnd(typ, "", inoutToTmpl)
 		in := &interfaceAttribute{
 			Name: *a.Name(),
 			Type: typ,
@@ -484,17 +484,17 @@ func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set str
 	return nil
 }
 
-func writeInterfaceMethods(methods []*types.IfMethod, main *types.Interface, tmpl string, dst io.Writer) error {
+func writeInterfaceMethods(methods []*types.IfMethod, main *types.Interface, tmpl string, use useInOut, dst io.Writer) error {
 	for _, m := range methods {
-		if err := writeInterfaceMethod(m, main, tmpl, dst); err != nil {
+		if err := writeInterfaceMethod(m, main, tmpl, use, dst); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string, dst io.Writer) error {
-	to := setupInOutWasmData(m.Params, "@name@", "_p%d")
+func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string, use useInOut, dst io.Writer) error {
+	to := setupInOutWasmData(m.Params, "@name@", "_p%d", use)
 	retLang, retList, isVoid := calculateMethodReturn(m.Return, to.ReleaseHdl)
 	in := &interfaceMethod{
 		Name:         *m.Name(),
@@ -510,15 +510,15 @@ func writeInterfaceMethod(m *types.IfMethod, main *types.Interface, tmpl string,
 		return err
 	}
 	assign := "_args[%d] = _p%d; _end++"
-	if err := writeInOutToWasm(in.To, assign, dst); err != nil {
+	if err := writeInOutToWasm(in.To, assign, useIn, dst); err != nil {
 		return err
 	}
 	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-invoke", in); err != nil {
 		return err
 	}
 	if !in.IsVoidReturn {
-		result := setupInOutWasmForType(in.Method.Return, "_what_return_name", "_returned", "_converted")
-		if err := writeInOutFromWasm(result, "", dst); err != nil {
+		result := setupInOutWasmForType(in.Method.Return, "_what_return_name", "_returned", "_converted", useOut)
+		if err := writeInOutFromWasm(result, "", useOut, dst); err != nil {
 			return err
 		}
 	}
@@ -532,15 +532,15 @@ func writeInterfaceCallbackMethod(in *interfaceMethod, assign, tmpl string, dst 
 	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-start", in); err != nil {
 		return err
 	}
-	if err := writeInOutFromWasm(in.To, assign, dst); err != nil {
+	if err := writeInOutFromWasm(in.To, assign, useOut, dst); err != nil {
 		return err
 	}
 	if err := interfaceTmpl.ExecuteTemplate(dst, tmpl+"-invoke", in); err != nil {
 		return err
 	}
 	if !in.IsVoidReturn {
-		result := setupInOutWasmForType(in.Method.Return, "_what_return_name", "_returned", "_converted")
-		if err := writeInOutToWasm(result, "", dst); err != nil {
+		result := setupInOutWasmForType(in.Method.Return, "_what_return_name", "_returned", "_converted", useOut)
+		if err := writeInOutToWasm(result, "", useOut, dst); err != nil {
 			return err
 		}
 	}

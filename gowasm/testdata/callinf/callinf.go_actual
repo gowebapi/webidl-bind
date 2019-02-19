@@ -39,7 +39,8 @@ func UnionFromJS(value js.Value) *Union {
 	return &Union{Value: value}
 }
 
-const Test1_Foo1 string = 2
+const Test1_Foo1 string = "2"
+const Test3_Foo1 int = 3
 
 // Foo1 is a callback interface.
 type Foo1 interface {
@@ -347,9 +348,7 @@ func Foo3FromJS(value js.Wrapper) *Foo3Value {
 	if input.Type() == js.TypeObject {
 		return &Foo3Value{Value: input}
 	}
-	if input.Type() == js.TypeFunction {
-		return &Foo3Value{Value: input, useInvoke: true}
-	}
+	// note: have no support for functions, method count: 4
 	panic("unsupported type")
 }
 

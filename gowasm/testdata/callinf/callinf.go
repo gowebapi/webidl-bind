@@ -348,9 +348,7 @@ func Foo3FromJS(value js.Wrapper) *Foo3Value {
 	if input.Type() == js.TypeObject {
 		return &Foo3Value{Value: input}
 	}
-	if input.Type() == js.TypeFunction {
-		return &Foo3Value{Value: input, useInvoke: true}
-	}
+	// note: have no support for functions, method count: 4
 	panic("unsupported type")
 }
 

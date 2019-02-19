@@ -26,6 +26,14 @@ func TestCallbackInterface(t *testing.T) {
 	standardSetupTest("callinf", t)
 }
 
+func TestDict(t *testing.T) {
+	standardSetupTest("dict", t)
+}
+
+func TestInterface(t *testing.T) {
+	standardSetupTest("iface", t)
+}
+
 func standardSetupTest(name string, t *testing.T) *types.Convert {
 	idl := fmt.Sprintf("testdata/%s/%s.idl", name, name)
 	actual := fmt.Sprintf("testdata/%s/%s.go", name, name)

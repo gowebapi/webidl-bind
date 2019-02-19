@@ -73,7 +73,7 @@ type callbackData struct {
 func writeCallback(dst io.Writer, value types.Type) error {
 	cb := value.(*types.Callback)
 	data := &callbackData{
-		InOut:   setupInOutWasmData(cb.Parameters, "args[%d@variadicSlice@]", "_p%d"),
+		InOut:   setupInOutWasmData(cb.Parameters, "args[%d@variadicSlice@]", "_p%d", useOut),
 		VoidRet: types.IsVoid(cb.Return),
 	}
 	data.ArgVar = calculateMethodArgsSize(data.InOut)
@@ -83,32 +83,32 @@ func writeCallback(dst io.Writer, value types.Type) error {
 	if err := callbackTempl.ExecuteTemplate(dst, "start", data); err != nil {
 		return err
 	}
-	if err := writeInOutFromWasm(data.InOut, "", dst); err != nil {
+	if err := writeInOutFromWasm(data.InOut, "", useOut, dst); err != nil {
 		return err
 	}
 	if err := callbackTempl.ExecuteTemplate(dst, "middle-1", data); err != nil {
 		return err
 	}
 	if !data.VoidRet {
-		result := setupInOutWasmForType(cb.Return, "", "_returned", "_converted")
-		if err := writeInOutToWasm(result, "", dst); err != nil {
+		result := setupInOutWasmForType(cb.Return, "", "_returned", "_converted", useOut)
+		if err := writeInOutToWasm(result, "", useOut, dst); err != nil {
 			return err
 		}
 	}
 	if err := callbackTempl.ExecuteTemplate(dst, "middle-2", data); err != nil {
 		return err
 	}
-	fromjs := setupInOutWasmData(cb.Parameters, "@name@", "_p%d")
+	fromjs := setupInOutWasmData(cb.Parameters, "@name@", "_p%d", useOut)
 	assign := "_args[%d] = _p%d; _end++"
-	if err := writeInOutToWasm(fromjs, assign, dst); err != nil {
+	if err := writeInOutToWasm(fromjs, assign, useOut, dst); err != nil {
 		return err
 	}
 	if err := callbackTempl.ExecuteTemplate(dst, "invoke", data); err != nil {
 		return err
 	}
 	if !data.VoidRet {
-		result := setupInOutWasmForType(cb.Return, "", "_returned", "_converted")
-		if err := writeInOutFromWasm(result, "", dst); err != nil {
+		result := setupInOutWasmForType(cb.Return, "", "_returned", "_converted", useOut)
+		if err := writeInOutFromWasm(result, "", useOut, dst); err != nil {
 			return err
 		}
 	}

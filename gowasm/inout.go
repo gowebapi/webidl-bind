@@ -55,9 +55,9 @@ const inoutToTmplInput = `
 
 {{define "type-sequence"}} 
 	{{.Out}} := js.Global().Get("Array").New(len( {{if .Info.Pointer}}*{{end}} {{.In}} ))
-	for __idx, __in := range {{if .Info.Pointer}}*{{end}} {{.In}} {
+	for __idx, __seq_in := range {{if .Info.Pointer}}*{{end}} {{.In}} {
 		{{.Inner}}
-		{{.Out}} .SetIndex(__idx, __out )
+		{{.Out}} .SetIndex(__idx, __seq_out )
 	}
 {{end}}
 
@@ -75,7 +75,7 @@ const inoutFromTmplInput = `
 {{define "start"}}
 	var (
 	{{range .ParamList}}
-		{{.Out}} {{.Info.Var}} // javascript: {{.Info.Idl}} {{.Name}}
+		{{.Out}} {{.Var}} // javascript: {{.Info.Idl}} {{.Name}}
 	{{end}}
 	)
 {{end}}
@@ -114,19 +114,19 @@ const inoutFromTmplInput = `
 
 {{define "type-sequence"}}
 	__length{{.Idx}} := {{.In}}.Length()
-	__array{{.Idx}} := make( {{.Info.Def}} , __length{{.Idx}}, __length{{.Idx}} )
+	__array{{.Idx}} := make( {{.Var}} , __length{{.Idx}}, __length{{.Idx}} )
 	for __idx := 0; __idx < __length{{.Idx}} ; __idx++ {
-		var __out {{.InnerInfo.Var}}
-		__in := {{.In}}.Index(__idx)
+		var __seq_out {{.VarInner}}
+		__seq_in := {{.In}}.Index(__idx)
 		{{.Inner}}
-		__array{{.Idx}}[__idx] = __out
+		__array{{.Idx}}[__idx] = __seq_out
 	}
 	{{.Out}} = {{if .Info.Pointer}} & {{end}} __array{{.Idx}}
 {{end}}
 {{define "type-variadic"}}
-	{{.Out}} = make( {{.Info.Output}} , 0, len( {{.In}} ))
+	{{.Out}} = make( {{.Var}} , 0, len( {{.In}} ))
 	for _, __in := range {{.In}} {
-		var __out {{.Info.VarInner}}
+		var __out {{.VarInner}}
 		{{.Inner}}
 		{{.Out}} = append({{.Out}}, __out)
 	} 
@@ -135,6 +135,13 @@ const inoutFromTmplInput = `
 
 var inoutToTmpl = template.Must(template.New("inout-to").Parse(inoutToTmplInput))
 var inoutFromTmpl = template.Must(template.New("inout-from").Parse(inoutFromTmplInput))
+
+type useInOut int
+
+const (
+	useIn useInOut = iota
+	useOut
+)
 
 type inoutData struct {
 	Params    string
@@ -163,19 +170,21 @@ type inoutParam struct {
 
 	// Inner type definintion
 	Type types.TypeRef
+
+	Var string
 }
 
 func parameterArgumentLine(input []*types.Parameter) (all string, list []string) {
 	for _, value := range input {
 		info, _ := value.Type.Param(false, value.Optional, value.Variadic)
-		name := value.Name + " " + info.Input
+		name := value.Name + " " + info.Output
 		list = append(list, name)
 	}
 	all = strings.Join(list, ", ")
 	return
 }
 
-func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
+func setupInOutWasmData(params []*types.Parameter, in, out string, use useInOut) *inoutData {
 	paramTextList := []string{}
 	paramList := []inoutParam{}
 	allout := []string{}
@@ -188,14 +197,22 @@ func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 			Out:   setupVarName(out, idx, pi.Name, pi.Variadic),
 		}
 		out := po.Out
-		if pi.Variadic {
-			out = setupVarName(out, idx, pi.Name, false) + "..."
-		}
+		// if pi.Variadic {
+		// 	out = setupVarName(out, idx, pi.Name, false) + "..."
+		// }
 		po.Info, po.Type = pi.Type.Param(false, pi.Optional, pi.Variadic)
 		po.Tmpl = po.Info.Template
+		po.Var = po.Info.VarOut
+		if use == useIn {
+			po.Var = po.Info.VarIn
+		}
 		releaseHdl = releaseHdl || pi.Type.NeedRelease()
 		paramList = append(paramList, po)
-		paramTextList = append(paramTextList, fmt.Sprint(pi.Name, " ", po.Info.Input))
+		paramType := po.Info.Output
+		if use == useIn {
+			paramType = po.Info.Input
+		}
+		paramTextList = append(paramTextList, fmt.Sprint(pi.Name, " ", paramType))
 		allout = append(allout, out)
 	}
 	return &inoutData{
@@ -206,7 +223,7 @@ func setupInOutWasmData(params []*types.Parameter, in, out string) *inoutData {
 	}
 }
 
-func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
+func setupInOutWasmForOne(param *types.Parameter, in, out string, use useInOut) *inoutData {
 	idx := 0
 	pi := param
 	po := inoutParam{
@@ -217,6 +234,10 @@ func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
 	}
 	po.Info, po.Type = pi.Type.Param(false, pi.Optional, pi.Variadic)
 	po.Tmpl = po.Info.Template
+	po.Var = po.Info.VarOut
+	if use == useIn {
+		po.Var = po.Info.VarIn
+	}
 	return &inoutData{
 		ParamList:  []inoutParam{po},
 		Params:     fmt.Sprint(pi.Name, " ", po.Info.Input),
@@ -224,14 +245,14 @@ func setupInOutWasmForOne(param *types.Parameter, in, out string) *inoutData {
 		AllOut:     po.Out,
 	}
 }
-func setupInOutWasmForType(t types.TypeRef, name, in, out string) *inoutData {
+func setupInOutWasmForType(t types.TypeRef, name, in, out string, use useInOut) *inoutData {
 	pi := types.Parameter{
 		Name:     name,
 		Optional: false,
 		Variadic: false,
 		Type:     t,
 	}
-	return setupInOutWasmForOne(&pi, in, out)
+	return setupInOutWasmForOne(&pi, in, out, use)
 }
 
 func setupVarName(value string, idx int, name string, variadic bool) string {
@@ -254,24 +275,30 @@ func setupVarName(value string, idx int, name string, variadic bool) string {
 	return value
 }
 
-func writeInOutToWasm(data *inoutData, assign string, dst io.Writer) error {
-	return writeInOutLoop(data, assign, inoutToTmpl, dst)
+func writeInOutToWasm(data *inoutData, assign string, use useInOut, dst io.Writer) error {
+	return writeInOutLoop(data, assign, use, inoutToTmpl, dst)
 }
 
-func writeInOutFromWasm(data *inoutData, assign string, dst io.Writer) error {
-	return writeInOutLoop(data, assign, inoutFromTmpl, dst)
+func writeInOutFromWasm(data *inoutData, assign string, use useInOut, dst io.Writer) error {
+	return writeInOutLoop(data, assign, use, inoutFromTmpl, dst)
 }
 
-func writeInOutLoop(data *inoutData, assign string, tmpl *template.Template, dst io.Writer) error {
+func writeInOutLoop(data *inoutData, assign string, use useInOut, tmpl *template.Template, dst io.Writer) error {
+	for _, p := range data.ParamList {
+		p.Var = p.Info.VarOut
+		if use == useIn {
+			p.Var = p.Info.VarIn
+		}
+	}
 	if err := tmpl.ExecuteTemplate(dst, "start", data); err != nil {
 		return err
 	}
 	for idx, p := range data.ParamList {
-		start := inoutParamStart(p.Type, p.Info, p.Out, p.In, idx, tmpl)
+		start := inoutParamStart(p.Type, p.Info, p.Out, p.In, idx, use, tmpl)
 		if _, err := io.WriteString(dst, start); err != nil {
 			return err
 		}
-		code := inoutGetToFromWasm(p.Type, p.Info, p.Out, p.In, idx, tmpl)
+		code := inoutGetToFromWasm(p.Type, p.Info, p.Out, p.In, idx, use, tmpl)
 		if _, err := io.WriteString(dst, code); err != nil {
 			return err
 		}
@@ -287,7 +314,7 @@ func writeInOutLoop(data *inoutData, assign string, tmpl *template.Template, dst
 	return nil
 }
 
-func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, idx int, tmpl *template.Template) string {
+func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, idx int, use useInOut, tmpl *template.Template) string {
 	if info == nil {
 		panic("null")
 		// info = t.DefaultParam()
@@ -303,29 +330,37 @@ func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, i
 
 		InnerInfo *types.TypeInfo
 		InnerType types.TypeRef
+
+		Var      string
+		VarInner string
 	}{
-		In:   in,
-		Type: t,
-		Out:  out,
-		Info: info,
-		Idx:  idx,
+		In:       in,
+		Type:     t,
+		Out:      out,
+		Info:     info,
+		Idx:      idx,
+		Var:      info.VarOut,
+		VarInner: info.VarOutInner,
 	}
 
+	if use == useIn {
+		data.Var, data.VarInner = info.VarIn, info.VarInInner
+	}
 	// sequence types need conversion of inner type
 	if seq, ok := t.(*types.SequenceType); ok {
 		data.InnerInfo, data.InnerType = seq.Elem.DefaultParam()
-		data.Inner = inoutGetToFromWasm(data.InnerType, data.InnerInfo, "__out", "__in", idx*100, tmpl)
+		data.Inner = inoutGetToFromWasm(data.InnerType, data.InnerInfo, "__seq_out", "__seq_in", idx*100, use, tmpl)
 	}
 	if data.Info.Variadic {
 		copy := *data.Info
 		copy.Variadic = false
-		data.Inner = inoutGetToFromWasm(data.Type, &copy, "__out", "__in", idx*100, tmpl)
+		data.Inner = inoutGetToFromWasm(data.Type, &copy, "__out", "__in", idx*100, use, tmpl)
 		t = types.ChangeTemplateName(t, "variadic")
 	}
 	return convertType(t, data, tmpl) + "\n"
 }
 
-func inoutParamStart(t types.TypeRef, info *types.TypeInfo, out, in string, idx int, tmpl *template.Template) string {
+func inoutParamStart(t types.TypeRef, info *types.TypeInfo, out, in string, idx int, use useInOut, tmpl *template.Template) string {
 	data := struct {
 		Nullable bool
 		Optional bool
@@ -334,6 +369,7 @@ func inoutParamStart(t types.TypeRef, info *types.TypeInfo, out, in string, idx 
 		In, Out  string
 		Idx      int
 		AnyType  bool
+		UseIn    bool
 	}{
 		Nullable: info.Nullable,
 		Optional: info.Option,
@@ -342,6 +378,7 @@ func inoutParamStart(t types.TypeRef, info *types.TypeInfo, out, in string, idx 
 		In:       in,
 		Out:      out,
 		Idx:      idx,
+		UseIn:    use == useIn,
 	}
 	_, data.AnyType = t.(*types.AnyType)
 	return executeTemplateToString("param-start", data, true, tmpl)
@@ -379,12 +416,13 @@ func executeTemplateToString(name string, data interface{}, newLine bool, tmpl *
 	return out
 }
 
-func inoutDictionaryVariableStart(dict *dictionaryData, from bool, tmpl *template.Template) string {
+func inoutDictionaryVariableStart(dict *dictionaryData, from useInOut, tmpl *template.Template) string {
 	type elem struct {
 		Name types.MethodName
 		In   string
 		Out  string
 		Info *types.TypeInfo
+		Var  string
 	}
 	data := struct {
 		ParamList  []*elem
@@ -396,8 +434,10 @@ func inoutDictionaryVariableStart(dict *dictionaryData, from bool, tmpl *templat
 			In:   m.toIn,
 			Out:  m.toOut,
 			Info: m.Type,
+			Var:  m.Type.VarOut,
 		}
-		if from {
+		if from == useIn {
+			v.Var = m.Type.VarIn
 			v.In, v.Out = m.fromIn, m.fromOut
 		}
 		data.ParamList = append(data.ParamList, v)

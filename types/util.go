@@ -34,14 +34,20 @@ type TypeInfo struct {
 	// Input is method parameter type
 	Input string
 
+	// VarIn used in variable definition in Input cases
+	VarIn string
+
+	// VarInInner is the inner type of a variadic/sequence in Input cases
+	VarInInner string
+
 	// Output define type out from a method
 	Output string
 
-	// Var used in variable definition
-	Var string
+	// VarOut used in variable definition in Output cases
+	VarOut string
 
-	// VarInner is the inner type of a variadic
-	VarInner string
+	// VarOut is the intter type of variadic/sequence in Output cases
+	VarOutInner string
 
 	// Pointer is true if InOut is a pointer type
 	Pointer bool
@@ -165,8 +171,10 @@ func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePt
 		BasicInfo:   basic,
 		Input:       basic.Def,
 		Output:      basic.Def,
-		Var:         basic.Def,
-		VarInner:    basic.Def,
+		VarIn:       basic.Def,
+		VarInInner:  basic.Def,
+		VarOut:      basic.Def,
+		VarOutInner: basic.Def,
 		NeedRelease: release,
 		Pointer:     (nullable || option || pointer) && !disablePtr,
 		Nullable:    nullable,
@@ -176,13 +184,16 @@ func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePt
 	if t.Pointer {
 		t.Input = "*" + t.Input
 		t.Output = "*" + t.Output
-		t.Var = "*" + t.Var
-		t.VarInner = "*" + t.VarInner
+		t.VarIn = "*" + t.VarIn
+		t.VarInInner = "*" + t.VarInInner
+		t.VarOut = "*" + t.VarOut
+		t.VarOutInner = "*" + t.VarOutInner
 	}
 	if variadic {
-		t.Var = "[]" + t.Var
 		t.Input = "..." + t.Input
+		t.VarIn = "[]" + t.VarIn
 		t.Output = "[]" + t.Output
+		t.VarOut = "[]" + t.VarOut
 	}
 	return t
 }

@@ -139,9 +139,11 @@ func (t *AnyType) Param(nullable, option, variadic bool) (info *TypeInfo, inner 
 	ret := &TypeInfo{
 		BasicInfo:   t.Basic(),
 		Input:       "js.Value",
+		VarIn:       "js.Value",
+		VarInInner:  "js.Value",
 		Output:      "js.Value",
-		Var:         "js.Value",
-		VarInner:    "js.Value",
+		VarOut:      "js.Value",
+		VarOutInner: "js.Value",
 		Pointer:     false,
 		NeedRelease: false,
 		Nullable:    false,
@@ -149,9 +151,10 @@ func (t *AnyType) Param(nullable, option, variadic bool) (info *TypeInfo, inner 
 		Variadic:    variadic,
 	}
 	if variadic {
-		ret.Var = "[]" + ret.Var
 		ret.Input = "..." + ret.Input
+		ret.VarIn = "[]" + ret.VarIn
 		ret.Output = "[]" + ret.Output
+		ret.VarOut = "[]" + ret.VarOut
 	}
 	return ret, t
 }
@@ -407,7 +410,9 @@ func (t *SequenceType) Basic() BasicInfo {
 	} else {
 		value.Def = "[]*" + eb.Def
 	}
-	return TransformBasic(t, value)
+	value.Idl = "sequence<" + eb.Idl + ">"
+	// basic is already transformed and doesn't need to be done again
+	return value
 }
 
 func (t *SequenceType) DefaultParam() (info *TypeInfo, inner TypeRef) {
@@ -427,7 +432,30 @@ func (t *SequenceType) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *SequenceType) Param(nullable, option, variadic bool) (info *TypeInfo, inner TypeRef) {
-	return newTypeInfo(t.Basic(), nullable, option, variadic, false, false, false), t
+	info, _ = t.Elem.Param(false, false, false)
+	info.Idl = "sequence<" + info.Idl + ">"
+	info.Def = "[]" + info.Def
+	info.Package = t.basic.Package
+	info.Internal = t.basic.Internal
+	info.Template = t.basic.Template
+
+	info.Input = "[]" + info.Input
+	info.Output = "[]" + info.Output
+	info.VarIn = "[]" + info.VarIn
+	info.VarOut = "[]" + info.VarOut
+
+	info.NeedRelease = false
+	info.Pointer = false
+	info.Nullable = nullable
+	info.Option = option
+	info.Variadic = variadic
+	if variadic {
+		info.Input = "..." + info.Input
+		info.VarIn = "[]" + info.VarIn
+		info.Output = "[]" + info.Output
+		info.VarOut = "[]" + info.VarOut
+	}
+	return info, t
 }
 
 func (t *SequenceType) NeedRelease() bool {
@@ -624,8 +652,10 @@ func (t *voidType) Param(nullable, option, variadic bool) (info *TypeInfo, inner
 		BasicInfo:   t.Basic(),
 		Input:       "",
 		Output:      "",
-		Var:       "",
-		VarInner: "",
+		VarIn:       "",
+		VarInInner:  "",
+		VarOut:      "",
+		VarOutInner: "",
 		NeedRelease: false,
 		Nullable:    false,
 		Option:      false,
