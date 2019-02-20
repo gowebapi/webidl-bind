@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/gowebapi/webidlgenerator/types"
+	"github.com/gowebapi/webidl-bind/types"
 )
 
 func TestCallback(t *testing.T) {

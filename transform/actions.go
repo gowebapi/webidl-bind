@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gowebapi/webidlgenerator/types"
+	"github.com/gowebapi/webidl-bind/types"
 )
 
 type action interface {

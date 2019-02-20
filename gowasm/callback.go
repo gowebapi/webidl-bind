@@ -4,7 +4,7 @@ import (
 	"io"
 	"text/template"
 
-	"github.com/gowebapi/webidlgenerator/types"
+	"github.com/gowebapi/webidl-bind/types"
 )
 
 const callbackTmplInput = `

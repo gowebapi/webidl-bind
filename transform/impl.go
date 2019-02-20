@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gowebapi/webidlgenerator/types"
+	"github.com/gowebapi/webidl-bind/types"
 )
 
 var globalProperties = map[string]bool{

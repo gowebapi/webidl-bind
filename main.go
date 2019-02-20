@@ -11,9 +11,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gowebapi/webidlgenerator/gowasm"
-	"github.com/gowebapi/webidlgenerator/transform"
-	"github.com/gowebapi/webidlgenerator/types"
+	"github.com/gowebapi/webidl-bind/gowasm"
+	"github.com/gowebapi/webidl-bind/transform"
+	"github.com/gowebapi/webidl-bind/types"
 )
 
 var args struct {

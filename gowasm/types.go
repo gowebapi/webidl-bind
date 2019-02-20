@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/gowebapi/webidlgenerator/types"
+	"github.com/gowebapi/webidl-bind/types"
 )
 
 func convertType(value types.TypeRef, data interface{}, tmpl *template.Template) string {
