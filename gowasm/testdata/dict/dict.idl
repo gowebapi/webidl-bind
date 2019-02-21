@@ -4,8 +4,15 @@ dictionary Test1 {
 	any b;
 	sequence<long> c;
 	sequence<any> d;
+	sequence<sequence<long>> e;
+};
+
+dictionary Test2 {
+	// must be first
+	sequence<sequence<long>> e;
 };
 
 interface Foo {
 	attribute Test1 test1;
+	attribute Test2 test2;
 };

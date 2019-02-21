@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -55,9 +56,9 @@ const inoutToTmplInput = `
 
 {{define "type-sequence"}} 
 	{{.Out}} := js.Global().Get("Array").New(len( {{if .Info.Pointer}}*{{end}} {{.In}} ))
-	for __idx, __seq_in := range {{if .Info.Pointer}}*{{end}} {{.In}} {
+	for __idx{{.Idx}} , __seq_in{{.Idx}} := range {{if .Info.Pointer}}*{{end}} {{.In}} {
 		{{.Inner}}
-		{{.Out}} .SetIndex(__idx, __seq_out )
+		{{.Out}} .SetIndex( __idx{{.Idx}} , __seq_out{{.Idx}} )
 	}
 {{end}}
 
@@ -115,11 +116,11 @@ const inoutFromTmplInput = `
 {{define "type-sequence"}}
 	__length{{.Idx}} := {{.In}}.Length()
 	__array{{.Idx}} := make( {{.Var}} , __length{{.Idx}}, __length{{.Idx}} )
-	for __idx := 0; __idx < __length{{.Idx}} ; __idx++ {
-		var __seq_out {{.VarInner}}
-		__seq_in := {{.In}}.Index(__idx)
+	for __idx{{.Idx}} := 0; __idx{{.Idx}} < __length{{.Idx}} ; __idx{{.Idx}} ++ {
+		var __seq_out{{.Idx}} {{.VarInner}}
+		__seq_in{{.Idx}} := {{.In}}.Index( __idx{{.Idx}} )
 		{{.Inner}}
-		__array{{.Idx}}[__idx] = __seq_out
+		__array{{.Idx}}[ __idx{{.Idx}} ] = __seq_out{{.Idx}}
 	}
 	{{.Out}} = {{if .Info.Pointer}} & {{end}} __array{{.Idx}}
 {{end}}
@@ -348,13 +349,14 @@ func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, i
 	}
 	// sequence types need conversion of inner type
 	if seq, ok := t.(*types.SequenceType); ok {
+		sp := strconv.Itoa(idx)
 		data.InnerInfo, data.InnerType = seq.Elem.DefaultParam()
-		data.Inner = inoutGetToFromWasm(data.InnerType, data.InnerInfo, "__seq_out", "__seq_in", idx*100, use, tmpl)
+		data.Inner = inoutGetToFromWasm(data.InnerType, data.InnerInfo, "__seq_out"+sp, "__seq_in"+sp, (idx+1)*100, use, tmpl)
 	}
 	if data.Info.Variadic {
 		copy := *data.Info
 		copy.Variadic = false
-		data.Inner = inoutGetToFromWasm(data.Type, &copy, "__out", "__in", idx*100, use, tmpl)
+		data.Inner = inoutGetToFromWasm(data.Type, &copy, "__out", "__in", (idx+1)*100, use, tmpl)
 		t = types.ChangeTemplateName(t, "variadic")
 	}
 	return convertType(t, data, tmpl) + "\n"

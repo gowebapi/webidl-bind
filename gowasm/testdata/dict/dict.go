@@ -45,6 +45,7 @@ type Test1 struct {
 	B js.Value
 	C []int
 	D []js.Value
+	E [][]int
 }
 
 // JSValue is allocating a new javasript object and copy
@@ -56,17 +57,27 @@ func (_this *Test1) JSValue() js.Value {
 	value1 := _this.B
 	out.Set("b", value1)
 	value2 := js.Global().Get("Array").New(len(_this.C))
-	for __idx, __seq_in := range _this.C {
-		__seq_out := __seq_in
-		value2.SetIndex(__idx, __seq_out)
+	for __idx2, __seq_in2 := range _this.C {
+		__seq_out2 := __seq_in2
+		value2.SetIndex(__idx2, __seq_out2)
 	}
 	out.Set("c", value2)
 	value3 := js.Global().Get("Array").New(len(_this.D))
-	for __idx, __seq_in := range _this.D {
-		__seq_out := __seq_in
-		value3.SetIndex(__idx, __seq_out)
+	for __idx3, __seq_in3 := range _this.D {
+		__seq_out3 := __seq_in3
+		value3.SetIndex(__idx3, __seq_out3)
 	}
 	out.Set("d", value3)
+	value4 := js.Global().Get("Array").New(len(_this.E))
+	for __idx4, __seq_in4 := range _this.E {
+		__seq_out4 := js.Global().Get("Array").New(len(__seq_in4))
+		for __idx500, __seq_in500 := range __seq_in4 {
+			__seq_out500 := __seq_in500
+			__seq_out4.SetIndex(__idx500, __seq_out500)
+		}
+		value4.SetIndex(__idx4, __seq_out4)
+	}
+	out.Set("e", value4)
 	return out
 }
 
@@ -81,6 +92,7 @@ func Test1FromJS(value js.Wrapper) *Test1 {
 		value1 js.Value   // javascript: any {b B b}
 		value2 []int      // javascript: sequence<long> {c C c}
 		value3 []js.Value // javascript: sequence<any> {d D d}
+		value4 [][]int    // javascript: sequence<sequence<long>> {e E e}
 	)
 	value0 = (input.Get("a")).Int()
 	out.A = value0
@@ -88,24 +100,94 @@ func Test1FromJS(value js.Wrapper) *Test1 {
 	out.B = value1
 	__length2 := input.Get("c").Length()
 	__array2 := make([]int, __length2, __length2)
-	for __idx := 0; __idx < __length2; __idx++ {
-		var __seq_out int
-		__seq_in := input.Get("c").Index(__idx)
-		__seq_out = (__seq_in).Int()
-		__array2[__idx] = __seq_out
+	for __idx2 := 0; __idx2 < __length2; __idx2++ {
+		var __seq_out2 int
+		__seq_in2 := input.Get("c").Index(__idx2)
+		__seq_out2 = (__seq_in2).Int()
+		__array2[__idx2] = __seq_out2
 	}
 	value2 = __array2
 	out.C = value2
 	__length3 := input.Get("d").Length()
 	__array3 := make([]js.Value, __length3, __length3)
-	for __idx := 0; __idx < __length3; __idx++ {
-		var __seq_out js.Value
-		__seq_in := input.Get("d").Index(__idx)
-		__seq_out = __seq_in
-		__array3[__idx] = __seq_out
+	for __idx3 := 0; __idx3 < __length3; __idx3++ {
+		var __seq_out3 js.Value
+		__seq_in3 := input.Get("d").Index(__idx3)
+		__seq_out3 = __seq_in3
+		__array3[__idx3] = __seq_out3
 	}
 	value3 = __array3
 	out.D = value3
+	__length4 := input.Get("e").Length()
+	__array4 := make([][]int, __length4, __length4)
+	for __idx4 := 0; __idx4 < __length4; __idx4++ {
+		var __seq_out4 []int
+		__seq_in4 := input.Get("e").Index(__idx4)
+		__length500 := __seq_in4.Length()
+		__array500 := make([]int, __length500, __length500)
+		for __idx500 := 0; __idx500 < __length500; __idx500++ {
+			var __seq_out500 int
+			__seq_in500 := __seq_in4.Index(__idx500)
+			__seq_out500 = (__seq_in500).Int()
+			__array500[__idx500] = __seq_out500
+		}
+		__seq_out4 = __array500
+		__array4[__idx4] = __seq_out4
+	}
+	value4 = __array4
+	out.E = value4
+	return &out
+}
+
+// dictionary: Test2
+type Test2 struct {
+	E [][]int
+}
+
+// JSValue is allocating a new javasript object and copy
+// all values
+func (_this *Test2) JSValue() js.Value {
+	out := js.Global().Get("Object").New()
+	value0 := js.Global().Get("Array").New(len(_this.E))
+	for __idx0, __seq_in0 := range _this.E {
+		__seq_out0 := js.Global().Get("Array").New(len(__seq_in0))
+		for __idx100, __seq_in100 := range __seq_in0 {
+			__seq_out100 := __seq_in100
+			__seq_out0.SetIndex(__idx100, __seq_out100)
+		}
+		value0.SetIndex(__idx0, __seq_out0)
+	}
+	out.Set("e", value0)
+	return out
+}
+
+// Test2FromJS is allocating a new
+// Test2 object and copy all values from
+// input javascript object
+func Test2FromJS(value js.Wrapper) *Test2 {
+	input := value.JSValue()
+	var out Test2
+	var (
+		value0 [][]int // javascript: sequence<sequence<long>> {e E e}
+	)
+	__length0 := input.Get("e").Length()
+	__array0 := make([][]int, __length0, __length0)
+	for __idx0 := 0; __idx0 < __length0; __idx0++ {
+		var __seq_out0 []int
+		__seq_in0 := input.Get("e").Index(__idx0)
+		__length100 := __seq_in0.Length()
+		__array100 := make([]int, __length100, __length100)
+		for __idx100 := 0; __idx100 < __length100; __idx100++ {
+			var __seq_out100 int
+			__seq_in100 := __seq_in0.Index(__idx100)
+			__seq_out100 = (__seq_in100).Int()
+			__array100[__idx100] = __seq_out100
+		}
+		__seq_out0 = __array100
+		__array0[__idx0] = __seq_out0
+	}
+	value0 = __array0
+	out.E = value0
 	return &out
 }
 
@@ -144,4 +226,20 @@ func (_this *Foo) Test1() *Test1 {
 func (_this *Foo) SetTest1(value *Test1) {
 	input := value.JSValue()
 	_this.Value_JS.Set("test1", input)
+}
+
+// Test2 returning attribute 'test2' with
+// type Test2 (idl: Test2).
+func (_this *Foo) Test2() *Test2 {
+	var ret *Test2
+	value := _this.Value_JS.Get("test2")
+	ret = Test2FromJS(value)
+	return ret
+}
+
+// SetTest2 setting attribute 'test2' with
+// type Test2 (idl: Test2).
+func (_this *Foo) SetTest2(value *Test2) {
+	input := value.JSValue()
+	_this.Value_JS.Set("test2", input)
 }

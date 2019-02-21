@@ -455,6 +455,10 @@ func (t *SequenceType) Param(nullable, option, variadic bool) (info *TypeInfo, i
 		info.Output = "[]" + info.Output
 		info.VarOut = "[]" + info.VarOut
 	}
+	if _, multi := t.Elem.(*SequenceType); multi {
+		info.VarInInner = "[]" + info.VarInInner
+		info.VarOutInner = "[]" + info.VarOutInner
+	}
 	return info, t
 }
 
