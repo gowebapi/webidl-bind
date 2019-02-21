@@ -86,6 +86,22 @@ func (t *mixin) merge(m *mixin, conv *Convert) {
 	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
 }
 
+// mergeIf is called with a partial interface that should be included
+// where
+func (t *mixin) mergeIf(m *Interface, conv *Convert) {
+	if m.inheritsName != "" {
+		conv.failing(m, "partial interface to mixin doesn't support inherits")
+	}
+	if m.Constructor != nil {
+		conv.failing(m, "partial interface to mixin doesn't support constructor")
+	}
+	t.Consts = append(t.Consts, m.Consts...)
+	t.Vars = append(t.Vars, m.Vars...)
+	t.StaticVars = append(t.StaticVars, m.StaticVars...)
+	t.Method = append(t.Method, m.Method...)
+	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
+}
+
 func (t *mixin) SourceReference() *Ref {
 	return t.ref
 }

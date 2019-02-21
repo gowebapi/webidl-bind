@@ -154,7 +154,7 @@ func (conv *Convert) processPartialAndMixin() {
 				conv.failing(pd, "trying to add partial dictionary to a non-dictionary type (%T)", candidate)
 			}
 		} else {
-			conv.failing(pd, "directory '%s' doesn't exist", pd.key())
+			conv.failing(pd, "dictionary '%s' doesn't exist", pd.key())
 		}
 	}
 	for _, pd := range conv.partialIf {
@@ -164,6 +164,8 @@ func (conv *Convert) processPartialAndMixin() {
 			} else {
 				conv.failing(pd, "trying to add partial interface to a non-interface type (%T)", candidate)
 			}
+		} else if mixin, f := conv.mixin[pd.key()]; f {
+			mixin.mergeIf(pd, conv)
 		} else {
 			conv.failing(pd, "interface '%s' doesn't exist", pd.key())
 		}
