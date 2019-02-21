@@ -30,7 +30,9 @@ func (_this * {{.Dict.Basic.Def}} ) JSValue() js.Value {
 // {{.Dict.Basic.Def}} object and copy all values from
 // input javascript object
 func {{.Dict.Basic.Def}}FromJS(value js.Wrapper) {{.Type.Output}} {
-	input := value.JSValue()
+	{{if gt (len .Dict.Members) 0}}
+		input := value.JSValue()
+	{{end}}
 	var out {{.Dict.Basic.Def}}
 	{{.From}}
 	return {{if .Type.Pointer}}&{{end}} out

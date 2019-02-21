@@ -191,6 +191,82 @@ func Test2FromJS(value js.Wrapper) *Test2 {
 	return &out
 }
 
+// dictionary: Empty
+type Empty struct {
+}
+
+// JSValue is allocating a new javasript object and copy
+// all values
+func (_this *Empty) JSValue() js.Value {
+	out := js.Global().Get("Object").New()
+	return out
+}
+
+// EmptyFromJS is allocating a new
+// Empty object and copy all values from
+// input javascript object
+func EmptyFromJS(value js.Wrapper) *Empty {
+	var out Empty
+	var ()
+	return &out
+}
+
+// dictionary: Super
+type Super struct {
+	A int
+}
+
+// JSValue is allocating a new javasript object and copy
+// all values
+func (_this *Super) JSValue() js.Value {
+	out := js.Global().Get("Object").New()
+	value0 := _this.A
+	out.Set("a", value0)
+	return out
+}
+
+// SuperFromJS is allocating a new
+// Super object and copy all values from
+// input javascript object
+func SuperFromJS(value js.Wrapper) *Super {
+	input := value.JSValue()
+	var out Super
+	var (
+		value0 int // javascript: long {a A a}
+	)
+	value0 = (input.Get("a")).Int()
+	out.A = value0
+	return &out
+}
+
+// dictionary: Inherit
+type Inherit struct {
+	A int
+}
+
+// JSValue is allocating a new javasript object and copy
+// all values
+func (_this *Inherit) JSValue() js.Value {
+	out := js.Global().Get("Object").New()
+	value0 := _this.A
+	out.Set("a", value0)
+	return out
+}
+
+// InheritFromJS is allocating a new
+// Inherit object and copy all values from
+// input javascript object
+func InheritFromJS(value js.Wrapper) *Inherit {
+	input := value.JSValue()
+	var out Inherit
+	var (
+		value0 int // javascript: long {a A a}
+	)
+	value0 = (input.Get("a")).Int()
+	out.A = value0
+	return &out
+}
+
 // interface: Foo
 type Foo struct {
 	// Value_JS holds a reference to a javascript value
@@ -242,4 +318,36 @@ func (_this *Foo) Test2() *Test2 {
 func (_this *Foo) SetTest2(value *Test2) {
 	input := value.JSValue()
 	_this.Value_JS.Set("test2", input)
+}
+
+// Empty returning attribute 'empty' with
+// type Empty (idl: Empty).
+func (_this *Foo) Empty() *Empty {
+	var ret *Empty
+	value := _this.Value_JS.Get("empty")
+	ret = EmptyFromJS(value)
+	return ret
+}
+
+// SetEmpty setting attribute 'empty' with
+// type Empty (idl: Empty).
+func (_this *Foo) SetEmpty(value *Empty) {
+	input := value.JSValue()
+	_this.Value_JS.Set("empty", input)
+}
+
+// Test3 returning attribute 'test3' with
+// type Inherit (idl: Inherit).
+func (_this *Foo) Test3() *Inherit {
+	var ret *Inherit
+	value := _this.Value_JS.Get("test3")
+	ret = InheritFromJS(value)
+	return ret
+}
+
+// SetTest3 setting attribute 'test3' with
+// type Inherit (idl: Inherit).
+func (_this *Foo) SetTest3(value *Inherit) {
+	input := value.JSValue()
+	_this.Value_JS.Set("test3", input)
 }

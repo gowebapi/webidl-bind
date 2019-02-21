@@ -12,7 +12,21 @@ dictionary Test2 {
 	sequence<sequence<long>> e;
 };
 
+dictionary Empty {
+
+};
+
+dictionary Super {
+	long a;
+};
+
+dictionary Inherit : Super {
+
+};
+
 interface Foo {
 	attribute Test1 test1;
 	attribute Test2 test2;
+	attribute Empty empty;
+	attribute Inherit test3;
 };

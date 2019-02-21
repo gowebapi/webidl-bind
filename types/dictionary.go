@@ -85,6 +85,25 @@ func (t *Dictionary) link(conv *Convert, inuse inuseLogic) TypeRef {
 		return t
 	}
 	t.inuse = true
+	if t.source.Inherits != "" {
+		if candidate, ok := conv.Types[t.source.Inherits]; ok {
+			inner := make(inuseLogic)
+			typeRef := candidate.link(conv, inner)
+			if parent, ok := typeRef.(*Dictionary); ok {
+				// found parent that is a dictionary
+				// copy members
+				out := make([]*DictMember, 0)
+				for _, in := range parent.Members {
+					out = append(out, in.copy())
+				}
+				t.Members = append(out, t.Members...)
+			} else {
+				conv.failing(t, "expected inherit to be a dictionary, not %T", typeRef)
+			}
+		} else {
+			conv.failing(t, "unable to find inherit '%s'", t.source.Inherits)
+		}
+	}
 	inner := make(inuseLogic)
 	for _, m := range t.Members {
 		m.Type = m.Type.link(conv, inner)
@@ -114,7 +133,15 @@ func (t *Dictionary) SetBasic(basic BasicInfo) {
 	t.basic = basic
 }
 
-
 func (t *Dictionary) TypeID() TypeID {
 	return TypeDictionary
+}
+
+func (t *DictMember) copy() *DictMember {
+	// TODO does the type need to be deep copied?
+	return &DictMember{
+		nameAndLink: t.nameAndLink,
+		Type:        t.Type,
+		Required:    t.Required,
+	}
 }
