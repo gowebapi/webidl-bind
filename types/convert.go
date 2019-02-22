@@ -229,6 +229,25 @@ func (t *Convert) registerTypeName(ref GetRef, name string) {
 	}
 }
 
+// Sort is sorting the Enum, Callbacks, Dictionary and Interface.
+func (t *Convert) Sort() {
+	sort.Slice(t.Enums, func(i, j int) bool {
+		return t.Enums[i].lessThan(t.Enums[j])
+	})
+	sort.Slice(t.Callbacks, func(i, j int) bool {
+		return t.Callbacks[i].lessThan(t.Callbacks[j])
+	})
+	sort.Slice(t.Dictionary, func(i, j int) bool {
+		return t.Dictionary[i].lessThan(t.Dictionary[j])
+	})
+	sort.Slice(t.Interface, func(i, j int) bool {
+		return t.Interface[i].lessThan(t.Interface[j])
+	})
+	sort.Slice(t.Unions, func(i, j int) bool {
+		return t.Unions[i].lessThan(t.Unions[j])
+	})
+}
+
 func (t *Convert) failing(ref GetRef, format string, args ...interface{}) {
 	t.setup.Error(ref, format, args...)
 	t.HaveError = true

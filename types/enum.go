@@ -72,6 +72,10 @@ func (t *Enum) key() string {
 	return t.basic.Idl
 }
 
+func (t *Enum) lessThan(b *Enum) bool {
+	return t.basic.lessThan(& b.basic)
+}
+
 func (t *Enum) link(conv *Convert, inuse inuseLogic) TypeRef {
 	t.inuse = true
 	return t

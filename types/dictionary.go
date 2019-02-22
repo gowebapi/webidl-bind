@@ -80,6 +80,10 @@ func (t *Dictionary) key() string {
 	return t.basic.Idl
 }
 
+func (t *Dictionary) lessThan(b *Dictionary) bool {
+	return t.basic.lessThan(&b.basic)
+}
+
 func (t *Dictionary) link(conv *Convert, inuse inuseLogic) TypeRef {
 	if t.inuse {
 		return t

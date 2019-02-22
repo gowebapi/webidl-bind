@@ -252,6 +252,10 @@ func (t *Interface) key() string {
 	return t.basic.Idl
 }
 
+func (t *Interface) lessThan(b *Interface) bool {
+	return t.basic.lessThan(&b.basic)
+}
+
 func (t *Interface) link(conv *Convert, inuse inuseLogic) TypeRef {
 	if t.inuse {
 		return t

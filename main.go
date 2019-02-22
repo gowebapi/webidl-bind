@@ -74,6 +74,7 @@ func run() error {
 		return err
 	}
 	transform.RenameOverrideMethods(conv)
+	conv.Sort()
 
 	files, err := gowasm.WriteSource(conv)
 	if err != nil {

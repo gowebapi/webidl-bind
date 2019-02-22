@@ -27,6 +27,16 @@ type BasicInfo struct {
 	Template string
 }
 
+func (a *BasicInfo) lessThan(b *BasicInfo) bool {
+	if a.Package != b.Package {
+		return a.Package < b.Package
+	}
+	if a.Def != b.Def {
+		return a.Def < b.Def
+	}
+	return a.Idl < b.Idl
+}
+
 // TypeName contains usage information about a type
 type TypeInfo struct {
 	BasicInfo

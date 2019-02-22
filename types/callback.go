@@ -42,6 +42,10 @@ func (t *Callback) key() string {
 	return t.basic.Idl
 }
 
+func (t *Callback) lessThan(b *Callback) bool {
+	return t.basic.lessThan(&b.basic)
+}
+
 func (t *Callback) link(conv *Convert, inuse inuseLogic) TypeRef {
 	if t.inuse {
 		return t

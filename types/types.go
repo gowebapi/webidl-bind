@@ -578,6 +578,13 @@ func (t *UnionType) DefaultParam() (info *TypeInfo, inner TypeRef) {
 	return t.Param(false, false, false)
 }
 
+func (t *UnionType) lessThan(b *UnionType) bool {
+	if t.ref.Filename != b.ref.Filename {
+		return t.ref.Filename < b.ref.Filename
+	}
+	return t.ref.Line < b.ref.Line
+}
+
 func (t *UnionType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	if t.use {
 		return t
