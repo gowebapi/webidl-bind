@@ -10,7 +10,7 @@ import (
 type action interface {
 	OperateOn() scopeMode
 	ExecuteCallback(instance *types.Callback, notify notifyMsg)
-	ExecuteDictionary(instance *types.Dictionary, notify notifyMsg)
+	ExecuteDictionary(instance *types.Dictionary, targets map[string]renameTarget, notify notifyMsg)
 	ExecuteEnum(instance *types.Enum, targets map[string]renameTarget, notify notifyMsg)
 	ExecuteInterface(instance *types.Interface, targets map[string]renameTarget, notify notifyMsg)
 	ExecuteStatus(instance *SpecStatus, notify notifyMsg)
@@ -47,7 +47,7 @@ func (t *property) ExecuteCallback(instance *types.Callback, notify notifyMsg) {
 	}
 }
 
-func (t *property) ExecuteDictionary(instance *types.Dictionary, notify notifyMsg) {
+func (t *property) ExecuteDictionary(instance *types.Dictionary, targets map[string]renameTarget, notify notifyMsg) {
 	if f, ok := dictionaryProperties[t.Name]; ok {
 		if msg := f(instance, t.Value); msg != "" {
 			notify.messageError(t.Ref, msg)
@@ -123,8 +123,8 @@ func (t *rename) ExecuteCallback(instance *types.Callback, notify notifyMsg) {
 	notify.messageError(t.Ref, "callback doesn't have any attributes or methods that can be renamed")
 }
 
-func (t *rename) ExecuteDictionary(value *types.Dictionary, notify notifyMsg) {
-	notify.messageError(t.Ref, "dictionary doesn't have any attributes or methods that can be renamed")
+func (t *rename) ExecuteDictionary(value *types.Dictionary, targets map[string]renameTarget, notify notifyMsg) {
+	genericRename(t.Name, t.Value, t.Ref, targets, notify)
 }
 
 func (t *rename) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, notify notifyMsg) {
@@ -175,8 +175,8 @@ func (t *globalRegExp) ExecuteCallback(instance *types.Callback, notify notifyMs
 	t.What.ExecuteCallback(instance, notify)
 }
 
-func (t *globalRegExp) ExecuteDictionary(value *types.Dictionary, notify notifyMsg) {
-	t.What.ExecuteDictionary(value, notify)
+func (t *globalRegExp) ExecuteDictionary(value *types.Dictionary, targets map[string]renameTarget, notify notifyMsg) {
+	t.What.ExecuteDictionary(value, targets, notify)
 }
 
 func (t *globalRegExp) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, notify notifyMsg) {
@@ -209,8 +209,16 @@ func (t *changeType) ExecuteCallback(instance *types.Callback, notify notifyMsg)
 	notify.messageError(t.Ref, "type change in callback in not yet implmented")
 }
 
-func (t *changeType) ExecuteDictionary(value *types.Dictionary, notify notifyMsg) {
-	notify.messageError(t.Ref, "type change in dictionary in not yet implmented")
+func (t *changeType) ExecuteDictionary(value *types.Dictionary, targets map[string]renameTarget, notify notifyMsg) {
+	on, found := targets[t.Name]
+	if !found {
+		notify.messageError(t.Ref, "unknown reference")
+		return
+	}
+	raw := types.NewRawJSType()
+	if msg := on.SetType(raw); msg != "" {
+		notify.messageError(t.Ref, "type change error: %s", msg)
+	}
 }
 
 func (t *changeType) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, notify notifyMsg) {

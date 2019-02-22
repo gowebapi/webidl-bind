@@ -149,3 +149,8 @@ func (t *DictMember) copy() *DictMember {
 		Required:    t.Required,
 	}
 }
+
+func (t *DictMember) SetType(value TypeRef) string {
+	t.Type = value
+	return ""
+}

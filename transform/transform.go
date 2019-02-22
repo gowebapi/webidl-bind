@@ -126,9 +126,13 @@ func (t *Transform) processCallback(instance *types.Callback, change *onType) {
 }
 
 func (t *Transform) processDictionary(instance *types.Dictionary, change *onType) {
+	values := make(map[string]renameTarget)
+	for _, v := range instance.Members {
+		values[v.Name().Idl] = v
+	}
 	for _, a := range change.Actions {
 		if t.evalIfProcess(instance, a, matchDictionary) {
-			a.ExecuteDictionary(instance, t)
+			a.ExecuteDictionary(instance, values, t)
 		}
 	}
 }
