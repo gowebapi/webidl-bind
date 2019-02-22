@@ -8,13 +8,26 @@ import (
 )
 
 type action interface {
-	IsGlobal() bool
-	ExecuteCallback(instance *types.Callback, trans *Transform)
-	ExecuteDictionary(instance *types.Dictionary, trans *Transform)
-	ExecuteEnum(instance *types.Enum, targets map[string]renameTarget, trans *Transform)
-	ExecuteInterface(instance *types.Interface, targets map[string]renameTarget, trans *Transform)
+	OperateOn() scopeMode
+	ExecuteCallback(instance *types.Callback, notify notifyMsg)
+	ExecuteDictionary(instance *types.Dictionary, notify notifyMsg)
+	ExecuteEnum(instance *types.Enum, targets map[string]renameTarget, notify notifyMsg)
+	ExecuteInterface(instance *types.Interface, targets map[string]renameTarget, notify notifyMsg)
+	ExecuteStatus(instance *SpecStatus, notify notifyMsg)
 	Reference() ref
 }
+
+type notifyMsg interface {
+	messageError(ref ref, format string, args ...interface{})
+}
+
+type scopeMode int
+
+const (
+	scopeGlobal scopeMode = iota
+	scopeFile
+	scopeType
+)
 
 // propary change on interface/enum/etc, like package name
 type property struct {
@@ -23,53 +36,71 @@ type property struct {
 	Ref   ref
 }
 
-func (t *property) ExecuteCallback(instance *types.Callback, trans *Transform) {
+func (t *property) ExecuteCallback(instance *types.Callback, notify notifyMsg) {
 	if f, ok := callbackProperties[t.Name]; ok {
 		if msg := f(instance, t.Value); msg != "" {
-			trans.messageError(t.Ref, msg)
+			notify.messageError(t.Ref, msg)
 		}
 	} else {
-		trans.messageError(t.Ref, "unknown property '%s', valid are: %s",
+		notify.messageError(t.Ref, "unknown property '%s', valid are: %s",
 			t.Name, strings.Join(callbackPropertyNames, ", "))
 	}
 }
 
-func (t *property) ExecuteDictionary(instance *types.Dictionary, trans *Transform) {
+func (t *property) ExecuteDictionary(instance *types.Dictionary, notify notifyMsg) {
 	if f, ok := dictionaryProperties[t.Name]; ok {
 		if msg := f(instance, t.Value); msg != "" {
-			trans.messageError(t.Ref, msg)
+			notify.messageError(t.Ref, msg)
 		}
 	} else {
-		trans.messageError(t.Ref, "unknown property '%s', valid are: %s",
+		notify.messageError(t.Ref, "unknown property '%s', valid are: %s",
 			t.Name, strings.Join(dictionaryPropertyNames, ", "))
 	}
 }
 
-func (t *property) ExecuteEnum(instance *types.Enum, targets map[string]renameTarget, trans *Transform) {
+func (t *property) ExecuteEnum(instance *types.Enum, targets map[string]renameTarget, notify notifyMsg) {
 	if f, ok := enumProperties[t.Name]; ok {
 		if msg := f(instance, t.Value); msg != "" {
-			trans.messageError(t.Ref, msg)
+			notify.messageError(t.Ref, msg)
 		}
 	} else {
-		trans.messageError(t.Ref, "unknown property '%s', valid are: %s",
+		notify.messageError(t.Ref, "unknown property '%s', valid are: %s",
 			t.Name, strings.Join(enumPropertyNames, ", "))
 	}
 }
 
-func (t *property) ExecuteInterface(instance *types.Interface, targets map[string]renameTarget, trans *Transform) {
+func (t *property) ExecuteInterface(instance *types.Interface, targets map[string]renameTarget, notify notifyMsg) {
 	if f, ok := interfaceProperties[t.Name]; ok {
 		if msg := f(instance, t.Value); msg != "" {
-			trans.messageError(t.Ref, msg)
+			notify.messageError(t.Ref, msg)
 		}
 	} else {
-		trans.messageError(t.Ref, "unknown property '%s', valid are: %s",
+		notify.messageError(t.Ref, "unknown property '%s', valid are: %s",
 			t.Name, strings.Join(interfacePropertyNames, ", "))
 	}
 }
 
-func (t property) IsGlobal() bool {
-	value, found := globalProperties[t.Name]
-	return value && found
+func (t *property) ExecuteStatus(instance *SpecStatus, notify notifyMsg) {
+	if f, ok := fileProperties[t.Name]; ok {
+		if msg := f(instance, t.Value); msg != "" {
+			notify.messageError(t.Ref, msg)
+		}
+	} else {
+		notify.messageError(t.Ref, "unknown property '%s', valid are: %s",
+			t.Name, strings.Join(filePropertyNames, ", "))
+	}
+}
+
+func (t property) OperateOn() scopeMode {
+	_, found := globalProperties[t.Name]
+	if found {
+		return scopeGlobal
+	}
+	_, found = fileProperties[t.Name]
+	if found {
+		return scopeFile
+	}
+	return scopeType
 }
 
 func (t property) Reference() ref {
@@ -88,32 +119,36 @@ type renameTarget interface {
 	SetType(value types.TypeRef) string
 }
 
-func (t *rename) ExecuteCallback(instance *types.Callback, trans *Transform) {
-	trans.messageError(t.Ref, "callback doesn't have any attributes or methods that can be renamed")
+func (t *rename) ExecuteCallback(instance *types.Callback, notify notifyMsg) {
+	notify.messageError(t.Ref, "callback doesn't have any attributes or methods that can be renamed")
 }
 
-func (t *rename) ExecuteDictionary(value *types.Dictionary, trans *Transform) {
-	trans.messageError(t.Ref, "dictionary doesn't have any attributes or methods that can be renamed")
+func (t *rename) ExecuteDictionary(value *types.Dictionary, notify notifyMsg) {
+	notify.messageError(t.Ref, "dictionary doesn't have any attributes or methods that can be renamed")
 }
 
-func (t *rename) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, trans *Transform) {
-	genericRename(t.Name, t.Value, t.Ref, targets, trans)
+func (t *rename) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, notify notifyMsg) {
+	genericRename(t.Name, t.Value, t.Ref, targets, notify)
 }
 
-func (t *rename) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, trans *Transform) {
-	genericRename(t.Name, t.Value, t.Ref, targets, trans)
+func (t *rename) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, notify notifyMsg) {
+	genericRename(t.Name, t.Value, t.Ref, targets, notify)
 }
 
-func genericRename(name, value string, ref ref, targets map[string]renameTarget, trans *Transform) {
+func (t *rename) ExecuteStatus(instance *SpecStatus, notify notifyMsg) {
+	panic("unsupported")
+}
+
+func genericRename(name, value string, ref ref, targets map[string]renameTarget, notify notifyMsg) {
 	if target, found := targets[name]; found {
 		target.Name().Def = value
 	} else {
-		trans.messageError(ref, "unknown rename target '%s'", name)
+		notify.messageError(ref, "unknown rename target '%s'", name)
 	}
 }
 
-func (t *rename) IsGlobal() bool {
-	return false
+func (t *rename) OperateOn() scopeMode {
+	return scopeType
 }
 
 func (t rename) Reference() ref {
@@ -128,28 +163,32 @@ type globalRegExp struct {
 	Ref   ref
 }
 
-func (t *globalRegExp) IsGlobal() bool {
-	return true
+func (t *globalRegExp) OperateOn() scopeMode {
+	return scopeGlobal
 }
 
 func (t globalRegExp) Reference() ref {
 	return t.Ref
 }
 
-func (t *globalRegExp) ExecuteCallback(instance *types.Callback, trans *Transform) {
-	t.What.ExecuteCallback(instance, trans)
+func (t *globalRegExp) ExecuteCallback(instance *types.Callback, notify notifyMsg) {
+	t.What.ExecuteCallback(instance, notify)
 }
 
-func (t *globalRegExp) ExecuteDictionary(value *types.Dictionary, trans *Transform) {
-	t.What.ExecuteDictionary(value, trans)
+func (t *globalRegExp) ExecuteDictionary(value *types.Dictionary, notify notifyMsg) {
+	t.What.ExecuteDictionary(value, notify)
 }
 
-func (t *globalRegExp) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, trans *Transform) {
-	t.What.ExecuteEnum(value, targets, trans)
+func (t *globalRegExp) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, notify notifyMsg) {
+	t.What.ExecuteEnum(value, targets, notify)
 }
 
-func (t *globalRegExp) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, trans *Transform) {
-	t.What.ExecuteInterface(value, targets, trans)
+func (t *globalRegExp) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, notify notifyMsg) {
+	t.What.ExecuteInterface(value, targets, notify)
+}
+
+func (t *globalRegExp) ExecuteStatus(instance *SpecStatus, notify notifyMsg) {
+	panic("unsupported")
 }
 
 type changeType struct {
@@ -158,34 +197,38 @@ type changeType struct {
 	Ref   ref
 }
 
-func (t *changeType) IsGlobal() bool {
-	return false
+func (t *changeType) OperateOn() scopeMode {
+	return scopeType
 }
 
 func (t changeType) Reference() ref {
 	return t.Ref
 }
 
-func (t *changeType) ExecuteCallback(instance *types.Callback, trans *Transform) {
-	trans.messageError(t.Ref, "type change in callback in not yet implmented")
+func (t *changeType) ExecuteCallback(instance *types.Callback, notify notifyMsg) {
+	notify.messageError(t.Ref, "type change in callback in not yet implmented")
 }
 
-func (t *changeType) ExecuteDictionary(value *types.Dictionary, trans *Transform) {
-	trans.messageError(t.Ref, "type change in dictionary in not yet implmented")
+func (t *changeType) ExecuteDictionary(value *types.Dictionary, notify notifyMsg) {
+	notify.messageError(t.Ref, "type change in dictionary in not yet implmented")
 }
 
-func (t *changeType) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, trans *Transform) {
-	trans.messageError(t.Ref, "type change for enum is not supported")
+func (t *changeType) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, notify notifyMsg) {
+	notify.messageError(t.Ref, "type change for enum is not supported")
 }
 
-func (t *changeType) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, trans *Transform) {
+func (t *changeType) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, notify notifyMsg) {
 	on, found := targets[t.Name]
 	if !found {
-		trans.messageError(t.Ref, "unknown reference")
+		notify.messageError(t.Ref, "unknown reference")
 		return
 	}
 	raw := types.NewRawJSType()
 	if msg := on.SetType(raw); msg != "" {
-		trans.messageError(t.Ref, "type change error: %s", msg)
+		notify.messageError(t.Ref, "type change error: %s", msg)
 	}
+}
+
+func (t *changeType) ExecuteStatus(instance *SpecStatus, notify notifyMsg) {
+	panic("unsupported")
 }

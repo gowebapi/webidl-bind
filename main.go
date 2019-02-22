@@ -22,6 +22,7 @@ var args struct {
 	singlePkg  string
 	insidePkg  string
 	goBuild    string
+	statusFile string 
 }
 
 var errStop = errors.New("too many errors")
@@ -104,6 +105,11 @@ func run() error {
 	}
 	if err := tryCompileResult(folders); err != nil {
 		return err
+	}
+	if args.statusFile != "" {
+		if err := trans.WriteMarkdownStatus(args.statusFile); err != nil {
+			return err 
+		}
 	}
 	return nil
 }
@@ -190,6 +196,7 @@ func parseArgs() string {
 	flag.StringVar(&args.insidePkg, "inside-package", "", "output path is inside current package")
 	flag.StringVar(&args.singlePkg, "single-package", "", "all types to same package")
 	flag.StringVar(&args.goBuild, "go-build", "", "execute go build in output folders")
+	flag.StringVar(&args.statusFile, "spec-status", "", "write a markdown spec status file")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
 		return "no input files on command line"

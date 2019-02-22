@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -11,6 +12,31 @@ var globalProperties = map[string]bool{
 	"package": true,
 }
 var globalPropertyNames = []string{}
+
+var fileProperties = map[string]func(spec *SpecStatus, value string) string{
+	"title": fileTitle,
+	"url":   fileUrl,
+}
+var filePropertyNames = []string{}
+
+func fileTitle(spec *SpecStatus, value string) string {
+	if spec.Title != "" {
+		return fmt.Sprintf("title is already defined '%s'", spec.Title)
+	}
+	spec.Title = value
+	return ""
+}
+
+func fileUrl(spec *SpecStatus, value string) string {
+	if spec.Url != "" {
+		return fmt.Sprintf("url  is already defined '%s'", spec.Url)
+	}
+	if strings.HasPrefix(value, "<") && strings.HasSuffix(value, ">") {
+		value = value[1 : len(value)-1]
+	}
+	spec.Url = value
+	return ""
+}
 
 var callbackProperties = map[string]func(cb *types.Callback, value string) string{
 	"name":    callbackName,
@@ -158,4 +184,8 @@ func init() {
 		callbackPropertyNames = append(interfacePropertyNames, k)
 	}
 	sort.Strings(interfacePropertyNames)
+	for k := range fileProperties {
+		filePropertyNames = append(filePropertyNames, k)
+	}
+	sort.Strings(filePropertyNames)
 }

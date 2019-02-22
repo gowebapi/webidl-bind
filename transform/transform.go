@@ -19,6 +19,9 @@ type Transform struct {
 
 	// errors is number of errors currently printed
 	errors int
+
+	// Status data from files
+	Status []*SpecStatus
 }
 
 // ref is input source code reference
@@ -61,7 +64,7 @@ func (t *Transform) Execute(conv *types.Convert) error {
 
 // executeFiles is doing the global changes on multiple types.
 func (t *Transform) executeFiles(conv *types.Convert) {
-	all := t.calcGlobalCmd()
+	all, files, faction := t.calcGlobalCmd()
 	if t.errors > 0 {
 		return
 	}
@@ -73,6 +76,7 @@ func (t *Transform) executeFiles(conv *types.Convert) {
 			t.executeOnType(item, change, "<file>")
 		}
 	}
+	t.Status = createStatusData(files, faction, conv.All, t)
 }
 
 // executeTypes is execute the changes on singlar type
@@ -192,14 +196,15 @@ func (t *Transform) messageError(ref ref, format string, args ...interface{}) {
 
 // go over input files and sort actions according to
 // "package" name and what actions to run.
-func (t *Transform) calcGlobalCmd() map[string]*onType {
+func (t *Transform) calcGlobalCmd() (types map[string]*onType, files []ref, faction []action) {
 	all := make(map[string][]*onType)
 	for _, file := range t.Global {
 		list := all[file.Name]
 		list = append(list, file)
 		all[file.Name] = list
+		files = append(files, file.Ref)
 	}
-	ret := make(map[string]*onType)
+	types = make(map[string]*onType)
 	for key, list := range all {
 		// sort to get a predictable behavior
 		sort.Slice(list, func(i, j int) bool {
@@ -210,20 +215,23 @@ func (t *Transform) calcGlobalCmd() map[string]*onType {
 		out := make([]action, 0)
 		for _, item := range list {
 			for _, a := range item.Actions {
-				if !a.IsGlobal() {
+				switch a.OperateOn() {
+				case scopeGlobal:
+					out = append(out, a)
+				case scopeFile:
+					faction = append(faction, a)
+				default:
 					t.messageError(a.Reference(), "invalid global command. valid are: %s",
 						strings.Join(globalPropertyNames, ", "))
-					panic(fmt.Sprintf("%T", a))
 				}
 			}
-			out = append(out, item.Actions...)
 		}
-		ret[key] = &onType{
+		types[key] = &onType{
 			Name:    key,
 			Actions: out,
 		}
 	}
-	return ret
+	return
 }
 
 // groupName is common name takes from a filename
