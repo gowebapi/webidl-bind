@@ -451,12 +451,13 @@ func writeInterfaceConst(vars []*types.IfConst, main *types.Interface, dst io.Wr
 }
 
 func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set string, dst io.Writer) error {
-	for idx, a := range vars {
+	for _, a := range vars {
 		typ, ref := a.Type.DefaultParam()
 		ret := ""
 		if a.Type.NeedRelease() {
 			ret = "(_release ReleasableApiResource)"
 		}
+		idx := 0
 		from := inoutParamStart(ref, typ, "ret", "value", idx, useOut, inoutFromTmpl)
 		from += inoutGetToFromWasm(ref, typ, "ret", "value", idx, useOut, inoutFromTmpl)
 		from += inoutParamEnd(typ, "", inoutFromTmpl)

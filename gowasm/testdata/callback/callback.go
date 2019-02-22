@@ -982,13 +982,13 @@ func (_this *Foo) Test2() Test2Func {
 // SetTest2 setting attribute 'test2' with
 // type Test2 (idl: Test2).
 func (_this *Foo) SetTest2(value *Test2) {
-	var __callback1 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback1 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback1 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback1
+	input := __callback0
 	_this.Value_JS.Set("test2", input)
 }
 
@@ -1004,13 +1004,13 @@ func (_this *Foo) Test3() Test3Func {
 // SetTest3 setting attribute 'test3' with
 // type Test3 (idl: Test3).
 func (_this *Foo) SetTest3(value *Test3) {
-	var __callback2 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback2 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback2 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback2
+	input := __callback0
 	_this.Value_JS.Set("test3", input)
 }
 
@@ -1026,13 +1026,13 @@ func (_this *Foo) Test4() Test4Func {
 // SetTest4 setting attribute 'test4' with
 // type Test4 (idl: Test4).
 func (_this *Foo) SetTest4(value *Test4) {
-	var __callback3 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback3 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback3 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback3
+	input := __callback0
 	_this.Value_JS.Set("test4", input)
 }
 
@@ -1048,13 +1048,13 @@ func (_this *Foo) Test5() Test5Func {
 // SetTest5 setting attribute 'test5' with
 // type Test5 (idl: Test5).
 func (_this *Foo) SetTest5(value *Test5) {
-	var __callback4 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback4 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback4 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback4
+	input := __callback0
 	_this.Value_JS.Set("test5", input)
 }
 
@@ -1070,13 +1070,13 @@ func (_this *Foo) Test6() Test6Func {
 // SetTest6 setting attribute 'test6' with
 // type Test6 (idl: Test6).
 func (_this *Foo) SetTest6(value *Test6) {
-	var __callback5 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback5 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback5 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback5
+	input := __callback0
 	_this.Value_JS.Set("test6", input)
 }
 
@@ -1092,13 +1092,13 @@ func (_this *Foo) Test7() Test7Func {
 // SetTest7 setting attribute 'test7' with
 // type Test7 (idl: Test7).
 func (_this *Foo) SetTest7(value *Test7) {
-	var __callback6 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback6 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback6 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback6
+	input := __callback0
 	_this.Value_JS.Set("test7", input)
 }
 
@@ -1114,13 +1114,13 @@ func (_this *Foo) Test8() Test8Func {
 // SetTest8 setting attribute 'test8' with
 // type Test8 (idl: Test8).
 func (_this *Foo) SetTest8(value *Test8) {
-	var __callback7 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback7 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback7 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback7
+	input := __callback0
 	_this.Value_JS.Set("test8", input)
 }
 
@@ -1136,13 +1136,13 @@ func (_this *Foo) Test9() Test9Func {
 // SetTest9 setting attribute 'test9' with
 // type Test9 (idl: Test9).
 func (_this *Foo) SetTest9(value *Test9) {
-	var __callback8 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback8 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback8 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback8
+	input := __callback0
 	_this.Value_JS.Set("test9", input)
 }
 
@@ -1158,13 +1158,13 @@ func (_this *Foo) Test10() Test10Func {
 // SetTest10 setting attribute 'test10' with
 // type Test10 (idl: Test10).
 func (_this *Foo) SetTest10(value *Test10) {
-	var __callback9 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback9 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback9 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback9
+	input := __callback0
 	_this.Value_JS.Set("test10", input)
 }
 
@@ -1180,13 +1180,13 @@ func (_this *Foo) Test11() Test11Func {
 // SetTest11 setting attribute 'test11' with
 // type Test11 (idl: Test11).
 func (_this *Foo) SetTest11(value *Test11) {
-	var __callback10 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback10 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback10 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback10
+	input := __callback0
 	_this.Value_JS.Set("test11", input)
 }
 
@@ -1202,13 +1202,13 @@ func (_this *Foo) Test12() Test12Func {
 // SetTest12 setting attribute 'test12' with
 // type Test12 (idl: Test12).
 func (_this *Foo) SetTest12(value *Test12) {
-	var __callback11 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback11 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback11 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback11
+	input := __callback0
 	_this.Value_JS.Set("test12", input)
 }
 
@@ -1224,13 +1224,13 @@ func (_this *Foo) Test13() Test13Func {
 // SetTest13 setting attribute 'test13' with
 // type Test13 (idl: Test13).
 func (_this *Foo) SetTest13(value *Test13) {
-	var __callback12 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback12 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback12 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback12
+	input := __callback0
 	_this.Value_JS.Set("test13", input)
 }
 
@@ -1246,13 +1246,13 @@ func (_this *Foo) Test14() Test14Func {
 // SetTest14 setting attribute 'test14' with
 // type Test14 (idl: Test14).
 func (_this *Foo) SetTest14(value *Test14) {
-	var __callback13 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback13 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback13 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback13
+	input := __callback0
 	_this.Value_JS.Set("test14", input)
 }
 
@@ -1268,13 +1268,13 @@ func (_this *Foo) Test15() Test15Func {
 // SetTest15 setting attribute 'test15' with
 // type Test15 (idl: Test15).
 func (_this *Foo) SetTest15(value *Test15) {
-	var __callback14 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback14 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback14 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback14
+	input := __callback0
 	_this.Value_JS.Set("test15", input)
 }
 
@@ -1290,12 +1290,12 @@ func (_this *Foo) Test16() Test16Func {
 // SetTest16 setting attribute 'test16' with
 // type Test16 (idl: Test16).
 func (_this *Foo) SetTest16(value *Test16) {
-	var __callback15 js.Value
+	var __callback0 js.Value
 	if value != nil {
-		__callback15 = (*value).Value
+		__callback0 = (*value).Value
 	} else {
-		__callback15 = js.Null()
+		__callback0 = js.Null()
 	}
-	input := __callback15
+	input := __callback0
 	_this.Value_JS.Set("test16", input)
 }

@@ -351,12 +351,12 @@ func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, i
 	if seq, ok := t.(*types.SequenceType); ok {
 		sp := strconv.Itoa(idx)
 		data.InnerInfo, data.InnerType = seq.Elem.DefaultParam()
-		data.Inner = inoutGetToFromWasm(data.InnerType, data.InnerInfo, "__seq_out"+sp, "__seq_in"+sp, (idx+1)*100, use, tmpl)
+		data.Inner = inoutGetToFromWasm(data.InnerType, data.InnerInfo, "__seq_out"+sp, "__seq_in"+sp, idx+1, use, tmpl)
 	}
 	if data.Info.Variadic {
 		copy := *data.Info
 		copy.Variadic = false
-		data.Inner = inoutGetToFromWasm(data.Type, &copy, "__out", "__in", (idx+1)*100, use, tmpl)
+		data.Inner = inoutGetToFromWasm(data.Type, &copy, "__out", "__in", idx+1, use, tmpl)
 		t = types.ChangeTemplateName(t, "variadic")
 	}
 	return convertType(t, data, tmpl) + "\n"

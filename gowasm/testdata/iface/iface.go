@@ -207,9 +207,9 @@ func Test6(a []int, b ...[]int) (_result []int) {
 	_end++
 	for _, __in := range b {
 		__out := js.Global().Get("Array").New(len(__in))
-		for __idx200, __seq_in200 := range __in {
-			__seq_out200 := __seq_in200
-			__out.SetIndex(__idx200, __seq_out200)
+		for __idx2, __seq_in2 := range __in {
+			__seq_out2 := __seq_in2
+			__out.SetIndex(__idx2, __seq_out2)
 		}
 		_args[_end] = __out
 		_end++
@@ -273,9 +273,9 @@ func (_this *Foo2) Test1(a []int, b ...[]int) (_result []int) {
 	_end++
 	for _, __in := range b {
 		__out := js.Global().Get("Array").New(len(__in))
-		for __idx200, __seq_in200 := range __in {
-			__seq_out200 := __seq_in200
-			__out.SetIndex(__idx200, __seq_out200)
+		for __idx2, __seq_in2 := range __in {
+			__seq_out2 := __seq_in2
+			__out.SetIndex(__idx2, __seq_out2)
 		}
 		_args[_end] = __out
 		_end++
@@ -364,9 +364,9 @@ func Test8(a []interface{}, b ...[]interface{}) (_result []js.Value) {
 	_end++
 	for _, __in := range b {
 		__out := js.Global().Get("Array").New(len(__in))
-		for __idx200, __seq_in200 := range __in {
-			__seq_out200 := __seq_in200
-			__out.SetIndex(__idx200, __seq_out200)
+		for __idx2, __seq_in2 := range __in {
+			__seq_out2 := __seq_in2
+			__out.SetIndex(__idx2, __seq_out2)
 		}
 		_args[_end] = __out
 		_end++
@@ -430,9 +430,9 @@ func (_this *Foo3) Test1(a []interface{}, b ...[]interface{}) (_result []js.Valu
 	_end++
 	for _, __in := range b {
 		__out := js.Global().Get("Array").New(len(__in))
-		for __idx200, __seq_in200 := range __in {
-			__seq_out200 := __seq_in200
-			__out.SetIndex(__idx200, __seq_out200)
+		for __idx2, __seq_in2 := range __in {
+			__seq_out2 := __seq_in2
+			__out.SetIndex(__idx2, __seq_out2)
 		}
 		_args[_end] = __out
 		_end++

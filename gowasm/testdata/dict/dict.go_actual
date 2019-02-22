@@ -71,9 +71,9 @@ func (_this *Test1) JSValue() js.Value {
 	value4 := js.Global().Get("Array").New(len(_this.E))
 	for __idx4, __seq_in4 := range _this.E {
 		__seq_out4 := js.Global().Get("Array").New(len(__seq_in4))
-		for __idx500, __seq_in500 := range __seq_in4 {
-			__seq_out500 := __seq_in500
-			__seq_out4.SetIndex(__idx500, __seq_out500)
+		for __idx5, __seq_in5 := range __seq_in4 {
+			__seq_out5 := __seq_in5
+			__seq_out4.SetIndex(__idx5, __seq_out5)
 		}
 		value4.SetIndex(__idx4, __seq_out4)
 	}
@@ -123,15 +123,15 @@ func Test1FromJS(value js.Wrapper) *Test1 {
 	for __idx4 := 0; __idx4 < __length4; __idx4++ {
 		var __seq_out4 []int
 		__seq_in4 := input.Get("e").Index(__idx4)
-		__length500 := __seq_in4.Length()
-		__array500 := make([]int, __length500, __length500)
-		for __idx500 := 0; __idx500 < __length500; __idx500++ {
-			var __seq_out500 int
-			__seq_in500 := __seq_in4.Index(__idx500)
-			__seq_out500 = (__seq_in500).Int()
-			__array500[__idx500] = __seq_out500
+		__length5 := __seq_in4.Length()
+		__array5 := make([]int, __length5, __length5)
+		for __idx5 := 0; __idx5 < __length5; __idx5++ {
+			var __seq_out5 int
+			__seq_in5 := __seq_in4.Index(__idx5)
+			__seq_out5 = (__seq_in5).Int()
+			__array5[__idx5] = __seq_out5
 		}
-		__seq_out4 = __array500
+		__seq_out4 = __array5
 		__array4[__idx4] = __seq_out4
 	}
 	value4 = __array4
@@ -151,9 +151,9 @@ func (_this *Test2) JSValue() js.Value {
 	value0 := js.Global().Get("Array").New(len(_this.E))
 	for __idx0, __seq_in0 := range _this.E {
 		__seq_out0 := js.Global().Get("Array").New(len(__seq_in0))
-		for __idx100, __seq_in100 := range __seq_in0 {
-			__seq_out100 := __seq_in100
-			__seq_out0.SetIndex(__idx100, __seq_out100)
+		for __idx1, __seq_in1 := range __seq_in0 {
+			__seq_out1 := __seq_in1
+			__seq_out0.SetIndex(__idx1, __seq_out1)
 		}
 		value0.SetIndex(__idx0, __seq_out0)
 	}
@@ -175,15 +175,15 @@ func Test2FromJS(value js.Wrapper) *Test2 {
 	for __idx0 := 0; __idx0 < __length0; __idx0++ {
 		var __seq_out0 []int
 		__seq_in0 := input.Get("e").Index(__idx0)
-		__length100 := __seq_in0.Length()
-		__array100 := make([]int, __length100, __length100)
-		for __idx100 := 0; __idx100 < __length100; __idx100++ {
-			var __seq_out100 int
-			__seq_in100 := __seq_in0.Index(__idx100)
-			__seq_out100 = (__seq_in100).Int()
-			__array100[__idx100] = __seq_out100
+		__length1 := __seq_in0.Length()
+		__array1 := make([]int, __length1, __length1)
+		for __idx1 := 0; __idx1 < __length1; __idx1++ {
+			var __seq_out1 int
+			__seq_in1 := __seq_in0.Index(__idx1)
+			__seq_out1 = (__seq_in1).Int()
+			__array1[__idx1] = __seq_out1
 		}
-		__seq_out0 = __array100
+		__seq_out0 = __array1
 		__array0[__idx0] = __seq_out0
 	}
 	value0 = __array0
