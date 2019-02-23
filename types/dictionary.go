@@ -24,7 +24,7 @@ type DictMember struct {
 
 func (t *extractTypes) convertDictionary(in *ast.Dictionary) (*Dictionary, bool) {
 	ref := createRef(in, t)
-	t.assertTrue(len(in.Annotations) == 0, ref, "unsupported annotations")
+	t.warningTrue(len(in.Annotations) == 0, ref, "unsupported annotations")
 	// t.assertTrue(in.Inherits == "", ref , "unsupported dictionary inherites of %s", in.Inherits)
 	ret := &Dictionary{
 		standardType: standardType{

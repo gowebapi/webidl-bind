@@ -27,7 +27,7 @@ type EnumValue struct {
 
 func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 	ref := createRef(in, t)
-	t.assertTrue(len(in.Annotations) == 0, ref, "unsupported annotation")
+	t.warningTrue(len(in.Annotations) == 0, ref, "unsupported annotation")
 	ret := &Enum{
 		standardType: standardType{
 			ref:         ref,
@@ -73,7 +73,7 @@ func (t *Enum) key() string {
 }
 
 func (t *Enum) lessThan(b *Enum) bool {
-	return t.basic.lessThan(& b.basic)
+	return t.basic.lessThan(&b.basic)
 }
 
 func (t *Enum) link(conv *Convert, inuse inuseLogic) TypeRef {
