@@ -45,9 +45,9 @@ func convertType(in ast.Type, exrType *extractTypes) TypeRef {
 		case "unsigned long long":
 			ret = newPrimitiveType(in.Name, "int", "Int", false, false)
 		case "float":
-			ret = newPrimitiveType(in.Name, "float32", "Float", false, true)
+			ret = newPrimitiveType(in.Name, "float32", "Float", true, true)
 		case "unrestricted float":
-			ret = newPrimitiveType(in.Name, "float32", "Float", false, true)
+			ret = newPrimitiveType(in.Name, "float32", "Float", true, true)
 		case "double":
 			ret = newPrimitiveType(in.Name, "float64", "Float", false, true)
 		case "unrestricted double":
