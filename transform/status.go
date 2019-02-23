@@ -19,6 +19,7 @@ type SpecStatus struct {
 	Group    string
 	Title    string
 	Url      string
+	Comment  string
 	Included bool
 
 	// outline modification files
@@ -30,16 +31,14 @@ type SpecStatus struct {
 }
 
 const statusTmplInput = `
-{{define "full"}}
-|Spec|Included|
-|----|---|
-{{range .}}|[{{.Title}}]({{.Url}})|{{if .Included}}Yes{{else}}No{{end}}|
-{{end}}{{end}}
+{{define "working"}}|Spec|Included|Comment|
+|----|---|---|
+{{range .}}{{if .Included}}|[{{.Title}}]({{.Url}})|{{if .Included}}Yes{{else}}No{{end}}|{{.Comment}}|
+{{end}}{{end}}{{end}}
 
-{{define "short"}}
-|Spec|Included|
-|----|---|
-{{range .}}{{if .Included}}|[{{.Title}}]({{.Url}})|{{if .Included}}Yes{{else}}No{{end}}|
+{{define "missing"}}|Spec|Included|Comment|
+|----|---|---|
+{{range .}}{{if not .Included}}|[{{.Title}}]({{.Url}})|{{if .Included}}Yes{{else}}No{{end}}|{{.Comment}}|
 {{end}}{{end}}{{end}}
 `
 
@@ -127,22 +126,22 @@ func (s *SpecStatus) verify(notify notifyMsg) {
 func (t *Transform) WriteMarkdownStatus(filename string) error {
 	fmt.Println("saving spec status", filename)
 	var err error
-	full := t.executeStatusTmpl("full", &err)
-	short := t.executeStatusTmpl("short", &err)
+	missing := t.executeStatusTmpl("missing", &err)
+	working := t.executeStatusTmpl("working", &err)
 	if err != nil {
 		return err
 	}
 	// try using template
 	var content []byte
-	tname := filename + ".tmpl.md"
+	tname := filename + ".tmpl"
 	if content, err = ioutil.ReadFile(tname); err == nil {
 		fmt.Println("using template", tname)
-		content = bytes.Replace(content, []byte("%FULLSTATUS%"), full , 1)
-		content = bytes.Replace(content, []byte("%SHORTSTATUS%"), short , 1)
+		content = bytes.Replace(content, []byte("%WORKING%"), working, 1)
+		content = bytes.Replace(content, []byte("%MISSING%"), missing, 1)
 	} else if !os.IsNotExist(err) {
 		return err
 	} else {
-		content = full
+		content = working
 	}
 	return ioutil.WriteFile(filename, content, 0664)
 }

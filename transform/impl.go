@@ -14,10 +14,19 @@ var globalProperties = map[string]bool{
 var globalPropertyNames = []string{}
 
 var fileProperties = map[string]func(spec *SpecStatus, value string) string{
-	"title": fileTitle,
-	"url":   fileUrl,
+	"comment": fileComment,
+	"title":   fileTitle,
+	"url":     fileUrl,
 }
 var filePropertyNames = []string{}
+
+func fileComment(spec *SpecStatus, value string) string {
+	if spec.Comment != "" {
+		return fmt.Sprintf("title is already defined '%s'", spec.Comment)
+	}
+	spec.Comment = value
+	return ""
+}
 
 func fileTitle(spec *SpecStatus, value string) string {
 	if spec.Title != "" {
