@@ -104,7 +104,10 @@ const inoutFromTmplInput = `
 	{{if .Info.Pointer}} {{.Out}} = &__tmp {{end}}
 {{end}}
 {{define "type-callback"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
-{{define "type-enum"}}		{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
+{{define "type-enum"}}
+	{{if .Info.Pointer}}__tmp := {{else}} {{.Out}} = {{end}} {{.Info.Def}}FromJS( {{.In}} )
+	{{if .Info.Pointer}} {{.Out}} = &__tmp {{end}}
+{{end}}
 {{define "type-interface"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-union"}}  {{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-any"}}    {{.Out}} = {{.In}} {{end}}
