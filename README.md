@@ -6,7 +6,7 @@ It can currently generate DOM/HTML bindings for Go Web Assembly.
 
 ## Target Languages
 
-* Go 1.11 Web Assembly - Initail support
+* Go 1.12 Web Assembly - Initail support
 
 Current no other languages is planned. Contributions are welcome :)
 
