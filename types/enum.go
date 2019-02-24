@@ -47,6 +47,7 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 			if lang == "" {
 				lang = fmt.Sprintf("empty_string_%d", i)
 			}
+			lang = convertIntoValidVariableName(lang)
 			ret.Values = append(ret.Values, EnumValue{
 				MethodName: MethodName{
 					Idl: idl,

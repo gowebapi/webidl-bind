@@ -131,6 +131,24 @@ func clipString(input string) string {
 	return input
 }
 
+// convertIntoValidVariableName will convert any non-variable
+// accepted chars will be turned into _ instead.
+func convertIntoValidVariableName(input string) string {
+	out := ""
+	for _, c := range input {
+		switch {
+		case c >= '0' && c <= '9':
+		case c >= 'A' && c <= 'Z':
+		case c >= 'a' && c <= 'z':
+		case c == '_':
+		default:
+			c = '_'
+		}
+		out += string(c)
+	}
+	return out
+}
+
 func fromIdlToTypeName(pkg string, name string, tmpl string) BasicInfo {
 	name = getIdlName(name)
 	ret := BasicInfo{
