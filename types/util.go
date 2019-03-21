@@ -274,6 +274,13 @@ func (t *nameAndLink) Name() *MethodName {
 	return &t.name
 }
 
+func (t *Ref) sourceLessThan(other *Ref) bool {
+	if t.Filename != other.Filename {
+		return t.Filename < other.Filename
+	}
+	return t.Line < other.Line
+}
+
 func (t *Ref) SourceReference() *Ref {
 	return t
 }

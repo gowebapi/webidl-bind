@@ -125,6 +125,7 @@ func (t *Convert) Parse(content []byte, setup *Setup) error {
 // to WebIDL specification. It also expand types, like removing
 // typedef etc.
 func (conv *Convert) Evaluate() error {
+	conv.innerSort()
 	if conv.processPartialAndMixin(); conv.HaveError {
 		return ErrStop
 	}
@@ -245,6 +246,23 @@ func (t *Convert) Sort() {
 	})
 	sort.Slice(t.Unions, func(i, j int) bool {
 		return t.Unions[i].lessThan(t.Unions[j])
+	})
+}
+
+// innerSort is sorting types according to source file and line.
+// it only sort partial and mixin types
+func (t *Convert) innerSort() {
+	sort.Slice(t.partialDict, func(i, j int) bool {
+		return t.partialDict[i].ref.sourceLessThan(t.partialDict[j].ref)
+	})
+	sort.Slice(t.partialIf, func(i, j int) bool {
+		return t.partialIf[i].ref.sourceLessThan(t.partialIf[j].ref)
+	})
+	sort.Slice(t.partialMixin, func(i, j int) bool {
+		return t.partialMixin[i].ref.sourceLessThan(t.partialMixin[j].ref)
+	})
+	sort.Slice(t.includes, func(i, j int) bool {
+		return t.includes[i].ref.sourceLessThan(t.includes[j].ref)
 	})
 }
 
