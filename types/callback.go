@@ -9,7 +9,6 @@ type Callback struct {
 	basic      BasicInfo
 	Return     TypeRef
 	Parameters []*Parameter
-	source     *ast.Callback
 }
 
 // Callback need to implement Type
@@ -23,7 +22,6 @@ func (t *extractTypes) convertCallback(in *ast.Callback) *Callback {
 			needRelease: false,
 		},
 		basic:      fromIdlToTypeName(t.main.setup.Package, in.Name, "callback"),
-		source:     in,
 		Return:     convertType(in.Return, t),
 		Parameters: params,
 	}

@@ -228,7 +228,7 @@ func (t *nullableType) NeedRelease() bool {
 // ParametrizedType is e.g. "Promise<any>"
 type ParametrizedType struct {
 	*Ref
-	in        *ast.ParametrizedType
+	name      string
 	ParamName string
 	Elems     []TypeRef
 	Type      TypeRef
@@ -243,7 +243,7 @@ func newParametrizedType(in *ast.ParametrizedType, name string, elems []TypeRef,
 	}
 	return &ParametrizedType{
 		Ref:       ref,
-		in:        in,
+		name:      in.Name,
 		ParamName: name,
 		Elems:     elems,
 	}
@@ -271,7 +271,7 @@ func (t *ParametrizedType) link(conv *Convert, inuse inuseLogic) TypeRef {
 	if real, f := conv.Types[candidate]; f {
 		t.Type = real.link(conv, inuse)
 	} else {
-		conv.failing(t, "reference to unknown type '%s' (%s)", candidate, t.in.Name)
+		conv.failing(t, "reference to unknown type '%s' (%s)", candidate, t.name)
 		return t
 	}
 	return t
@@ -509,7 +509,7 @@ func (t *TypedArrayType) NeedRelease() bool {
 
 type typeNameRef struct {
 	*Ref
-	in         *ast.TypeName
+	name       string
 	Underlying TypeRef
 }
 
@@ -517,8 +517,8 @@ var _ TypeRef = &typeNameRef{}
 
 func newTypeNameRef(in *ast.TypeName, ref *Ref) *typeNameRef {
 	return &typeNameRef{
-		in:  in,
-		Ref: ref,
+		name: in.Name,
+		Ref:  ref,
 	}
 }
 
@@ -532,12 +532,12 @@ func (t *typeNameRef) DefaultParam() (info *TypeInfo, inner TypeRef) {
 }
 
 func (t *typeNameRef) link(conv *Convert, inuse inuseLogic) TypeRef {
-	candidate := getIdlName(t.in.Name)
+	candidate := getIdlName(t.name)
 	if real, f := conv.Types[candidate]; f {
 		t.Underlying = real.link(conv, inuse)
 		return t.Underlying
 	} else {
-		conv.failing(t, "reference to unknown type '%s' (%s)", candidate, t.in.Name)
+		conv.failing(t, "reference to unknown type '%s' (%s)", candidate, t.name)
 		return t
 	}
 }
@@ -552,7 +552,6 @@ func (t *typeNameRef) NeedRelease() bool {
 }
 
 type UnionType struct {
-	in    *ast.UnionType
 	ref   *Ref
 	name  string
 	Types []TypeRef
@@ -563,7 +562,7 @@ type UnionType struct {
 var _ TypeRef = &UnionType{}
 
 func newUnionType(in *ast.UnionType, exrTypes *extractTypes) *UnionType {
-	ret := &UnionType{in: in, ref: createRef(in, exrTypes)}
+	ret := &UnionType{ref: createRef(in, exrTypes)}
 	for _, t := range in.Types {
 		ret.Types = append(ret.Types, convertType(t, exrTypes))
 	}
@@ -625,7 +624,6 @@ func (t *UnionType) NeedRelease() bool {
 
 type voidType struct {
 	basicType
-	in *ast.TypeName
 }
 
 var _ TypeRef = &voidType{}
@@ -635,7 +633,6 @@ func newVoidType(in *ast.TypeName) *voidType {
 		basicType: basicType{
 			needRelease: false,
 		},
-		in: in,
 	}
 }
 

@@ -7,9 +7,8 @@ import (
 )
 
 type mixin struct {
-	source *ast.Mixin
-	Name   string
-	ref    *Ref
+	Name string
+	ref  *Ref
 
 	Consts       []*IfConst
 	Vars         []*IfVar
@@ -31,9 +30,8 @@ type includes struct {
 
 func (t *extractTypes) convertMixin(in *ast.Mixin) (*mixin, bool) {
 	ret := &mixin{
-		source: in,
-		Name:   in.Name,
-		ref:    createRef(in, t),
+		Name: in.Name,
+		ref:  createRef(in, t),
 	}
 	for _, raw := range in.Members {
 		mi, ok := raw.(*ast.Member)

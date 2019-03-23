@@ -6,9 +6,9 @@ import (
 
 type Dictionary struct {
 	standardType
-	basic    BasicInfo
-	source   *ast.Dictionary
-	Inherits *Dictionary
+	basic        BasicInfo
+	Inherits     *Dictionary
+	inheritsName string
 
 	Members []*DictMember
 }
@@ -31,8 +31,8 @@ func (t *extractTypes) convertDictionary(in *ast.Dictionary) (*Dictionary, bool)
 			ref:         ref,
 			needRelease: false,
 		},
-		basic:  fromIdlToTypeName(t.main.setup.Package, in.Name, "dictionary"),
-		source: in,
+		basic:        fromIdlToTypeName(t.main.setup.Package, in.Name, "dictionary"),
+		inheritsName: in.Inherits,
 	}
 	for _, mi := range in.Members {
 		mo := t.convertDictMember(mi)
@@ -89,8 +89,8 @@ func (t *Dictionary) link(conv *Convert, inuse inuseLogic) TypeRef {
 		return t
 	}
 	t.inuse = true
-	if t.source.Inherits != "" {
-		if candidate, ok := conv.Types[t.source.Inherits]; ok {
+	if t.inheritsName != "" {
+		if candidate, ok := conv.Types[t.inheritsName]; ok {
 			inner := make(inuseLogic)
 			typeRef := candidate.link(conv, inner)
 			if parent, ok := typeRef.(*Dictionary); ok {
@@ -105,7 +105,7 @@ func (t *Dictionary) link(conv *Convert, inuse inuseLogic) TypeRef {
 				conv.failing(t, "expected inherit to be a dictionary, not %T", typeRef)
 			}
 		} else {
-			conv.failing(t, "unable to find inherit '%s'", t.source.Inherits)
+			conv.failing(t, "unable to find inherit '%s'", t.inheritsName)
 		}
 	}
 	inner := make(inuseLogic)
@@ -116,7 +116,7 @@ func (t *Dictionary) link(conv *Convert, inuse inuseLogic) TypeRef {
 }
 
 func (t *Dictionary) merge(partial *Dictionary, conv *Convert) {
-	conv.assertTrue(partial.source.Inherits == "", partial, "unsupported dictionary inherites on partial")
+	conv.assertTrue(partial.inheritsName == "", partial, "unsupported dictionary inherites on partial")
 	// TODO member elemination logic with duplicate is detected
 	t.Members = append(t.Members, partial.Members...)
 }

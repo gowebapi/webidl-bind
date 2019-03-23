@@ -8,8 +8,7 @@ import (
 
 type Interface struct {
 	standardType
-	source *ast.Interface
-	basic  BasicInfo
+	basic BasicInfo
 
 	Inherits     *Interface
 	inheritsName string
@@ -43,14 +42,12 @@ var _ Type = &Interface{}
 
 type IfConst struct {
 	nameAndLink
-	Src   *ast.Member
 	Type  TypeRef
 	Value string
 }
 
 type IfVar struct {
 	nameAndLink
-	Src      *ast.Member
 	Type     TypeRef
 	Static   bool
 	Readonly bool
@@ -58,8 +55,6 @@ type IfVar struct {
 
 type IfMethod struct {
 	nameAndLink
-	Src    *ast.Member
-	SrcA   *ast.Annotation
 	Return TypeRef
 	Static bool
 	Params []*Parameter
@@ -89,7 +84,6 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			needRelease: false,
 		},
 		basic:        fromIdlToTypeName(t.main.setup.Package, in.Name, "interface"),
-		source:       in,
 		inheritsName: in.Inherits,
 		Callback:     in.Callback,
 		FunctionCB:   true,
@@ -133,7 +127,6 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 					name: fromIdlToMethodName("New_" + ret.basic.Idl),
 				},
 				Static: true,
-				SrcA:   a,
 				Return: newInterfaceType(ret),
 				Params: params,
 			}
@@ -164,7 +157,6 @@ func (conv *extractTypes) convertInterfaceConst(in *ast.Member) *IfConst {
 			ref:  ref,
 			name: fromIdlToMethodName(in.Name),
 		},
-		Src:   in,
 		Type:  convertType(in.Type, conv),
 		Value: value,
 	}
@@ -199,7 +191,6 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 			ref:  ref,
 			name: fromIdlToMethodName(in.Name),
 		},
-		Src:      in,
 		Type:     convertType(in.Type, conv),
 		Static:   in.Static,
 		Readonly: in.Readonly,
@@ -233,7 +224,6 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 			ref:  ref,
 			name: fromIdlToMethodName(in.Name),
 		},
-		Src:    in,
 		Return: convertType(in.Type, conv),
 		Static: in.Static,
 		Params: conv.convertParams(in.Parameters),

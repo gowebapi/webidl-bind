@@ -10,7 +10,6 @@ import (
 type Enum struct {
 	standardType
 	basic  BasicInfo
-	source *ast.Enum
 	Values []EnumValue
 
 	// target language prefix and suffix for enum values
@@ -34,7 +33,6 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 			needRelease: false,
 		},
 		basic:  fromIdlToTypeName(t.main.setup.Package, in.Name, "enum"),
-		source: in,
 		Values: []EnumValue{},
 	}
 	ret.Suffix = ret.basic.Def
