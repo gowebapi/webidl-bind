@@ -62,11 +62,13 @@ func run() error {
 			if err := trans.Load(name, pkg); err != nil {
 				return err
 			}
-		} else {
+		} else if ext == ".idl" {
 			fmt.Println("reading WebIDL file", name)
 			if err := processFile(name, conv, setup); err != nil {
 				return err
 			}
+		} else {
+			fmt.Println("skipping", name)
 		}
 	}
 	if err := conv.Evaluate(); err != nil {
