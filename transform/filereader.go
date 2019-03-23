@@ -79,6 +79,13 @@ func (p *parser) processFile(content []byte) error {
 			continue
 		}
 
+		if action, ok := p.trySpecialPatch(line); ok {
+			if action != nil {
+				p.ontype.Actions = append(p.ontype.Actions, action)
+			}
+			continue
+		}
+
 		if action, ok := p.tryEqualCommand(line); ok {
 			if action != nil {
 				p.ontype.Actions = append(p.ontype.Actions, action)
@@ -227,7 +234,7 @@ func (p *parser) tryChangeTypeCmd(line string) (action, bool) {
 		p.messageError("invalid syntax")
 		return nil, true
 	} else if typ != "rawjs" {
-		p.messageError("invalid type, valid are 'rawjs")
+		p.messageError("invalid type, valid are 'rawjs'")
 		return nil, true
 	}
 	ret := changeType{
@@ -238,6 +245,27 @@ func (p *parser) tryChangeTypeCmd(line string) (action, bool) {
 	return &ret, true
 }
 
+func (p *parser) trySpecialPatch(line string) (action, bool) {
+	split := strings.Split(line, " ")
+	if len(split) == 0 || split[0] != "@patch" {
+		return nil, false
+	}
+	split = renameEmptyStrings(split)
+	if len(split) < 2 {
+		p.messageError("missing parameter")
+		return nil, true
+	}
+	switch split[1] {
+	case "idlconst":
+		ret := idlconst{
+			Ref: p.ref,
+		}
+		return &ret, true
+	}
+	p.messageError("unknown patch")
+	return nil, true
+}
+
 func (p *parser) messageError(format string, args ...interface{}) {
 	printMessageError(p.ref, format, args...)
 	p.errors++
@@ -246,4 +274,14 @@ func (p *parser) messageError(format string, args ...interface{}) {
 func printMessageError(ref ref, format string, args ...interface{}) {
 	text := fmt.Sprintf(format, args...)
 	fmt.Fprintf(os.Stderr, "error:%s:%d:%s\n", ref.Filename, ref.Line, text)
+}
+
+func renameEmptyStrings(in []string) []string {
+	out := make([]string, 0, len(in))
+	for _, s := range in {
+		if len(s) > 0 {
+			out = append(out, s)
+		}
+	}
+	return out
 }

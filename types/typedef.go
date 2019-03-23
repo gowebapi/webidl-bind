@@ -71,5 +71,5 @@ func (t *typeDef) SetBasic(basic BasicInfo) {
 }
 
 func (t *typeDef) TypeID() TypeID {
-	return TypeTypeDef 
+	return TypeTypeDef
 }

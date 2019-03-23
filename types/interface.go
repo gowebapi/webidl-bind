@@ -325,7 +325,9 @@ func (t *Interface) merge(m *Interface, conv *Convert) {
 }
 
 func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
-	t.Consts = append(t.Consts, m.Consts...)
+	for _, v := range m.Consts {
+		t.Consts = append(t.Consts, v.copy())
+	}
 	t.Vars = append(t.Vars, m.Vars...)
 	t.StaticVars = append(t.StaticVars, m.StaticVars...)
 	t.Method = append(t.Method, m.Method...)
@@ -334,6 +336,11 @@ func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
 
 func (t *Interface) TypeID() TypeID {
 	return TypeInterface
+}
+
+func (t *IfConst) copy() *IfConst {
+	dup := *t
+	return &dup
 }
 
 func (t *IfConst) SetType(value TypeRef) string {

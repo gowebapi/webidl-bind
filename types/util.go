@@ -226,6 +226,7 @@ func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePt
 	return t
 }
 
+// toCamelCase is convert a constant into camel case
 func toCamelCase(in string, upper bool) string {
 	out := ""
 	up := true
@@ -272,6 +273,10 @@ func (t *nameAndLink) SourceReference() *Ref {
 
 func (t *nameAndLink) Name() *MethodName {
 	return &t.name
+}
+
+func (t *nameAndLink) SetName(value *MethodName) {
+	t.name = *value
 }
 
 func (t *Ref) sourceLessThan(other *Ref) bool {

@@ -240,3 +240,40 @@ func (t *changeType) ExecuteInterface(value *types.Interface, targets map[string
 func (t *changeType) ExecuteStatus(instance *SpecStatus, notify notifyMsg) {
 	panic("unsupported")
 }
+
+type idlconst struct {
+	Ref ref
+}
+
+func (t *idlconst) OperateOn() scopeMode {
+	return scopeType
+}
+
+func (t idlconst) Reference() ref {
+	return t.Ref
+}
+
+func (t *idlconst) ExecuteCallback(instance *types.Callback, notify notifyMsg) {
+	notify.messageError(t.Ref, "not supported on this type")
+}
+
+func (t *idlconst) ExecuteDictionary(value *types.Dictionary, targets map[string]renameTarget, notify notifyMsg) {
+	notify.messageError(t.Ref, "not supported on this type")
+}
+
+func (t *idlconst) ExecuteEnum(value *types.Enum, targets map[string]renameTarget, notify notifyMsg) {
+	notify.messageError(t.Ref, "not supported on this type")
+}
+
+func (t *idlconst) ExecuteInterface(value *types.Interface, targets map[string]renameTarget, notify notifyMsg) {
+	for _, c := range value.Consts {
+		m := c.Name()
+		idl := m.Idl
+		m.Def = strings.ToUpper(idl[:1]) + idl[1:]
+		c.SetName(m)
+	}
+}
+
+func (t *idlconst) ExecuteStatus(instance *SpecStatus, notify notifyMsg) {
+	panic("unsupported")
+}
