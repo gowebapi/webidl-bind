@@ -22,7 +22,8 @@ var args struct {
 	singlePkg  string
 	insidePkg  string
 	goBuild    string
-	statusFile string 
+	goTest     string
+	statusFile string
 }
 
 var errStop = errors.New("too many errors")
@@ -106,9 +107,12 @@ func run() error {
 	if err := tryCompileResult(folders); err != nil {
 		return err
 	}
+	if err := tryTestResult(folders); err != nil {
+		return err
+	}
 	if args.statusFile != "" {
 		if err := trans.WriteMarkdownStatus(args.statusFile); err != nil {
-			return err 
+			return err
 		}
 	}
 	return nil
@@ -163,6 +167,53 @@ func tryCompileResult(folders []string) error {
 	return nil
 }
 
+func tryTestResult(folders []string) error {
+	if args.goTest == "" {
+		return nil
+	}
+	sort.Strings(folders)
+	last := ":/:"
+	failed := []string{}
+	for _, folder := range folders {
+		if folder == last {
+			continue
+		}
+		last = folder
+
+		// any test files?
+		if yes, err := haveTestFiles(folder); err != nil {
+			return err
+		} else if !yes {
+			continue
+		}
+
+		wasm := args.goTest == "wasm"
+		args := []string{"test"}
+		// if !wasm {
+		// 	args = append(args, "-i")
+		// }
+
+		p := exec.Command("go", args...)
+		p.Dir = folder
+		p.Stdout = os.Stdout
+		p.Stderr = os.Stderr
+		if wasm {
+			p.Env = os.Environ()
+			p.Env = append(p.Env, "GOOS=js")
+			p.Env = append(p.Env, "GOARCH=wasm")
+		}
+		fmt.Printf("> running '%s' in folder %s\n", strings.Join(p.Args, " "), folder)
+		if err := p.Run(); err != nil {
+			fmt.Println("> error: command failed:", err)
+			failed = append(failed, folder)
+		}
+	}
+	if len(failed) > 0 {
+		return fmt.Errorf("not all test was successful. failure in %s", strings.Join(failed, ", "))
+	}
+	return nil
+}
+
 func failing(ref types.GetRef, format string, args ...interface{}) {
 	source := ""
 	if ref != nil {
@@ -196,6 +247,7 @@ func parseArgs() string {
 	flag.StringVar(&args.insidePkg, "inside-package", "", "output path is inside current package")
 	flag.StringVar(&args.singlePkg, "single-package", "", "all types to same package")
 	flag.StringVar(&args.goBuild, "go-build", "", "execute go build in output folders")
+	flag.StringVar(&args.goTest, "go-test", "", "execute go test in output folders")
 	flag.StringVar(&args.statusFile, "spec-status", "", "write a markdown spec status file")
 	flag.Parse()
 	if len(flag.Args()) == 0 {
@@ -207,6 +259,9 @@ func parseArgs() string {
 	if args.goBuild != "" && args.goBuild != "wasm" && args.goBuild != "host" {
 		return "-go-build value should be 'wasm' or 'host'"
 	}
+	if args.goTest != "" && args.goTest != "wasm" && args.goTest != "host" {
+		return "-go-test value should be 'wasm' or 'host'"
+	}
 	return ""
 }
 
@@ -215,4 +270,17 @@ func pathExist(path string) bool {
 		return true
 	}
 	return false
+}
+
+func haveTestFiles(path string) (bool, error) {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return false, err
+	}
+	for _, f := range files {
+		if strings.HasSuffix(f.Name(), "_test.go") {
+			return true, nil
+		}
+	}
+	return false, nil
 }
