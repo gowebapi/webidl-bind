@@ -43,7 +43,17 @@ func {{.Type.Def}}FromJS(value js.Wrapper) {{.Type.Output}} {
 {{end}}
 
 {{define "const-var"}}
-	const {{.If.ConstPrefix}}{{.Const.Name.Def}}{{.If.ConstSuffix}} {{.Info.Def}} = {{.Value}}
+	{{.If.ConstPrefix}}{{.Const.Name.Def}}{{.If.ConstSuffix}} {{.Info.Def}} = {{.Value}}
+{{end}}
+{{define "const-var-start"}}
+	{{if len .}}
+		const (
+	{{end}}
+{{end}}
+{{define "const-var-end"}}
+	{{if len .}}
+		)
+	{{end}}
 {{end}}
 
 {{define "get-static-attribute"}}
@@ -425,6 +435,9 @@ func writeCallbackInterface(value *types.Interface, dst io.Writer) error {
 }
 
 func writeInterfaceConst(vars []*types.IfConst, main *types.Interface, dst io.Writer) error {
+	if err := interfaceTmpl.ExecuteTemplate(dst, "const-var-start", vars); err != nil {
+		return err
+	}
 	for idx, a := range vars {
 		data := struct {
 			Const *types.IfConst
@@ -446,6 +459,9 @@ func writeInterfaceConst(vars []*types.IfConst, main *types.Interface, dst io.Wr
 		if err := interfaceTmpl.ExecuteTemplate(dst, "const-var", data); err != nil {
 			return err
 		}
+	}
+	if err := interfaceTmpl.ExecuteTemplate(dst, "const-var-end", vars); err != nil {
+		return err
 	}
 	return nil
 }
