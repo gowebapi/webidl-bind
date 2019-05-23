@@ -30,6 +30,10 @@ type ref struct {
 	Line     int
 }
 
+func (r ref) String() string {
+	return fmt.Sprint(r.Filename, ":", r.Line)
+}
+
 // onType is the changes on a single types.Type
 type onType struct {
 	// Name of the type
