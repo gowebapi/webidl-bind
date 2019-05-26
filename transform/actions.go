@@ -38,7 +38,7 @@ type property struct {
 
 func (t *property) ExecuteCallback(instance *types.Callback, notify notifyMsg) {
 	if f, ok := callbackProperties[t.Name]; ok {
-		if msg := f(instance, t.Value); msg != "" {
+		if msg := f.Set(instance, t.Value); msg != "" {
 			notify.messageError(t.Ref, msg)
 		}
 	} else {
@@ -49,7 +49,7 @@ func (t *property) ExecuteCallback(instance *types.Callback, notify notifyMsg) {
 
 func (t *property) ExecuteDictionary(instance *types.Dictionary, targets map[string]renameTarget, notify notifyMsg) {
 	if f, ok := dictionaryProperties[t.Name]; ok {
-		if msg := f(instance, t.Value); msg != "" {
+		if msg := f.Set(instance, t.Value); msg != "" {
 			notify.messageError(t.Ref, msg)
 		}
 	} else {
@@ -60,7 +60,7 @@ func (t *property) ExecuteDictionary(instance *types.Dictionary, targets map[str
 
 func (t *property) ExecuteEnum(instance *types.Enum, targets map[string]renameTarget, notify notifyMsg) {
 	if f, ok := enumProperties[t.Name]; ok {
-		if msg := f(instance, t.Value); msg != "" {
+		if msg := f.Set(instance, t.Value); msg != "" {
 			notify.messageError(t.Ref, msg)
 		}
 	} else {
@@ -71,7 +71,7 @@ func (t *property) ExecuteEnum(instance *types.Enum, targets map[string]renameTa
 
 func (t *property) ExecuteInterface(instance *types.Interface, targets map[string]renameTarget, notify notifyMsg) {
 	if f, ok := interfaceProperties[t.Name]; ok {
-		if msg := f(instance, t.Value); msg != "" {
+		if msg := f.Set(instance, t.Value); msg != "" {
 			notify.messageError(t.Ref, msg)
 		}
 	} else {
@@ -82,7 +82,7 @@ func (t *property) ExecuteInterface(instance *types.Interface, targets map[strin
 
 func (t *property) ExecuteStatus(instance *SpecStatus, notify notifyMsg) {
 	if f, ok := fileProperties[t.Name]; ok {
-		if msg := f(instance, t.Value); msg != "" {
+		if msg := f.Set(instance, t.Value); msg != "" {
 			notify.messageError(t.Ref, msg)
 		}
 	} else {

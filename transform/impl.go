@@ -13,14 +13,20 @@ var globalProperties = map[string]bool{
 }
 var globalPropertyNames = []string{}
 
-var fileProperties = map[string]func(spec *SpecStatus, value string) string{
-	"comment": fileComment,
-	"title":   fileTitle,
-	"url":     fileUrl,
+type fileProperty interface {
+	Set(spec *SpecStatus, value string) string
+}
+
+var fileProperties = map[string]fileProperty{
+	"comment": &fileComment{},
+	"title":   &fileTitle{},
+	"url":     &fileUrl{},
 }
 var filePropertyNames = []string{}
 
-func fileComment(spec *SpecStatus, value string) string {
+type fileComment struct{}
+
+func (fc *fileComment) Set(spec *SpecStatus, value string) string {
 	if spec.Comment != "" {
 		return fmt.Sprintf("title is already defined '%s'", spec.Comment)
 	}
@@ -28,7 +34,9 @@ func fileComment(spec *SpecStatus, value string) string {
 	return ""
 }
 
-func fileTitle(spec *SpecStatus, value string) string {
+type fileTitle struct{}
+
+func (t *fileTitle) Set(spec *SpecStatus, value string) string {
 	if spec.Title != "" {
 		return fmt.Sprintf("title is already defined '%s'", spec.Title)
 	}
@@ -36,7 +44,9 @@ func fileTitle(spec *SpecStatus, value string) string {
 	return ""
 }
 
-func fileUrl(spec *SpecStatus, value string) string {
+type fileUrl struct{}
+
+func (t *fileUrl) Set(spec *SpecStatus, value string) string {
 	if spec.Url != "" {
 		return fmt.Sprintf("url  is already defined '%s'", spec.Url)
 	}
@@ -47,20 +57,28 @@ func fileUrl(spec *SpecStatus, value string) string {
 	return ""
 }
 
-var callbackProperties = map[string]func(cb *types.Callback, value string) string{
-	"name":    callbackName,
-	"package": callbackPackage,
+type callbackProperty interface {
+	Set(cb *types.Callback, value string) string
+}
+
+var callbackProperties = map[string]callbackProperty{
+	"name":    &callbackName{},
+	"package": &callbackPackage{},
 }
 var callbackPropertyNames = []string{}
 
-func callbackName(cb *types.Callback, value string) string {
+type callbackName struct{}
+
+func (t *callbackName) Set(cb *types.Callback, value string) string {
 	b := cb.Basic()
 	b.Def = value
 	cb.SetBasic(b)
 	return ""
 }
 
-func callbackPackage(cb *types.Callback, value string) string {
+type callbackPackage struct{}
+
+func (t *callbackPackage) Set(cb *types.Callback, value string) string {
 	msg := verifyPackageName(value)
 	b := cb.Basic()
 	b.Package = value
@@ -68,20 +86,28 @@ func callbackPackage(cb *types.Callback, value string) string {
 	return msg
 }
 
-var dictionaryProperties = map[string]func(cb *types.Dictionary, value string) string{
-	"name":    dictionaryName,
-	"package": dictionaryPackage,
+type dictionaryProperty interface {
+	Set(cb *types.Dictionary, value string) string
+}
+
+var dictionaryProperties = map[string]dictionaryProperty{
+	"name":    &dictionaryName{},
+	"package": &dictionaryPackage{},
 }
 var dictionaryPropertyNames = []string{}
 
-func dictionaryName(cb *types.Dictionary, value string) string {
+type dictionaryName struct{}
+
+func (t *dictionaryName) Set(cb *types.Dictionary, value string) string {
 	b := cb.Basic()
 	b.Def = value
 	cb.SetBasic(b)
 	return ""
 }
 
-func dictionaryPackage(cb *types.Dictionary, value string) string {
+type dictionaryPackage struct{}
+
+func (t *dictionaryPackage) Set(cb *types.Dictionary, value string) string {
 	msg := verifyPackageName(value)
 	b := cb.Basic()
 	b.Package = value
@@ -89,22 +115,30 @@ func dictionaryPackage(cb *types.Dictionary, value string) string {
 	return msg
 }
 
-var enumProperties = map[string]func(cb *types.Enum, value string) string{
-	"name":    enumName,
-	"package": enumPackage,
-	"prefix":  enumPrefix,
-	"suffix":  enumSuffix,
+type enumProperty interface {
+	Set(cb *types.Enum, value string) string
+}
+
+var enumProperties = map[string]enumProperty{
+	"name":    &enumName{},
+	"package": &enumPackage{},
+	"prefix":  &enumPrefix{},
+	"suffix":  &enumSuffix{},
 }
 var enumPropertyNames = []string{}
 
-func enumName(cb *types.Enum, value string) string {
+type enumName struct{}
+
+func (t *enumName) Set(cb *types.Enum, value string) string {
 	b := cb.Basic()
 	b.Def = value
 	cb.SetBasic(b)
 	return ""
 }
 
-func enumPackage(cb *types.Enum, value string) string {
+type enumPackage struct{}
+
+func (t *enumPackage) Set(cb *types.Enum, value string) string {
 	msg := verifyPackageName(value)
 	b := cb.Basic()
 	b.Package = value
@@ -112,26 +146,36 @@ func enumPackage(cb *types.Enum, value string) string {
 	return msg
 }
 
-func enumPrefix(cb *types.Enum, value string) string {
+type enumPrefix struct{}
+
+func (t *enumPrefix) Set(cb *types.Enum, value string) string {
 	cb.Prefix = value
 	return ""
 }
 
-func enumSuffix(cb *types.Enum, value string) string {
+type enumSuffix struct{}
+
+func (t *enumSuffix) Set(cb *types.Enum, value string) string {
 	cb.Suffix = value
 	return ""
 }
 
-var interfaceProperties = map[string]func(inf *types.Interface, value string) string{
-	"constPrefix":     interfaceConstPrefix,
-	"constSuffix":     interfaceConstSuffix,
-	"constructorName": interfaceConstructorName,
-	"name":            interfaceName,
-	"package":         interfacePackage,
+type interfaceProperty interface {
+	Set(inf *types.Interface, value string) string
+}
+
+var interfaceProperties = map[string]interfaceProperty{
+	"constPrefix":     &interfaceConstPrefix{},
+	"constSuffix":     &interfaceConstSuffix{},
+	"constructorName": &interfaceConstructorName{},
+	"name":            &interfaceName{},
+	"package":         &interfacePackage{},
 }
 var interfacePropertyNames = []string{}
 
-func interfaceConstructorName(inf *types.Interface, value string) string {
+type interfaceConstructorName struct{}
+
+func (t *interfaceConstructorName) Set(inf *types.Interface, value string) string {
 	if inf.Constructor == nil {
 		return "interface doesn't have any constructor"
 	}
@@ -140,24 +184,32 @@ func interfaceConstructorName(inf *types.Interface, value string) string {
 	return ""
 }
 
-func interfaceConstPrefix(inf *types.Interface, value string) string {
+type interfaceConstPrefix struct{}
+
+func (t *interfaceConstPrefix) Set(inf *types.Interface, value string) string {
 	inf.ConstPrefix = value
 	return ""
 }
 
-func interfaceConstSuffix(inf *types.Interface, value string) string {
+type interfaceConstSuffix struct{}
+
+func (t *interfaceConstSuffix) Set(inf *types.Interface, value string) string {
 	inf.ConstSuffix = value
 	return ""
 }
 
-func interfaceName(inf *types.Interface, value string) string {
+type interfaceName struct{}
+
+func (t *interfaceName) Set(inf *types.Interface, value string) string {
 	b := inf.Basic()
 	b.Def = value
 	inf.SetBasic(b)
 	return ""
 }
 
-func interfacePackage(inf *types.Interface, value string) string {
+type interfacePackage struct{}
+
+func (t *interfacePackage) Set(inf *types.Interface, value string) string {
 	msg := verifyPackageName(value)
 	b := inf.Basic()
 	b.Package = value
