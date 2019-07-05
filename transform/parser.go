@@ -32,12 +32,14 @@ type parseResult interface {
 	newProperty(name, value string) action
 	newRename(name, value string) action
 	newPatchIdlConst() action
+	newReplace(property, from, to string) action
 }
 
 var commandToken = map[string]int{
 	"on":         t_cmd_on,
 	"changetype": t_cmd_change_type,
 	"patch":      t_cmd_patch,
+	"replace":    t_cmd_replace,
 }
 var keywordToken = map[string]int{
 	"interface":  t_interface,
@@ -229,6 +231,15 @@ func (lw *lexWrap) newPatchIdlConst() action {
 		Ref: lw.ref(),
 	}
 	return &ret
+}
+
+func (lw *lexWrap) newReplace(property, from, to string) action {
+	return &replace{
+		Property: property,
+		From:     from,
+		To:       to,
+		Ref:      lw.ref(),
+	}
 }
 
 func (lw *lexWrap) messageError(format string, args ...interface{}) {

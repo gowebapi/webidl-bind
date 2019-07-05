@@ -212,4 +212,3 @@ func (l *lexer) evalWord(expected string, accept bool) bool {
 func (l *lexer) acceptWord(expected string) bool {
 	return l.evalWord(expected, true)
 }
-

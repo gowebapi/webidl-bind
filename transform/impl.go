@@ -58,6 +58,7 @@ func (t *fileUrl) Set(spec *SpecStatus, value string) string {
 }
 
 type callbackProperty interface {
+	Get(cb *types.Callback) string
 	Set(cb *types.Callback, value string) string
 }
 
@@ -69,6 +70,10 @@ var callbackPropertyNames = []string{}
 
 type callbackName struct{}
 
+func (t *callbackName) Get(cb *types.Callback) string {
+	return cb.Basic().Def
+}
+
 func (t *callbackName) Set(cb *types.Callback, value string) string {
 	b := cb.Basic()
 	b.Def = value
@@ -77,6 +82,10 @@ func (t *callbackName) Set(cb *types.Callback, value string) string {
 }
 
 type callbackPackage struct{}
+
+func (t *callbackPackage) Get(cb *types.Callback) string {
+	return cb.Basic().Package
+}
 
 func (t *callbackPackage) Set(cb *types.Callback, value string) string {
 	msg := verifyPackageName(value)
@@ -87,6 +96,7 @@ func (t *callbackPackage) Set(cb *types.Callback, value string) string {
 }
 
 type dictionaryProperty interface {
+	Get(cb *types.Dictionary) string
 	Set(cb *types.Dictionary, value string) string
 }
 
@@ -98,6 +108,10 @@ var dictionaryPropertyNames = []string{}
 
 type dictionaryName struct{}
 
+func (t *dictionaryName) Get(cb *types.Dictionary) string {
+	return cb.Basic().Def
+}
+
 func (t *dictionaryName) Set(cb *types.Dictionary, value string) string {
 	b := cb.Basic()
 	b.Def = value
@@ -106,6 +120,10 @@ func (t *dictionaryName) Set(cb *types.Dictionary, value string) string {
 }
 
 type dictionaryPackage struct{}
+
+func (t *dictionaryPackage) Get(cb *types.Dictionary) string {
+	return cb.Basic().Package
+}
 
 func (t *dictionaryPackage) Set(cb *types.Dictionary, value string) string {
 	msg := verifyPackageName(value)
@@ -116,6 +134,7 @@ func (t *dictionaryPackage) Set(cb *types.Dictionary, value string) string {
 }
 
 type enumProperty interface {
+	Get(cb *types.Enum) string
 	Set(cb *types.Enum, value string) string
 }
 
@@ -129,6 +148,10 @@ var enumPropertyNames = []string{}
 
 type enumName struct{}
 
+func (t *enumName) Get(cb *types.Enum) string {
+	return cb.Basic().Def
+}
+
 func (t *enumName) Set(cb *types.Enum, value string) string {
 	b := cb.Basic()
 	b.Def = value
@@ -137,6 +160,10 @@ func (t *enumName) Set(cb *types.Enum, value string) string {
 }
 
 type enumPackage struct{}
+
+func (t *enumPackage) Get(cb *types.Enum) string {
+	return cb.Basic().Package
+}
 
 func (t *enumPackage) Set(cb *types.Enum, value string) string {
 	msg := verifyPackageName(value)
@@ -148,6 +175,10 @@ func (t *enumPackage) Set(cb *types.Enum, value string) string {
 
 type enumPrefix struct{}
 
+func (t *enumPrefix) Get(cb *types.Enum) string {
+	return cb.Prefix
+}
+
 func (t *enumPrefix) Set(cb *types.Enum, value string) string {
 	cb.Prefix = value
 	return ""
@@ -155,12 +186,17 @@ func (t *enumPrefix) Set(cb *types.Enum, value string) string {
 
 type enumSuffix struct{}
 
+func (t *enumSuffix) Get(cb *types.Enum) string {
+	return cb.Suffix
+}
+
 func (t *enumSuffix) Set(cb *types.Enum, value string) string {
 	cb.Suffix = value
 	return ""
 }
 
 type interfaceProperty interface {
+	Get(cb *types.Interface) string
 	Set(inf *types.Interface, value string) string
 }
 
@@ -175,6 +211,10 @@ var interfacePropertyNames = []string{}
 
 type interfaceConstructorName struct{}
 
+func (t *interfaceConstructorName) Get(inf *types.Interface) string {
+	return inf.Constructor.Name().Def
+}
+
 func (t *interfaceConstructorName) Set(inf *types.Interface, value string) string {
 	if inf.Constructor == nil {
 		return "interface doesn't have any constructor"
@@ -186,6 +226,10 @@ func (t *interfaceConstructorName) Set(inf *types.Interface, value string) strin
 
 type interfaceConstPrefix struct{}
 
+func (t *interfaceConstPrefix) Get(inf *types.Interface) string {
+	return inf.ConstPrefix
+}
+
 func (t *interfaceConstPrefix) Set(inf *types.Interface, value string) string {
 	inf.ConstPrefix = value
 	return ""
@@ -193,12 +237,20 @@ func (t *interfaceConstPrefix) Set(inf *types.Interface, value string) string {
 
 type interfaceConstSuffix struct{}
 
+func (t *interfaceConstSuffix) Get(inf *types.Interface) string {
+	return inf.ConstSuffix
+}
+
 func (t *interfaceConstSuffix) Set(inf *types.Interface, value string) string {
 	inf.ConstSuffix = value
 	return ""
 }
 
 type interfaceName struct{}
+
+func (t *interfaceName) Get(inf *types.Interface) string {
+	return inf.Basic().Def
+}
 
 func (t *interfaceName) Set(inf *types.Interface, value string) string {
 	b := inf.Basic()
@@ -208,6 +260,10 @@ func (t *interfaceName) Set(inf *types.Interface, value string) string {
 }
 
 type interfacePackage struct{}
+
+func (t *interfacePackage) Get(inf *types.Interface) string {
+	return inf.Basic().Package
+}
 
 func (t *interfacePackage) Set(inf *types.Interface, value string) string {
 	msg := verifyPackageName(value)

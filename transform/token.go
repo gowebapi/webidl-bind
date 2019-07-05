@@ -16,6 +16,7 @@ func init() {
 		lexCommandItem{"on", lexCommandOn},
 		lexCommandItem{"patch", lexCommandPatch},
 		lexCommandItem{"changetype", lexCommandChangeType},
+		lexCommandItem{"replace", lexCommandReplace},
 	}
 }
 
@@ -69,11 +70,9 @@ func lexCommandStart(l *lexer) stateFn {
 	for _, item := range lexCommandList {
 		if l.acceptWord(item.name) {
 			l.emit(itemCommand)
-			if !l.acceptWith(isWhitespace) {
-				return l.errorf("invalid command or syntax")
-			}
-			l.ignore()
-			return item.state
+			next := item.state
+			next = requireWhitespace(l, next)
+			return next
 		}
 	}
 	return l.errorf("unknown command or invalid syntax")
@@ -97,33 +96,9 @@ func lexCommandOn(l *lexer) stateFn {
 	}
 
 	// consume regular expression
-	ch := l.next()
-	if ch != '"' {
-		return l.errorf("expected a string inside \"...\"")
+	if state := tryConsumeString(l); state != nil {
+		return state
 	}
-	l.ignore()
-	escape := false
-main:
-	for {
-		ch = l.next()
-		if isNewLine(ch) {
-			return l.errorf("unexpected end of string, missing '\"'")
-		}
-		if !escape {
-			switch ch {
-			case '"':
-				break main
-			case '\\':
-				escape = true
-			}
-		} else {
-			escape = false
-		}
-	}
-	l.backup()
-	l.emit(itemString)
-	l.next()
-	l.ignore()
 
 	// white spaces before ':'
 	ignoreWhitespaces(l)
@@ -136,11 +111,14 @@ main:
 	ignoreWhitespaces(l)
 
 	// evalaute command that should be executed
-	ch = l.next()
+	ch := l.next()
 	switch {
 	case ch == '.':
 		l.emit(itemSpecial)
 		return lexPropertyStart
+	case ch == '@':
+		l.ignore()
+		return lexCommandStart
 	case isIdentFirst(ch):
 		return lexRenameStmt
 	}
@@ -156,10 +134,8 @@ func lexCommandChangeType(l *lexer) stateFn {
 	l.emit(itemIdent)
 
 	// space in between
-	if !l.acceptWith(isWhitespace) {
-		return l.errorf("expected two arguments for @changetype")
-	}
-	l.ignore()
+	next := emitNewLineGotoLineStart
+	next = requireWhitespace(l, next)
 
 	if l.acceptWord("rawjs") {
 		l.emit(itemKeyword)
@@ -175,6 +151,23 @@ func lexCommandPatch(l *lexer) stateFn {
 		l.emit(itemKeyword)
 	}
 	return emitNewLineGotoLineStart
+}
+
+func lexCommandReplace(l *lexer) stateFn {
+	ch := l.next()
+	if ch == '.' {
+		l.emit(itemSpecial)
+	} else {
+		l.backup()
+	}
+	tryConsumeIdent(l)
+	next := emitNewLineGotoLineStart
+	next = requireWhitespace(l, next)
+	tryConsumeString(l)
+	next = requireWhitespace(l, next)
+	tryConsumeString(l)
+	l.acceptWith(isWhitespace)
+	return next
 }
 
 func lexPropertyStart(l *lexer) stateFn {
@@ -268,6 +261,37 @@ func tryConsumeIdent(l *lexer) {
 	l.emit(itemIdent)
 }
 
+func tryConsumeString(l *lexer) stateFn {
+	ch := l.next()
+	if ch != '"' {
+		return l.errorf("expected a string inside \"...\"")
+	}
+	l.ignore()
+	escape := false
+main:
+	for {
+		ch = l.next()
+		if isNewLine(ch) {
+			return l.errorf("unexpected end of string, missing '\"'")
+		}
+		if !escape {
+			switch ch {
+			case '"':
+				break main
+			case '\\':
+				escape = true
+			}
+		} else {
+			escape = false
+		}
+	}
+	l.backup()
+	l.emit(itemString)
+	l.next()
+	l.ignore()
+	return nil
+}
+
 /*
 func tryConsumeNumber(l *lexer) {
 	// Optional leading sign.
@@ -292,6 +316,14 @@ func tryConsumeNumber(l *lexer) {
 func ignoreWhitespaces(l *lexer) {
 	l.acceptWith(isWhitespace)
 	l.ignore()
+}
+
+func requireWhitespace(l *lexer, onSucess stateFn) stateFn {
+	if !l.acceptWith(isWhitespace) {
+		return l.errorf("invalid command or syntax, expecting white space")
+	}
+	l.ignore()
+	return onSucess
 }
 
 func requireRemaningToBeEmpty(l *lexer, next stateFn) stateFn {

@@ -21,13 +21,13 @@ import (
 %token t_newline
 %token t_heading_file t_heading_type t_comment
 %token t_ident t_value t_string
-%token t_cmd_change_type t_cmd_on t_cmd_patch
+%token t_cmd_change_type t_cmd_on t_cmd_patch t_cmd_replace
 %token t_interface t_enum t_callback t_dictionary t_idlconst t_rawjs
 
 %type <val> t_ident comment t_comment t_heading_file t_string value t_value
 %type <val> t_idlconst t_rawjs
 %type <ontype> newType fileHeader typeHeader
-%type <action> line changeType onType command property rename patch
+%type <action> line changeType onType command property rename patch replace
 %type <what> onWhat
 %type <section> section
 
@@ -73,6 +73,7 @@ line: changeType       { $$ = $1 }
 command: property      { $$ = $1 }
     | rename           { $$ = $1 }
     | patch            { $$ = $1 }
+    | replace          { $$ = $1 }
     ;
 
 comment: t_comment       { $$ = $1 }
@@ -127,6 +128,13 @@ patch: t_cmd_patch t_idlconst
     {
         $$ = presult(transformlex).newPatchIdlConst()
     }
+
+    /* @on ".": @replace .name "WebGL" "" */
+replace: t_cmd_replace '.' t_ident t_string t_string
+    {
+        $$ = presult(transformlex).newReplace($3, $4, $5)
+    }
+    ;
 
 value: t_value { $$ = $1 }
     | t_string { $$ = $1 }

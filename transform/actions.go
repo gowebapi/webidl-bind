@@ -277,3 +277,78 @@ func (t *idlconst) ExecuteInterface(value *types.Interface, targets map[string]r
 func (t *idlconst) ExecuteStatus(instance *SpecStatus, notify notifyMsg) {
 	panic("unsupported")
 }
+
+type replace struct {
+	Ref      ref
+	Property string
+	From     string
+	To       string
+}
+
+func (t *replace) OperateOn() scopeMode {
+	return scopeType
+}
+
+func (t replace) Reference() ref {
+	return t.Ref
+}
+
+func (t *replace) exec(in string) string {
+	return strings.Replace(in, t.From, t.To, -1)
+}
+
+func (t *replace) ExecuteCallback(instance *types.Callback, notify notifyMsg) {
+	if p, ok := callbackProperties[t.Property]; ok {
+		value := p.Get(instance)
+		value = t.exec(value)
+		if msg := p.Set(instance, value); msg != "" {
+			notify.messageError(t.Ref, msg)
+		}
+	} else {
+		notify.messageError(t.Ref, "%s: unknown property '%s', valid are: %s",
+			instance.Basic().Idl, t.Property, strings.Join(callbackPropertyNames, ", "))
+	}
+}
+
+func (t *replace) ExecuteDictionary(instance *types.Dictionary, targets map[string]renameTarget, notify notifyMsg) {
+	if p, ok := dictionaryProperties[t.Property]; ok {
+		value := p.Get(instance)
+		value = t.exec(value)
+		if msg := p.Set(instance, value); msg != "" {
+			notify.messageError(t.Ref, msg)
+		}
+	} else {
+		notify.messageError(t.Ref, "%s: unknown property '%s', valid are: %s",
+			instance.Basic().Idl, t.Property, strings.Join(dictionaryPropertyNames, ", "))
+	}
+}
+
+func (t *replace) ExecuteEnum(instance *types.Enum, targets map[string]renameTarget, notify notifyMsg) {
+	if p, ok := enumProperties[t.Property]; ok {
+		value := p.Get(instance)
+		value = t.exec(value)
+		if msg := p.Set(instance, value); msg != "" {
+			notify.messageError(t.Ref, msg)
+		}
+	} else {
+		notify.messageError(t.Ref, "%s: unknown property '%s', valid are: %s",
+			instance.Basic().Idl, t.Property, strings.Join(enumPropertyNames, ", "))
+	}
+}
+
+func (t *replace) ExecuteInterface(instance *types.Interface, targets map[string]renameTarget, notify notifyMsg) {
+	if p, ok := interfaceProperties[t.Property]; ok {
+		value := p.Get(instance)
+		value = t.exec(value)
+		if msg := p.Set(instance, value); msg != "" {
+			notify.messageError(t.Ref, msg)
+		}
+	} else {
+		notify.messageError(t.Ref, "%s: unknown property '%s', valid are: %s",
+			instance.Basic().Idl, t.Property, strings.Join(interfacePropertyNames, ", "))
+	}
+}
+
+func (t *replace) ExecuteStatus(instance *SpecStatus, notify notifyMsg) {
+	panic("unsupported")
+}
