@@ -88,8 +88,9 @@ type MethodName struct {
 
 // Reference in input file
 type Ref struct {
-	Filename string
-	Line     int
+	Filename      string
+	Line          int
+	TransformFile string
 }
 
 type GetRef interface {

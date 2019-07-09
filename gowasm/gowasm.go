@@ -27,6 +27,10 @@ import "syscall/js"
 
 // @IMPORT@
 
+// @IDL-FILES@
+
+// @TRANSFORM-FILES@
+
 // ReleasableApiResource is used to release underlaying
 // allocated resources.
 type ReleasableApiResource interface {
@@ -70,6 +74,11 @@ type fileData struct {
 
 type writeFn func(dst io.Writer, in types.Type) error
 
+type packageData struct {
+	buf   bytes.Buffer
+	types map[types.Type]struct{}
+}
+
 type Source struct {
 	Package string
 	name    string
@@ -93,7 +102,7 @@ func WriteSource(conv *types.Convert) ([]*Source, error) {
 	restoreTB := func() { types.TransformBasic = oldTB }
 	defer restoreTB()
 	types.TransformBasic = pkgMgr.transformPackageName
-	target := make(map[string]*bytes.Buffer)
+	target := make(map[string]*packageData)
 	var err error
 	for _, e := range conv.Enums {
 		if e.InUse() {
@@ -119,12 +128,12 @@ func WriteSource(conv *types.Convert) ([]*Source, error) {
 		return nil, err
 	}
 	ret := make([]*Source, 0)
-	for pkg, buffer := range target {
-		content := buffer.Bytes()
+	for pkg, data := range target {
+		content := data.buf.Bytes()
 		content = sourceCodeRemoveEmptyLines(content)
+		content = sourceInsertInputFileNames(content, data)
 		if content, err = insertImportLines(pkg, content); err != nil {
 			fmt.Fprintf(os.Stderr, "error:%s:unable to remove unused imports from source code: %s\n", pkg, err)
-
 		}
 		if source, err := format.Source(content); err == nil {
 			content = source
@@ -155,7 +164,7 @@ func WriteSource(conv *types.Convert) ([]*Source, error) {
 	return ret, nil
 }
 
-func writeType(value types.Type, target map[string]*bytes.Buffer, conv writeFn, err error) error {
+func writeType(value types.Type, target map[string]*packageData, conv writeFn, err error) error {
 	if err != nil {
 		return err
 	}
@@ -164,24 +173,28 @@ func writeType(value types.Type, target map[string]*bytes.Buffer, conv writeFn, 
 	if err != nil {
 		return err
 	}
-	if err := conv(dst, value); err != nil {
+	if err := conv(&dst.buf, value); err != nil {
 		return err
 	}
 	return nil
 }
 
-func getTarget(value types.Type, target map[string]*bytes.Buffer) (*bytes.Buffer, error) {
+func getTarget(value types.Type, target map[string]*packageData) (*packageData, error) {
 	pkg := value.Basic().Package
 	dst, ok := target[pkg]
 	if ok {
+		dst.types[value] = struct{}{}
 		return dst, nil
 	}
-	dst = &bytes.Buffer{}
+	dst = &packageData{
+		types: make(map[types.Type]struct{}),
+	}
+	dst.types[value] = struct{}{}
 	target[pkg] = dst
 	data := fileData{
 		Package: shortPackageName(pkg),
 	}
-	if err := fileTempl.ExecuteTemplate(dst, "header", data); err != nil {
+	if err := fileTempl.ExecuteTemplate(&dst.buf, "header", data); err != nil {
 		return nil, err
 	}
 	return dst, nil
@@ -267,6 +280,28 @@ func insertImportLines(pkg string, content []byte) ([]byte, error) {
 	lines = lines + "\n" + file.importInfo()
 	content = bytes.Replace(content, []byte("// @IMPORT@"), []byte(lines), 1)
 	return content, err
+}
+
+func sourceInsertInputFileNames(content []byte, data *packageData) []byte {
+	var idl, mod []string
+	taken := make(map[string]struct{})
+	for t := range data.types {
+		sr := t.SourceReference()
+		if _, found := taken[sr.Filename]; !found {
+			idl = append(idl, "// "+filepath.Base(sr.Filename))
+			mod = append(mod, "// "+sr.TransformFile)
+			taken[sr.Filename] = struct{}{}
+		}
+	}
+	sort.Strings(idl)
+	sort.Strings(mod)
+
+	idlFiles := "\n\n// source idl files:\n" + strings.Join(idl, "\n") + "\n\n"
+	modFiles := "\n\n// transform files:\n" + strings.Join(mod, "\n") + "\n\n"
+
+	content = bytes.Replace(content, []byte("// @IDL-FILES@"), []byte(idlFiles), 1)
+	content = bytes.Replace(content, []byte("// @TRANSFORM-FILES@"), []byte(modFiles), 1)
+	return content
 }
 
 func (src *Source) Filename(insidePkg string) (string, bool) {

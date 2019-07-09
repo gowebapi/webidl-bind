@@ -63,6 +63,7 @@ func (t *Transform) Execute(conv *types.Convert) error {
 	if t.errors > 0 {
 		return errStop
 	}
+	assignTranformFileName(conv)
 	return nil
 }
 
@@ -240,6 +241,13 @@ func (t *Transform) calcGlobalCmd() (types map[string]*onType, files []ref, fact
 		}
 	}
 	return
+}
+
+func assignTranformFileName(conv *types.Convert) {
+	for _, value := range conv.All {
+		sg := groupName(value.SourceReference().Filename)
+		value.SourceReference().TransformFile = sg + ".go.md"
+	}
 }
 
 // groupName is common name takes from a filename
