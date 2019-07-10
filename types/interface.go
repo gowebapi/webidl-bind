@@ -210,14 +210,21 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 }
 
 func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
+	name := in.Name
 	ref := createRef(in, conv)
-	if in.Name == "" {
-		if in.Specialization != "" {
-			conv.warning(ref, "skipping method, no support for specialization '%s'", in.Specialization)
-		} else {
-			conv.failing(ref, "empty method name")
+	if name == "" {
+		if in.Specialization == "" {
 		}
-		return nil
+		switch in.Specialization {
+		case "":
+			conv.failing(ref, "empty method name")
+			return nil
+		case "stringifier":
+			name = "toString"
+		default:
+			conv.warning(ref, "skipping method, no support for specialization '%s'", in.Specialization)
+			return nil
+		}
 	}
 	conv.warningTrue(in.Specialization == "", ref, "method: unsupported specialization (need to be implemented)")
 	conv.assertTrue(in.Init == nil, ref, "method: unsupported default value")
@@ -234,7 +241,7 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 	return &IfMethod{
 		nameAndLink: nameAndLink{
 			ref:  ref,
-			name: fromIdlToMethodName(in.Name),
+			name: fromIdlToMethodName(name),
 		},
 		Return: convertType(in.Type, conv),
 		Static: in.Static,
