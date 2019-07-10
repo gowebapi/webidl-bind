@@ -12,6 +12,18 @@ type Parameter struct {
 	Name     string
 }
 
+func (p *Parameter) copy() *Parameter {
+	r := *p.ref
+	dst := &Parameter{
+		ref:      &r,
+		Type:     p.Type,
+		Optional: p.Optional,
+		Variadic: p.Variadic,
+		Name:     p.Name,
+	}
+	return dst
+}
+
 func (t *extractTypes) convertParams(list []*ast.Parameter) []*Parameter {
 	params := []*Parameter{}
 	for _, pi := range list {

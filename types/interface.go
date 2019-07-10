@@ -60,6 +60,8 @@ type IfMethod struct {
 	Params []*Parameter
 }
 
+type TypeConvert func(in TypeRef) TypeRef
+
 var ignoredInterfaceAnnotation = map[string]bool{
 	"Exposed":                           true,
 	"LegacyUnenumerableNamedProperties": true,
@@ -328,6 +330,66 @@ func (t *Interface) TypeID() TypeID {
 	return TypeInterface
 }
 
+func (t *Interface) TemplateCopy(targetInfo BasicInfo) *Interface {
+	src := t
+	ref := *src.standardType.ref
+	dst := &Interface{
+		standardType: standardType{
+			inuse:       true,
+			needRelease: src.standardType.needRelease,
+			ref:         &ref,
+		},
+		basic:        targetInfo,
+		Inherits:     src.Inherits,
+		inheritsName: src.inheritsName,
+		Global:       src.Global,
+		Callback:     src.Callback,
+		FunctionCB:   src.FunctionCB,
+		ConstPrefix:  src.ConstPrefix,
+		ConstSuffix:  src.ConstSuffix,
+		Constructor:  src.Constructor.copy(),
+	}
+	dst.basic.Template = src.basic.Template
+	for _, in := range src.Consts {
+		dst.Consts = append(dst.Consts, in.copy())
+	}
+	for _, in := range src.Vars {
+		dst.Vars = append(dst.Vars, in.copy())
+	}
+	for _, in := range src.StaticVars {
+		dst.StaticVars = append(dst.StaticVars, in.copy())
+	}
+	for _, in := range src.Method {
+		dst.Method = append(dst.Method, in.copy())
+	}
+	for _, in := range src.StaticMethod {
+		dst.StaticMethod = append(dst.StaticMethod, in.copy())
+	}
+	return dst
+}
+
+func (t *Interface) ChangeType(typeConv TypeConvert) {
+	src := t
+	if t.Constructor != nil {
+		t.Constructor.changeType(typeConv)
+	}
+	for _, value := range src.Consts {
+		value.Type = typeConv(value.Type)
+	}
+	for _, value := range src.Vars {
+		value.Type = typeConv(value.Type)
+	}
+	for _, value := range src.StaticVars {
+		value.Type = typeConv(value.Type)
+	}
+	for _, value := range src.Method {
+		value.changeType(typeConv)
+	}
+	for _, value := range src.StaticMethod {
+		value.changeType(typeConv)
+	}
+}
+
 func (t *IfConst) copy() *IfConst {
 	dup := *t
 	return &dup
@@ -337,9 +399,48 @@ func (t *IfConst) SetType(value TypeRef) string {
 	return "const can't change type"
 }
 
+func (t *IfVar) copy() *IfVar {
+	r := *t.ref
+	return &IfVar{
+		nameAndLink: nameAndLink{
+			name: t.nameAndLink.name,
+			ref:  &r,
+		},
+		Type:     t.Type,
+		Static:   t.Static,
+		Readonly: t.Readonly,
+	}
+}
+
 func (t *IfVar) SetType(value TypeRef) string {
 	t.Type = value
 	return ""
+}
+
+func (t *IfMethod) copy() *IfMethod {
+	if t == nil {
+		return t
+	}
+	r := *t.ref
+	dst := &IfMethod{
+		nameAndLink: nameAndLink{
+			name: t.nameAndLink.name,
+			ref:  &r,
+		},
+		Return: t.Return,
+		Static: t.Static,
+	}
+	for _, pin := range t.Params {
+		dst.Params = append(dst.Params, pin.copy())
+	}
+	return dst
+}
+
+func (t *IfMethod) changeType(typeConv TypeConvert) {
+	t.Return = typeConv(t.Return)
+	for i := range t.Params {
+		t.Params[i].Type = typeConv(t.Params[i].Type)
+	}
 }
 
 func (t *IfMethod) SetType(value TypeRef) string {

@@ -22,6 +22,9 @@ type Transform struct {
 
 	// Status data from files
 	Status []*SpecStatus
+
+	// to track where javascript.* package ends up
+	promiseTemplate types.Type
 }
 
 // ref is input source code reference
@@ -60,6 +63,7 @@ func (t *Transform) Execute(conv *types.Convert) error {
 		return errStop
 	}
 	t.executeTypes(conv)
+	t.executePromises(conv)
 	if t.errors > 0 {
 		return errStop
 	}
@@ -196,6 +200,39 @@ func (t *Transform) evalIfProcess(value types.Type, a action, what matchType) bo
 		}
 	}
 	return true
+}
+
+// executeFiles is doing the global changes on multiple types.
+func (t *Transform) executePromises(conv *types.Convert) {
+	if t.errors > 0 {
+		return
+	}
+	promises, primitive := t.setupPromiseEvaluation(conv.Types)
+	for _, item := range conv.All {
+		if !item.InUse() {
+			continue
+		}
+		t.evaluatePromise(item, promises)
+	}
+	processed := make(map[types.Type]struct{})
+	for key, item := range promises {
+		if _, found := primitive[key]; found {
+			continue
+		}
+		if _, found := processed[item]; found {
+			continue
+		}
+		processed[item] = struct{}{}
+		conv.All = append(conv.All, item)
+		switch value := item.(type) {
+		case *types.Callback:
+			conv.Callbacks = append(conv.Callbacks, value)
+		case *types.Interface:
+			conv.Interface = append(conv.Interface, value)
+		default:
+			panic(fmt.Sprintf("unknown type %T", value))
+		}
+	}
 }
 
 func (t *Transform) messageError(ref ref, format string, args ...interface{}) {

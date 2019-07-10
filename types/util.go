@@ -303,6 +303,10 @@ func (t *standardType) InUse() bool {
 	return t.inuse
 }
 
+func (t *standardType) SetInUse(value bool) {
+	t.inuse = value
+}
+
 func (t *standardType) SourceReference() *Ref {
 	return t.ref
 }

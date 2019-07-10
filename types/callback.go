@@ -73,3 +73,29 @@ func (t *Callback) SetBasic(basic BasicInfo) {
 func (t *Callback) TypeID() TypeID {
 	return TypeCallback
 }
+
+func (t *Callback) TemplateCopy(targetInfo BasicInfo) *Callback {
+	src := t
+	ref := *src.standardType.ref
+	dst := &Callback{
+		standardType: standardType{
+			inuse:       true,
+			needRelease: src.standardType.needRelease,
+			ref:         &ref,
+		},
+		basic:  targetInfo,
+		Return: src.Return,
+	}
+	dst.basic.Template = src.basic.Template
+	for _, pin := range t.Parameters {
+		dst.Parameters = append(dst.Parameters, pin.copy())
+	}
+	return dst
+}
+
+func (t *Callback) ChangeType(typeConv TypeConvert) {
+	t.Return = typeConv(t.Return)
+	for i := range t.Parameters {
+		t.Parameters[i].Type = typeConv(t.Parameters[i].Type)
+	}
+}

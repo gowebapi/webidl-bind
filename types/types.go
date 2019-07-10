@@ -211,7 +211,7 @@ func (t *nullableType) Basic() BasicInfo {
 }
 
 func (t *nullableType) DefaultParam() (info *TypeInfo, inner TypeRef) {
-	return t.Param(false, false, false)
+	return t.Param(true, false, false)
 }
 
 func (t *nullableType) link(conv *Convert, inuse inuseLogic) TypeRef {
@@ -267,6 +267,9 @@ func (t *ParametrizedType) link(conv *Convert, inuse inuseLogic) TypeRef {
 		inner := make(inuseLogic)
 		t.Elems[i] = t.Elems[i].link(conv, inner)
 		// names = append(names, t.Elems[i].Basic().Idl)
+	}
+	if len(t.Elems) != 1 {
+		conv.failing(t, "parameterized type support only 1 parameter, not %d", len(t.Elems))
 	}
 
 	candidate := getIdlName(t.ParamName)

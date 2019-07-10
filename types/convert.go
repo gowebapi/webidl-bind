@@ -37,6 +37,7 @@ type Type interface {
 	// Used indicate that it's a interface or a type that is used by
 	// an interface
 	InUse() bool
+	SetInUse(value bool)
 
 	SetBasic(basic BasicInfo)
 
