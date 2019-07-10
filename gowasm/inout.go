@@ -87,7 +87,7 @@ const inoutFromTmplInput = `
 		if len(args) > {{.Idx}} {
 	{{end}}
 	{{if .Nullable}}
-		if {{.In}}.Type() != js.TypeNull {
+		if {{.In}}.Type() != js.TypeNull && {{.In}}.Type() != js.TypeUndefined {
 	{{end}}
 {{end}}
 {{define "param-end"}}
