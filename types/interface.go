@@ -48,9 +48,10 @@ type IfConst struct {
 
 type IfVar struct {
 	nameAndLink
-	Type     TypeRef
-	Static   bool
-	Readonly bool
+	Type        TypeRef
+	Static      bool
+	Readonly    bool
+	Stringifier bool
 }
 
 type IfMethod struct {
@@ -191,7 +192,7 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 		}
 	}
 	conv.assertTrue(len(in.Parameters) == 0, ref, "var: unsupported parameters")
-	conv.warningTrue(in.Specialization == "", ref, "var: unsupported specialization")
+	conv.warningTrue(in.Specialization == "" || in.Specialization == "stringifier", ref, "var: unsupported specialization")
 	conv.assertTrue(in.Init == nil, ref, "var: unsupported default value")
 	conv.assertTrue(!in.Required, ref, "var: unsupported required attribute")
 	// parser.Dump(os.Stdout, in)
@@ -201,9 +202,10 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 			ref:  ref,
 			name: fromIdlToMethodName(in.Name),
 		},
-		Type:     convertType(in.Type, conv),
-		Static:   in.Static,
-		Readonly: in.Readonly,
+		Type:        convertType(in.Type, conv),
+		Static:      in.Static,
+		Readonly:    in.Readonly,
+		Stringifier: in.Specialization == "stringifier",
 	}
 }
 

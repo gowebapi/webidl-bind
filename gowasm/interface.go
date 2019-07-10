@@ -89,6 +89,14 @@ func (_this * {{.If.Basic.Def}} ) {{.Name.Def}} () {{.Type.Output}} {
 	{{.From}}
 	return ret
 }
+
+{{if .Var.Stringifier}}
+	// ToString is an alias for {{.Name.Def}}.
+	func (_this * {{.If.Basic.Def}} ) ToString() string {
+		return _this. {{.Name.Def}} ()
+	}
+{{end}}
+
 {{end}}
 
 {{define "set-object-attribute"}}
@@ -336,6 +344,7 @@ type interfaceAttribute struct {
 	To   string
 	If   *types.Interface
 	Ret  string
+	Var  *types.IfVar
 }
 
 type interfaceMethod struct {
@@ -488,6 +497,7 @@ func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set str
 			To:   to,
 			If:   main,
 			Ret:  ret,
+			Var:  a,
 		}
 		if err := interfaceTmpl.ExecuteTemplate(dst, get, in); err != nil {
 			return err
