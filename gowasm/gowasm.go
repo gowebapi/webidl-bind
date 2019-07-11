@@ -151,7 +151,7 @@ func WriteSource(conv *types.Convert) ([]*Source, error) {
 		})
 		ret = append(ret, &Source{
 			Package: pkg,
-			name:    base + "_js_wasm.go",
+			name:    base + "_js.go",
 			Content: wasm,
 		})
 	}

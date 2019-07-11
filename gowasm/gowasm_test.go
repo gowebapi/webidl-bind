@@ -90,7 +90,7 @@ func compareResult(expectedFile string, actual []*Source, t *testing.T) {
 	tested := 0
 	for _, src := range actual {
 		name, include := src.Filename("")
-		if strings.Contains(name, "wasm") {
+		if strings.Contains(name, "_js.go") {
 			continue
 		}
 		tested++
