@@ -4,9 +4,15 @@
 
 package callinf
 
-import js "github.com/gowebapi/webapi/core/failjs"
+import js "github.com/gowebapi/webapi/core/js"
 
 // using following types:
+
+// source idl files:
+// callinf.idl
+
+// transform files:
+//
 
 // ReleasableApiResource is used to release underlaying
 // allocated resources.
@@ -39,8 +45,10 @@ func UnionFromJS(value js.Value) *Union {
 	return &Union{Value: value}
 }
 
-const Test1_Foo1 string = "2"
-const Test3_Foo1 int = 3
+const (
+	Test1_Foo1 string = "2"
+	Test3_Foo1 int    = 3
+)
 
 // Foo1 is a callback interface.
 type Foo1 interface {

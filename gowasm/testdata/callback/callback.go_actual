@@ -4,9 +4,15 @@
 
 package callback
 
-import js "github.com/gowebapi/webapi/core/failjs"
+import js "github.com/gowebapi/webapi/core/js"
 
 // using following types:
+
+// source idl files:
+// callback.idl
+
+// transform files:
+//
 
 // ReleasableApiResource is used to release underlaying
 // allocated resources.
