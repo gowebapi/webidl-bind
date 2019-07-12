@@ -142,7 +142,7 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 	for _, c := range in.CustomOps {
 		switch c.Name {
 		case "stringifier":
-			t.applyInterfaceStringifer(ret, c)
+			t.queueProtocolInterfaceStringifier(ret.basic.Idl, ret.ref)
 		default:
 			t.failing(ret.ref, "unsupported custom operation '%s'", c.Name)
 		}
@@ -151,10 +151,10 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 		v := in.Iterable.Elem
 		ref := createRef(in.Iterable, t)
 		if in.Iterable.Key == nil {
-			queueProtocolIterableOne(ret.basic.Idl, v, ref, t)
+			t.queueProtocolIterableOne(ret.basic.Idl, v, ref)
 		} else {
 			k := in.Iterable.Key
-			queueProtocolIterableTwo(ret.basic.Idl, k, v, ref, t)
+			t.queueProtocolIterableTwo(ret.basic.Idl, k, v, ref)
 		}
 	}
 	return ret, in.Partial
@@ -257,24 +257,6 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 		Static: in.Static,
 		Params: conv.convertParams(in.Parameters),
 	}
-}
-
-func (conv *extractTypes) applyInterfaceStringifer(value *Interface, op *ast.CustomOp) {
-	stringType := &ast.TypeName{Base: op.Base, Name: "DOMString"}
-	toString := &IfMethod{
-		nameAndLink: nameAndLink{
-			name: MethodName{
-				Idl:      "toString",
-				Def:      "ToString",
-				Internal: "toString",
-			},
-			ref: createRef(op, conv),
-		},
-		Return: convertType(stringType, conv),
-		Static: false,
-		Params: []*Parameter{},
-	}
-	value.Method = append(value.Method, toString)
 }
 
 func (t *Interface) Basic() BasicInfo {

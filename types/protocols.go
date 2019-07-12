@@ -48,36 +48,47 @@ dictionary {{.Name}}ValueIteratorValue {
 };
 {{end}}
 
+{{define "stringifier"}}
+interface mixin {{.Name}}Stringifier {
+	USVString toString();
+};
+{{.Name}} includes {{.Name}}Stringifier;
+
+{{end}}
 
 `
 
 var protocolTemplate = template.Must(template.New("protocol").Parse(protocolTemplateInput))
 
-func queueProtocolIterableOne(name string, value ast.Type, ref *Ref, et *extractTypes) {
-	protocolAddIterableBase(name, ref, et)
+func (et *extractTypes) queueProtocolIterableOne(name string, value ast.Type, ref *Ref) {
+	et.protocolAddTemplate("iterable", name, ref)
 	key := &ast.TypeName{Name: "unsigned long"}
-	protocolAddTypeDef(name+"_TypeDef_Key", key, ref, et)
-	protocolAddTypeDef(name+"_TypeDef_Value", value, ref, et)
+	et.protocolAddTypeDef(name+"_TypeDef_Key", key, ref)
+	et.protocolAddTypeDef(name+"_TypeDef_Value", value, ref)
 }
 
-func queueProtocolIterableTwo(name string, key, value ast.Type, ref *Ref, et *extractTypes) {
-	protocolAddIterableBase(name, ref, et)
-	protocolAddTypeDef(name+"_TypeDef_Key", value, ref, et)
-	protocolAddTypeDef(name+"_TypeDef_Value", value, ref, et)
+func (et *extractTypes) queueProtocolIterableTwo(name string, key, value ast.Type, ref *Ref) {
+	et.protocolAddTemplate("iterable", name, ref)
+	et.protocolAddTypeDef(name+"_TypeDef_Key", value, ref)
+	et.protocolAddTypeDef(name+"_TypeDef_Value", value, ref)
 }
 
-func protocolAddIterableBase(name string, ref *Ref, et *extractTypes) {
+func (et *extractTypes) queueProtocolInterfaceStringifier(name string, ref *Ref) {
+	et.protocolAddTemplate("stringifier", name, ref)
+}
+
+func (et *extractTypes) protocolAddTemplate(tmpl, name string, ref *Ref) {
 	data := struct {
 		Name string
 	}{
 		Name: name,
 	}
-	if err := protocolTemplate.ExecuteTemplate(&et.protocol, "iterable", &data); err != nil {
+	if err := protocolTemplate.ExecuteTemplate(&et.protocol, tmpl, &data); err != nil {
 		et.failing(ref, "internal error: template execute: %s", err)
 	}
 }
 
-func protocolAddTypeDef(name string, value ast.Type, ref *Ref, et *extractTypes) {
+func (et *extractTypes) protocolAddTypeDef(name string, value ast.Type, ref *Ref) {
 	typedef := &ast.Typedef{
 		Base: ast.Base{
 			Line: ref.Line,
