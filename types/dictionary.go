@@ -141,6 +141,33 @@ func (t *Dictionary) TypeID() TypeID {
 	return TypeDictionary
 }
 
+func (t *Dictionary) templateCopy(targetInfo BasicInfo) *Dictionary {
+	src := t
+	ref := *src.standardType.ref
+	dst := &Dictionary{
+		standardType: standardType{
+			inuse:       true,
+			needRelease: src.standardType.needRelease,
+			ref:         &ref,
+		},
+		basic: targetInfo,
+
+		Inherits:     src.Inherits,
+		inheritsName: src.inheritsName,
+	}
+	dst.basic.Template = src.basic.Template
+	for _, m := range src.Members {
+		dst.Members = append(dst.Members, m.copy())
+	}
+	return dst
+}
+
+func (t *Dictionary) changeType(typeConv TypeConvert) {
+	for _, m := range t.Members {
+		m.Type = typeConv(m.Type)
+	}
+}
+
 func (t *DictMember) copy() *DictMember {
 	// TODO does the type need to be deep copied?
 	return &DictMember{
