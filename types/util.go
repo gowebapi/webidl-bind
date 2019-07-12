@@ -2,6 +2,7 @@
 package types
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"unicode"
@@ -246,6 +247,21 @@ func toCamelCase(in string, upper bool) string {
 	return out
 }
 
+// insertLineNumber is used to debug print internal type specification
+// and is adding line number to every line
+func insertLineNumber(content []byte) []byte {
+	split := bytes.Split(content, []byte("\n"))
+	out := make([]byte, 0, len(content)+5*len(split))
+	nl := []byte("\n")
+	for idx, line := range split {
+		number := fmt.Sprintf("%03d ", idx+1)
+		out = append(out, []byte(number)...)
+		out = append(out, line...)
+		out = append(out, nl...)
+	}
+	return out
+}
+
 func IsString(t TypeRef) bool {
 	p, ok := t.(*PrimitiveType)
 	if ok {
@@ -264,7 +280,7 @@ func IsVoid(t TypeRef) bool {
 func createRef(in ast.Node, et *extractTypes) *Ref {
 	return &Ref{
 		Filename: et.main.setup.Filename,
-		Line:     in.NodeBase().Line,
+		Line:     in.NodeBase().Line + et.lineOffset,
 	}
 }
 

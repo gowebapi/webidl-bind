@@ -1,6 +1,7 @@
 package types
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -104,18 +105,39 @@ func (t *Convert) Load(setup *Setup) error {
 // ParseTest is parsing a text and Process it
 func (t *Convert) Parse(content []byte, setup *Setup) error {
 	t.setup = setup
+	list := &extractTypes{main: t}
+
+	// main file parsing
+	if err := t.parseContent(content, list); err != nil {
+		return err
+	}
+
+	// queued protocol parsing
+	list.lineOffset = 1000000
+	if err := t.parseContent(list.protocol.Bytes(), list); err != nil {
+		fmt.Println("internal dump of type generated:\n",
+			string(insertLineNumber(list.protocol.Bytes())),
+		)
+		return err
+	}
+	return nil
+}
+
+func (t *Convert) parseContent(content []byte, list *extractTypes) error {
+	if len(content) == 0 {
+		return nil
+	}
 	file := parser.Parse(string(content))
 	trouble := ast.GetAllErrorNodes(file)
 	if len(trouble) > 0 {
 		sort.SliceStable(trouble, func(i, j int) bool { return trouble[i].Line < trouble[j].Line })
 		for _, e := range trouble {
-			ref := Ref{Filename: setup.Filename, Line: e.Line}
+			ref := Ref{Filename: list.main.setup.Filename, Line: e.Line}
 			t.failing(&ref, e.Message)
 		}
 		return ErrStop
 	}
-	list := extractTypes{main: t}
-	ast.Accept(file, &list)
+	ast.Accept(file, list)
 	if t.HaveError {
 		return ErrStop
 	}
@@ -290,7 +312,9 @@ func (t *Convert) warningTrue(test bool, ref GetRef, format string, args ...inte
 
 type extractTypes struct {
 	ast.EmptyVisitor
-	main *Convert
+	main       *Convert
+	protocol   bytes.Buffer
+	lineOffset int
 }
 
 func (t *extractTypes) Enum(value *ast.Enum) bool {

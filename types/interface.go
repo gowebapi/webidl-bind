@@ -147,6 +147,16 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			t.failing(ret.ref, "unsupported custom operation '%s'", c.Name)
 		}
 	}
+	if in.Iterable != nil {
+		v := in.Iterable.Elem
+		ref := createRef(in.Iterable, t)
+		if in.Iterable.Key == nil {
+			queueProtocolIterableOne(ret.basic.Idl, v, ref, t)
+		} else {
+			k := in.Iterable.Key
+			queueProtocolIterableTwo(ret.basic.Idl, k, v, ref, t)
+		}
+	}
 	return ret, in.Partial
 }
 
