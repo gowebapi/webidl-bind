@@ -158,6 +158,11 @@ func (conv *Convert) Evaluate() error {
 	if conv.verifyIndividualTypeCheck(); conv.HaveError {
 		return ErrStop
 	}
+	for _, inf := range conv.Interface {
+		if inf.haveReplacableMethods {
+			inf.Method = cleanupReplaceMethods(inf.Method)
+		}
+	}
 	return nil
 }
 

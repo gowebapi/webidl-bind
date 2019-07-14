@@ -6,6 +6,10 @@ import (
 	"github.com/gowebapi/webidlparser/ast"
 )
 
+// TODO: A maplike interface and its inherited interfaces must
+// not have an iterable declaration, a setlike declaration, or
+// an indexed property getter.
+
 type Interface struct {
 	standardType
 	basic BasicInfo
@@ -35,6 +39,9 @@ type Interface struct {
 	StaticVars   []*IfVar
 	Method       []*IfMethod
 	StaticMethod []*IfMethod
+
+	// indicate that this interface have replacable methods
+	haveReplacableMethods bool
 }
 
 // Interface need to implement Type
@@ -59,6 +66,10 @@ type IfMethod struct {
 	Return TypeRef
 	Static bool
 	Params []*Parameter
+
+	// ReplaceOnOverride indicate that this method can be replaced
+	// by another method and shall not be overrided.
+	replaceOnOverride bool
 }
 
 type TypeConvert func(in TypeRef) TypeRef
@@ -70,8 +81,10 @@ var ignoredInterfaceAnnotation = map[string]bool{
 }
 
 var ignoredMethodAnnotation = map[string]bool{
-	"CEReactions": true, "NewObject": true,
-	"Unscopable": true,
+	"CEReactions": true, "NewObject": true, "Unscopable": true,
+	"SecureContext": true, "Exposed": true, "SameObject": true,
+	"Default": true, "Unforgeable": true,
+	"WebGLHandlesContextLoss": true,
 }
 
 var ignoredVarAnnotations = map[string]bool{
@@ -114,6 +127,7 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 		} else {
 			mo := t.convertInterfaceMethod(mi)
 			if mo != nil {
+				ret.haveReplacableMethods = ret.haveReplacableMethods || mo.replaceOnOverride
 				ret.Method = append(ret.Method, mo)
 			}
 		}
@@ -147,14 +161,29 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			t.failing(ret.ref, "unsupported custom operation '%s'", c.Name)
 		}
 	}
-	if in.Iterable != nil {
-		v := in.Iterable.Elem
-		ref := createRef(in.Iterable, t)
-		if in.Iterable.Key == nil {
-			t.queueProtocolIterableOne(ret.basic.Idl, v, ref)
-		} else {
-			k := in.Iterable.Key
-			t.queueProtocolIterableTwo(ret.basic.Idl, k, v, ref)
+	for idx, pattern := range in.Patterns {
+		ref := createRef(pattern, t)
+		if idx >= 1 {
+			t.failing(ref, "an interface may only have one of iterable, maplike or setlike.")
+			break
+		}
+		switch pattern.Type {
+		case ast.Iterable:
+			v := pattern.Elem
+			if pattern.Key == nil {
+				t.queueProtocolIterableOne(ret.basic.Idl, v, ref)
+			} else {
+				k := pattern.Key
+				t.queueProtocolIterableTwo(ret.basic.Idl, k, v, ref)
+			}
+		case ast.AsyncIterable:
+			t.failing(createRef(pattern, t), "async iterable is not implemented")
+		case ast.Maplike:
+			t.queueProtocolMaplike(ret.basic.Idl, pattern.ReadOnly, pattern.Key, pattern.Elem, ref)
+		case ast.Setlike:
+			t.queueProtocolSetlike(ret.basic.Idl, pattern.ReadOnly, pattern.Elem, ref)
+		default:
+			panic(fmt.Sprint("unknown pattern: ", pattern.Type))
 		}
 	}
 	return ret, in.Partial
@@ -223,8 +252,6 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 	name := in.Name
 	ref := createRef(in, conv)
 	if name == "" {
-		if in.Specialization == "" {
-		}
 		switch in.Specialization {
 		case "":
 			conv.failing(ref, "empty method name")
@@ -240,12 +267,14 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 	conv.assertTrue(in.Init == nil, ref, "method: unsupported default value")
 	conv.assertTrue(!in.Required, ref, "method: unsupported required tag")
 	// TODO add support for method annotations
+	replaceOnOverride := false
 	for _, a := range in.Annotations {
-		if _, f := ignoredMethodAnnotation[a.Name]; f {
-			continue
+		if a.Name == "ReplaceOnOverride" {
+			replaceOnOverride = true
+		} else if _, f := ignoredMethodAnnotation[a.Name]; !f {
+			aref := createRef(a, conv)
+			conv.warning(aref, "unsupported method annotation '%s'", a.Name)
 		}
-		aref := createRef(a, conv)
-		conv.warning(aref, "unsupported method annotation '%s'", a.Name)
 	}
 
 	return &IfMethod{
@@ -253,9 +282,10 @@ func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
 			ref:  ref,
 			name: fromIdlToMethodName(name),
 		},
-		Return: convertType(in.Type, conv),
-		Static: in.Static,
-		Params: conv.convertParams(in.Parameters),
+		Return:            convertType(in.Type, conv),
+		Static:            in.Static,
+		Params:            conv.convertParams(in.Parameters),
+		replaceOnOverride: replaceOnOverride,
 	}
 }
 
@@ -341,6 +371,7 @@ func (t *Interface) merge(m *Interface, conv *Convert) {
 	t.StaticVars = append(t.StaticVars, m.StaticVars...)
 	t.Method = append(t.Method, m.Method...)
 	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
+	t.haveReplacableMethods = t.haveReplacableMethods || m.haveReplacableMethods
 }
 
 func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
@@ -351,6 +382,7 @@ func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
 	t.StaticVars = append(t.StaticVars, m.StaticVars...)
 	t.Method = append(t.Method, m.Method...)
 	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
+	t.haveReplacableMethods = t.haveReplacableMethods || m.haveReplacableMethods
 }
 
 func (t *Interface) TypeID() TypeID {
@@ -415,6 +447,26 @@ func (t *Interface) ChangeType(typeConv TypeConvert) {
 	for _, value := range src.StaticMethod {
 		value.changeType(typeConv)
 	}
+}
+
+func cleanupReplaceMethods(list []*IfMethod) []*IfMethod {
+	// first we search unique names
+	countNames := make(map[string]int)
+	for _, m := range list {
+		key := m.name.Idl
+		countNames[key] = countNames[key] + 1
+	}
+	// all replacable that isn't unique should be removed
+	out := make([]*IfMethod, 0, len(list))
+	for _, m := range list {
+		key := m.name.Idl
+		count := countNames[key]
+		if m.replaceOnOverride && count > 1 {
+			continue
+		}
+		out = append(out, m)
+	}
+	return out
 }
 
 func (t *IfConst) copy() *IfConst {

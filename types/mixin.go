@@ -15,6 +15,8 @@ type mixin struct {
 	StaticVars   []*IfVar
 	Method       []*IfMethod
 	StaticMethod []*IfMethod
+
+	haveReplacableMethods bool
 }
 
 // var _ Type = &Mixin{}
@@ -32,6 +34,9 @@ func (t *extractTypes) convertMixin(in *ast.Mixin) (*mixin, bool) {
 	ret := &mixin{
 		Name: in.Name,
 		ref:  createRef(in, t),
+	}
+	if len(in.Patterns) != 0 {
+		t.failing(ret.ref, "mixin doesn't have support for iterable, maplike or setlike.")
 	}
 	for _, raw := range in.Members {
 		mi, ok := raw.(*ast.Member)
@@ -55,6 +60,7 @@ func (t *extractTypes) convertMixin(in *ast.Mixin) (*mixin, bool) {
 		} else {
 			mo := t.convertInterfaceMethod(mi)
 			if mo != nil {
+				ret.haveReplacableMethods = ret.haveReplacableMethods || mo.replaceOnOverride
 				ret.Method = append(ret.Method, mo)
 			}
 		}
