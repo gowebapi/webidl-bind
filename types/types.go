@@ -32,6 +32,8 @@ func convertType(in ast.Type, exrType *extractTypes) TypeRef {
 		switch in.Name {
 		case "boolean":
 			ret = newPrimitiveType(in.Name, "bool", "Bool", false, false)
+		case "byte":
+			ret = newPrimitiveType(in.Name, "int", "Int", false, false)
 		case "octet":
 			ret = newPrimitiveType(in.Name, "int", "Int", false, false)
 		case "short":
