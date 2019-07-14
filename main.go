@@ -14,6 +14,7 @@ import (
 	"github.com/gowebapi/webidl-bind/gowasm"
 	"github.com/gowebapi/webidl-bind/transform"
 	"github.com/gowebapi/webidl-bind/types"
+	"github.com/gowebapi/webidl-bind/zinfo"
 )
 
 var args struct {
@@ -251,7 +252,12 @@ func parseArgs() string {
 	flag.StringVar(&args.goBuild, "go-build", "", "execute go build in output folders")
 	flag.StringVar(&args.goTest, "go-test", "", "execute go test in output folders")
 	flag.StringVar(&args.statusFile, "spec-status", "", "write a markdown spec status file")
+	license := flag.Bool("license", false, "print license information")
 	flag.Parse()
+	if *license {
+		zinfo.PrinLicenseText()
+		os.Exit(0)
+	}
 	if len(flag.Args()) == 0 {
 		return "no input files on command line"
 	}

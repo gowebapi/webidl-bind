@@ -1,6 +1,7 @@
 
 # License
 
+WebIDL-Bind
 Copyright 2019 Martin Juhlin (martin.juhlin@gmail.com)
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
