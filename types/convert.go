@@ -163,6 +163,7 @@ func (conv *Convert) Evaluate() error {
 			inf.Method = cleanupReplaceMethods(inf.Method)
 		}
 	}
+	conv.releaseMemory()
 	return nil
 }
 
@@ -313,6 +314,16 @@ func (t *Convert) warningTrue(test bool, ref GetRef, format string, args ...inte
 	if !test {
 		t.warning(ref, format, args...)
 	}
+}
+
+// releaseMemory is freeing up all internal values to save some memory
+func (t *Convert) releaseMemory() {
+	t.partialDict = nil
+	t.partialIf = nil
+	t.mixin = nil
+	t.partialMixin = nil
+	t.includes = nil
+	t.setup = nil
 }
 
 type extractTypes struct {
