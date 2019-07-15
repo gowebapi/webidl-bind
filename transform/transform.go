@@ -33,6 +33,13 @@ type ref struct {
 	Line     int
 }
 
+func convertRef(in *types.Ref) ref {
+	return ref{
+		Filename: in.Filename,
+		Line:     in.Line,
+	}
+}
+
 func (r ref) String() string {
 	return fmt.Sprint(r.Filename, ":", r.Line)
 }
@@ -50,6 +57,14 @@ type onType struct {
 
 var errStop = types.ErrStop
 
+var defaultSpecializationNames = map[types.SpecializationType]string{
+	types.SpecIndexGetter: "Index",
+	types.SpecIndexSetter: "SetIndex",
+	types.SpecKeyGetter:   "Get",
+	types.SpecKeySetter:   "Set",
+	types.SpecKeyDeleter:  "Delete",
+}
+
 func New() *Transform {
 	return &Transform{
 		All: make(map[string]*onType),
@@ -58,12 +73,13 @@ func New() *Transform {
 
 func (t *Transform) Execute(conv *types.Convert) error {
 	fmt.Println("applying transformation on", len(t.All), "types")
-	t.executeFiles(conv)
+	spec := t.executeFiles(conv)
 	if t.errors > 0 {
 		return errStop
 	}
 	t.executeTypes(conv)
 	t.executePromises(conv)
+	t.checkAllSpecilizationAssignment(spec)
 	if t.errors > 0 {
 		return errStop
 	}
@@ -72,20 +88,26 @@ func (t *Transform) Execute(conv *types.Convert) error {
 }
 
 // executeFiles is doing the global changes on multiple types.
-func (t *Transform) executeFiles(conv *types.Convert) {
+func (t *Transform) executeFiles(conv *types.Convert) []*types.Interface {
 	all, files, faction := t.calcGlobalCmd()
 	if t.errors > 0 {
-		return
+		return nil
 	}
+	spec := make([]*types.Interface, 0)
 	for _, item := range conv.All {
 		if !item.InUse() {
 			continue
+		}
+		if inf, ok := item.(*types.Interface); ok && len(inf.Specialization) > 0 {
+			spec = append(spec, inf)
+			t.assignDefaultSpecilizationNames(inf)
 		}
 		if change, f := all[item.Basic().Package]; f {
 			t.executeOnType(item, change, "<file>")
 		}
 	}
 	t.Status = createStatusData(files, faction, conv.All, t)
+	return spec
 }
 
 // executeTypes is execute the changes on singlar type
@@ -232,6 +254,38 @@ func (t *Transform) executePromises(conv *types.Convert) {
 		default:
 			panic(fmt.Sprintf("unknown type %T", value))
 		}
+	}
+}
+
+func (t *Transform) assignDefaultSpecilizationNames(inf *types.Interface) {
+	for _, method := range inf.Specialization {
+		value, found := defaultSpecializationNames[method.Specialization]
+		if found {
+			inf.SpecProperty[method.Specialization] = value
+		}
+	}
+}
+
+func (t *Transform) checkAllSpecilizationAssignment(list []*types.Interface) {
+	for _, inf := range list {
+		add := make([]*types.IfMethod, 0, len(inf.Method)+len(inf.Specialization))
+		for _, method := range inf.Specialization {
+			ref := convertRef(method.SourceReference())
+			name, found := inf.SpecProperty[method.Specialization]
+			if !found {
+				pname := interfaceSpecPropertyMap[method.Specialization]
+				t.messageError(ref, "%s: missing specialiation property '%s' (%s)",
+					inf.Basic().Idl, pname, method.Specialization)
+			} else if name != "" {
+				in := *method.Name()
+				in.Def = name
+				method = method.Copy()
+				method.SetName(&in)
+				add = append(add, method)
+			}
+		}
+		add = append(add, inf.Method...)
+		inf.Method = add
 	}
 }
 

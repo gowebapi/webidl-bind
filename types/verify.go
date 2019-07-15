@@ -25,5 +25,8 @@ func (t *Convert) verifyCallbackInterface(inf *Interface) {
 	if len(inf.StaticMethod) > 0 {
 		t.failing(inf, "static methods are not supported for callback interfaces")
 	}
+	if len(inf.Specialization) > 0 {
+		t.failing(inf, "speccialization methods are not supported for callback interfaces")
+	}
 	// if len(inf.Method) == 0 { }
 }

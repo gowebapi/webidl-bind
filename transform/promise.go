@@ -94,7 +94,7 @@ func (t *Transform) modifyPromise(value types.TypeRef, from, name string, promis
 	if !found {
 		return value
 	}
-	r := ref{in.Ref.Filename, in.Ref.Line}
+	r := convertRef(in.Ref)
 	if in.ParamName == "FrozenArray" {
 		// TODO support FrozenArray
 		// t.messageError(r, "%s:%s:FrozenArray type need to be transformed", from, name)

@@ -10,11 +10,12 @@ type mixin struct {
 	Name string
 	ref  *Ref
 
-	Consts       []*IfConst
-	Vars         []*IfVar
-	StaticVars   []*IfVar
-	Method       []*IfMethod
-	StaticMethod []*IfMethod
+	Consts         []*IfConst
+	Vars           []*IfVar
+	StaticVars     []*IfVar
+	Method         []*IfMethod
+	StaticMethod   []*IfMethod
+	Specialization []*IfMethod
 
 	haveReplacableMethods bool
 }
@@ -53,15 +54,21 @@ func (t *extractTypes) convertMixin(in *ast.Mixin) (*mixin, bool) {
 			mo := t.convertInterfaceVar(mi)
 			ret.Vars = append(ret.Vars, mo)
 		} else if mi.Static {
-			mo := t.convertInterfaceMethod(mi)
+			mo, spec := t.convertInterfaceMethod(mi)
 			if mo != nil {
 				ret.StaticMethod = append(ret.StaticMethod, mo)
 			}
+			if spec != nil {
+				t.failing(spec.ref, "specialization is not supported for static methods")
+			}
 		} else {
-			mo := t.convertInterfaceMethod(mi)
+			mo, spec := t.convertInterfaceMethod(mi)
 			if mo != nil {
 				ret.haveReplacableMethods = ret.haveReplacableMethods || mo.replaceOnOverride
 				ret.Method = append(ret.Method, mo)
+			}
+			if spec != nil {
+				ret.Specialization = append(ret.Specialization, spec)
 			}
 		}
 	}
@@ -88,6 +95,7 @@ func (t *mixin) merge(m *mixin, conv *Convert) {
 	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
 	t.Method = mergeMethods(t.Method, m.Method)
 	t.StaticMethod = mergeMethods(t.StaticMethod, m.StaticMethod)
+	t.Specialization = mergeMethods(t.Specialization, m.Specialization)
 	t.haveReplacableMethods = t.haveReplacableMethods || m.haveReplacableMethods
 }
 
@@ -105,6 +113,7 @@ func (t *mixin) mergeIf(m *Interface, conv *Convert) {
 	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
 	t.Method = mergeMethods(t.Method, m.Method)
 	t.StaticMethod = mergeMethods(t.StaticMethod, m.StaticMethod)
+	t.Specialization = mergeMethods(t.Specialization, m.Specialization)
 	t.haveReplacableMethods = t.haveReplacableMethods || m.haveReplacableMethods
 }
 

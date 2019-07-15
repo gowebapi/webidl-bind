@@ -34,14 +34,19 @@ type Interface struct {
 
 	Constructor *IfMethod
 
-	Consts       []*IfConst
-	Vars         []*IfVar
-	StaticVars   []*IfVar
-	Method       []*IfMethod
-	StaticMethod []*IfMethod
+	Consts         []*IfConst
+	Vars           []*IfVar
+	StaticVars     []*IfVar
+	Method         []*IfMethod
+	StaticMethod   []*IfMethod
+	Specialization []*IfMethod
 
 	// indicate that this interface have replacable methods
 	haveReplacableMethods bool
+
+	// SpecProperty is used by transform step to assign names
+	// for getters, setters and deleters
+	SpecProperty map[SpecializationType]string
 }
 
 // Interface need to implement Type
@@ -70,9 +75,25 @@ type IfMethod struct {
 	// ReplaceOnOverride indicate that this method can be replaced
 	// by another method and shall not be overrided.
 	replaceOnOverride bool
+
+	// Specialization indicate if this is a getter, setter or deleter
+	Specialization SpecializationType
 }
 
 type TypeConvert func(in TypeRef) TypeRef
+
+type SpecializationType int
+
+const (
+	// Nothing assigned
+	SpecNone SpecializationType = iota
+	// getter with integer index
+	SpecIndexGetter
+	SpecIndexSetter
+	SpecKeyGetter
+	SpecKeySetter
+	SpecKeyDeleter
+)
 
 var ignoredInterfaceAnnotation = map[string]bool{
 	"Exposed":                           true,
@@ -103,6 +124,7 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 		inheritsName: in.Inherits,
 		Callback:     in.Callback,
 		FunctionCB:   true,
+		SpecProperty: make(map[SpecializationType]string),
 	}
 	ret.ConstSuffix = "_" + ret.basic.Def
 	for _, raw := range in.Members {
@@ -120,15 +142,21 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			mo := t.convertInterfaceVar(mi)
 			ret.Vars = append(ret.Vars, mo)
 		} else if mi.Static {
-			mo := t.convertInterfaceMethod(mi)
+			mo, spec := t.convertInterfaceMethod(mi)
 			if mo != nil {
 				ret.StaticMethod = append(ret.StaticMethod, mo)
 			}
+			if spec != nil {
+				t.failing(spec.ref, "specialization is not supported for static methods")
+			}
 		} else {
-			mo := t.convertInterfaceMethod(mi)
+			mo, spec := t.convertInterfaceMethod(mi)
 			if mo != nil {
 				ret.haveReplacableMethods = ret.haveReplacableMethods || mo.replaceOnOverride
 				ret.Method = append(ret.Method, mo)
+			}
+			if spec != nil {
+				ret.Specialization = append(ret.Specialization, spec)
 			}
 		}
 	}
@@ -248,45 +276,62 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 	}
 }
 
-func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) *IfMethod {
-	name := in.Name
+func (conv *extractTypes) convertInterfaceMethod(in *ast.Member) (*IfMethod, *IfMethod) {
 	ref := createRef(in, conv)
-	if name == "" {
-		switch in.Specialization {
-		case "":
-			conv.failing(ref, "empty method name")
-			return nil
-		case "stringifier":
-			name = "toString"
-		default:
-			conv.warning(ref, "skipping method, no support for specialization '%s'", in.Specialization)
-			return nil
-		}
-	}
-	conv.warningTrue(in.Specialization == "", ref, "method: unsupported specialization (need to be implemented)")
 	conv.assertTrue(in.Init == nil, ref, "method: unsupported default value")
 	conv.assertTrue(!in.Required, ref, "method: unsupported required tag")
+
+	name := in.Name
+	value := &IfMethod{
+		nameAndLink: nameAndLink{
+			ref: ref,
+			// name: assigned below
+		},
+		Return: convertType(in.Type, conv),
+		Static: in.Static,
+		Params: conv.convertParams(in.Parameters),
+	}
+
+	// process annotations
 	// TODO add support for method annotations
-	replaceOnOverride := false
 	for _, a := range in.Annotations {
 		if a.Name == "ReplaceOnOverride" {
-			replaceOnOverride = true
+			value.replaceOnOverride = true
 		} else if _, f := ignoredMethodAnnotation[a.Name]; !f {
 			aref := createRef(a, conv)
 			conv.warning(aref, "unsupported method annotation '%s'", a.Name)
 		}
 	}
 
-	return &IfMethod{
-		nameAndLink: nameAndLink{
-			ref:  ref,
-			name: fromIdlToMethodName(name),
-		},
-		Return:            convertType(in.Type, conv),
-		Static:            in.Static,
-		Params:            conv.convertParams(in.Parameters),
-		replaceOnOverride: replaceOnOverride,
+	// process specialization
+	method := value
+	var specialization *IfMethod
+	switch in.Specialization {
+	case "":
+		if name == "" {
+			conv.failing(ref, "empty method name")
+			return nil, nil
+		}
+	case "stringifier":
+		if name == "" {
+			name = "toString"
+		}
+	case "getter", "setter", "deleter":
+		specialization = value
+		if name == "" {
+			method = nil
+		}
+		spec, msg := value.identifySpecializationType(in.Specialization)
+		if msg != "" {
+			conv.failing(ref, msg)
+		}
+		value.Specialization = spec
+	default:
+		conv.warning(ref, "skipping method, no support for specialization '%s'", in.Specialization)
+		return nil, nil
 	}
+	value.name = fromIdlToMethodName(name)
+	return method, specialization
 }
 
 func (t *Interface) Basic() BasicInfo {
@@ -350,6 +395,12 @@ func (t *Interface) link(conv *Convert, inuse inuseLogic) TypeRef {
 			p.Type = p.Type.link(conv, make(inuseLogic))
 		}
 	}
+	for _, m := range t.Specialization {
+		m.Return = m.Return.link(conv, make(inuseLogic))
+		for _, p := range m.Params {
+			p.Type = p.Type.link(conv, make(inuseLogic))
+		}
+	}
 	return t
 }
 
@@ -371,6 +422,7 @@ func (t *Interface) merge(m *Interface, conv *Convert) {
 	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
 	t.Method = mergeMethods(t.Method, m.Method)
 	t.StaticMethod = mergeMethods(t.StaticMethod, m.StaticMethod)
+	t.Specialization = mergeMethods(t.Specialization, m.Specialization)
 	t.haveReplacableMethods = t.haveReplacableMethods || m.haveReplacableMethods
 }
 
@@ -380,6 +432,7 @@ func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
 	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
 	t.Method = mergeMethods(t.Method, m.Method)
 	t.StaticMethod = mergeMethods(t.StaticMethod, m.StaticMethod)
+	t.Specialization = mergeMethods(t.Specialization, m.Specialization)
 	t.haveReplacableMethods = t.haveReplacableMethods || m.haveReplacableMethods
 }
 
@@ -422,6 +475,9 @@ func (t *Interface) TemplateCopy(targetInfo BasicInfo) *Interface {
 	for _, in := range src.StaticMethod {
 		dst.StaticMethod = append(dst.StaticMethod, in.Copy())
 	}
+	for _, in := range src.Specialization {
+		dst.Specialization = append(dst.Specialization, in.Copy())
+	}
 	return dst
 }
 
@@ -443,6 +499,9 @@ func (t *Interface) ChangeType(typeConv TypeConvert) {
 		value.changeType(typeConv)
 	}
 	for _, value := range src.StaticMethod {
+		value.changeType(typeConv)
+	}
+	for _, value := range src.Specialization {
 		value.changeType(typeConv)
 	}
 }
@@ -508,6 +567,7 @@ func (t *IfMethod) Copy() *IfMethod {
 		Return:            t.Return,
 		Static:            t.Static,
 		replaceOnOverride: t.replaceOnOverride,
+		Specialization:    t.Specialization,
 	}
 	for _, pin := range t.Params {
 		dst.Params = append(dst.Params, pin.copy())
@@ -520,6 +580,45 @@ func (t *IfMethod) changeType(typeConv TypeConvert) {
 	for i := range t.Params {
 		t.Params[i].Type = typeConv(t.Params[i].Type)
 	}
+}
+
+func (t *IfMethod) identifySpecializationType(forWhat string) (SpecializationType, string) {
+	for _, p := range t.Params {
+		if p.Variadic || p.Optional {
+			return SpecNone, "special operands can't have optional or variadic arguments"
+		}
+	}
+	if forWhat == "getter" {
+		if len(t.Params) != 1 {
+			return SpecNone, "getter must have exact one argument"
+		}
+		if isUnsignedInt(t.Params[0].Type) {
+			return SpecIndexGetter, ""
+		} else if IsString(t.Params[0].Type) {
+			return SpecKeyGetter, ""
+		}
+		return SpecNone, "unknown type for getter argument. only unsigned integer or DOMString is supported"
+	} else if forWhat == "setter" {
+		if len(t.Params) != 2 {
+			return SpecNone, "setter must have exactly two arguments"
+		}
+		if isUnsignedInt(t.Params[0].Type) {
+			return SpecIndexSetter, ""
+		} else if IsString(t.Params[0].Type) {
+			return SpecKeySetter, ""
+		}
+		return SpecNone, "unknown type for setter argument, only unsigned integer or DOMString is supported"
+	} else if forWhat == "deleter" {
+		if len(t.Params) != 1 {
+			return SpecNone, "deleter must have exact one argument"
+		}
+		if IsString(t.Params[0].Type) {
+			return SpecKeyDeleter, ""
+		}
+		return SpecNone, "unknown type for deleter argument. only DOMString is supported"
+	}
+	panic(forWhat)
+	// return SpecNone, ""
 }
 
 func (t *IfMethod) SetType(value TypeRef) string {

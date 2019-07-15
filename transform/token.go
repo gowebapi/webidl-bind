@@ -362,7 +362,7 @@ func isIdentFirst(ch rune) bool {
 }
 
 func isIdentAny(ch rune) bool {
-	return isIdentFirst(ch) || isDigit(ch)
+	return isIdentFirst(ch) || isDigit(ch) || ch == '-'
 }
 
 func isReferenceName(ch rune) bool {

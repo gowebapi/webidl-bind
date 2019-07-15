@@ -109,3 +109,8 @@ Interfaces have following properites
 |.constPrefix|a prefix added to all type constants|empty|
 |.constSuffix|a suffix added to all type constants|interface name|
 |.constructorName|name of constructor|"New" + instance name|
+|.index-getter|name for 'getter' method with integer index|Index|
+|.index-setter|name for 'setter' method with integer index|SetIndex|
+|.key-getter|name for 'getter' method with string key|Get|
+|.key-setter|name for 'setter' method with string key|Set|
+|.key-deleter|name for 'deleter' method with string key|Delete|

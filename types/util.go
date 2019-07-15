@@ -277,6 +277,15 @@ func IsVoid(t TypeRef) bool {
 	return isVoid
 }
 
+func isUnsignedInt(t TypeRef) bool {
+	if prim, ok := t.(*PrimitiveType); ok {
+		if prim.Lang == "uint" {
+			return true
+		}
+	}
+	return false
+}
+
 func createRef(in ast.Node, et *extractTypes) *Ref {
 	return &Ref{
 		Filename: et.main.setup.Filename,

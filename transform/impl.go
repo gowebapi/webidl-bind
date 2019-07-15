@@ -208,6 +208,13 @@ var interfaceProperties = map[string]interfaceProperty{
 	"package":         &interfacePackage{},
 }
 var interfacePropertyNames = []string{}
+var interfaceSpecPropertyMap = map[types.SpecializationType]string{
+	types.SpecIndexGetter: "index-getter",
+	types.SpecIndexSetter: "index-setter",
+	types.SpecKeyGetter:   "key-getter",
+	types.SpecKeySetter:   "key-setter",
+	types.SpecKeyDeleter:  "key-deleter",
+}
 
 type interfaceConstructorName struct{}
 
@@ -280,6 +287,22 @@ func verifyPackageName(value string) string {
 	return ""
 }
 
+type interfaceSpecProperty struct {
+	What types.SpecializationType
+}
+
+func (t *interfaceSpecProperty) Get(inf *types.Interface) string {
+	return inf.SpecProperty[t.What]
+}
+
+func (t *interfaceSpecProperty) Set(inf *types.Interface, value string) string {
+	if len(inf.Specialization) == 0 {
+		return "can only assign specization properties if the interface have specialation methods (getter, setter or deleter)"
+	}
+	inf.SpecProperty[t.What] = value
+	return ""
+}
+
 func init() {
 	for k := range callbackProperties {
 		callbackPropertyNames = append(callbackPropertyNames, k)
@@ -297,6 +320,11 @@ func init() {
 		globalPropertyNames = append(globalPropertyNames, k)
 	}
 	sort.Strings(globalPropertyNames)
+	for k, v := range interfaceSpecPropertyMap {
+		interfaceProperties[v] = &interfaceSpecProperty{
+			What: k,
+		}
+	}
 	for k := range interfaceProperties {
 		callbackPropertyNames = append(interfacePropertyNames, k)
 	}
