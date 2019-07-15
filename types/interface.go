@@ -366,22 +366,20 @@ func (t *Interface) SetBasic(value BasicInfo) {
 }
 
 func (t *Interface) merge(m *Interface, conv *Convert) {
-	t.Consts = append(t.Consts, m.Consts...)
-	t.Vars = append(t.Vars, m.Vars...)
-	t.StaticVars = append(t.StaticVars, m.StaticVars...)
-	t.Method = append(t.Method, m.Method...)
-	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
+	t.Consts = mergeConstants(t.Consts, m.Consts)
+	t.Vars = mergeVariables(t.Vars, m.Vars)
+	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
+	t.Method = mergeMethods(t.Method, m.Method)
+	t.StaticMethod = mergeMethods(t.StaticMethod, m.StaticMethod)
 	t.haveReplacableMethods = t.haveReplacableMethods || m.haveReplacableMethods
 }
 
 func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
-	for _, v := range m.Consts {
-		t.Consts = append(t.Consts, v.copy())
-	}
-	t.Vars = append(t.Vars, m.Vars...)
-	t.StaticVars = append(t.StaticVars, m.StaticVars...)
-	t.Method = append(t.Method, m.Method...)
-	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
+	t.Consts = mergeConstants(t.Consts, m.Consts)
+	t.Vars = mergeVariables(t.Vars, m.Vars)
+	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
+	t.Method = mergeMethods(t.Method, m.Method)
+	t.StaticMethod = mergeMethods(t.StaticMethod, m.StaticMethod)
 	t.haveReplacableMethods = t.haveReplacableMethods || m.haveReplacableMethods
 }
 
@@ -406,7 +404,7 @@ func (t *Interface) TemplateCopy(targetInfo BasicInfo) *Interface {
 		FunctionCB:   src.FunctionCB,
 		ConstPrefix:  src.ConstPrefix,
 		ConstSuffix:  src.ConstSuffix,
-		Constructor:  src.Constructor.copy(),
+		Constructor:  src.Constructor.Copy(),
 	}
 	dst.basic.Template = src.basic.Template
 	for _, in := range src.Consts {
@@ -419,10 +417,10 @@ func (t *Interface) TemplateCopy(targetInfo BasicInfo) *Interface {
 		dst.StaticVars = append(dst.StaticVars, in.copy())
 	}
 	for _, in := range src.Method {
-		dst.Method = append(dst.Method, in.copy())
+		dst.Method = append(dst.Method, in.Copy())
 	}
 	for _, in := range src.StaticMethod {
-		dst.StaticMethod = append(dst.StaticMethod, in.copy())
+		dst.StaticMethod = append(dst.StaticMethod, in.Copy())
 	}
 	return dst
 }
@@ -485,9 +483,10 @@ func (t *IfVar) copy() *IfVar {
 			name: t.nameAndLink.name,
 			ref:  &r,
 		},
-		Type:     t.Type,
-		Static:   t.Static,
-		Readonly: t.Readonly,
+		Type:        t.Type,
+		Static:      t.Static,
+		Readonly:    t.Readonly,
+		Stringifier: t.Stringifier,
 	}
 }
 
@@ -496,7 +495,7 @@ func (t *IfVar) SetType(value TypeRef) string {
 	return ""
 }
 
-func (t *IfMethod) copy() *IfMethod {
+func (t *IfMethod) Copy() *IfMethod {
 	if t == nil {
 		return t
 	}
@@ -506,8 +505,9 @@ func (t *IfMethod) copy() *IfMethod {
 			name: t.nameAndLink.name,
 			ref:  &r,
 		},
-		Return: t.Return,
-		Static: t.Static,
+		Return:            t.Return,
+		Static:            t.Static,
+		replaceOnOverride: t.replaceOnOverride,
 	}
 	for _, pin := range t.Params {
 		dst.Params = append(dst.Params, pin.copy())
@@ -524,4 +524,25 @@ func (t *IfMethod) changeType(typeConv TypeConvert) {
 
 func (t *IfMethod) SetType(value TypeRef) string {
 	return "method can't change type"
+}
+
+func mergeConstants(dst, src []*IfConst) []*IfConst {
+	for _, v := range src {
+		dst = append(dst, v.copy())
+	}
+	return dst
+}
+
+func mergeVariables(dst, src []*IfVar) []*IfVar {
+	for _, v := range src {
+		dst = append(dst, v.copy())
+	}
+	return dst
+}
+
+func mergeMethods(dst, src []*IfMethod) []*IfMethod {
+	for _, v := range src {
+		dst = append(dst, v.Copy())
+	}
+	return dst
 }

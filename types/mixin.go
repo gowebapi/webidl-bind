@@ -83,11 +83,12 @@ func (t *extractTypes) convertIncludes(in *ast.Includes) *includes {
 }
 
 func (t *mixin) merge(m *mixin, conv *Convert) {
-	t.Consts = append(t.Consts, m.Consts...)
-	t.Vars = append(t.Vars, m.Vars...)
-	t.StaticVars = append(t.StaticVars, m.StaticVars...)
-	t.Method = append(t.Method, m.Method...)
-	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
+	t.Consts = mergeConstants(t.Consts, m.Consts)
+	t.Vars = mergeVariables(t.Vars, m.Vars)
+	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
+	t.Method = mergeMethods(t.Method, m.Method)
+	t.StaticMethod = mergeMethods(t.StaticMethod, m.StaticMethod)
+	t.haveReplacableMethods = t.haveReplacableMethods || m.haveReplacableMethods
 }
 
 // mergeIf is called with a partial interface that should be included
@@ -99,11 +100,12 @@ func (t *mixin) mergeIf(m *Interface, conv *Convert) {
 	if m.Constructor != nil {
 		conv.failing(m, "partial interface to mixin doesn't support constructor")
 	}
-	t.Consts = append(t.Consts, m.Consts...)
-	t.Vars = append(t.Vars, m.Vars...)
-	t.StaticVars = append(t.StaticVars, m.StaticVars...)
-	t.Method = append(t.Method, m.Method...)
-	t.StaticMethod = append(t.StaticMethod, m.StaticMethod...)
+	t.Consts = mergeConstants(t.Consts, m.Consts)
+	t.Vars = mergeVariables(t.Vars, m.Vars)
+	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
+	t.Method = mergeMethods(t.Method, m.Method)
+	t.StaticMethod = mergeMethods(t.StaticMethod, m.StaticMethod)
+	t.haveReplacableMethods = t.haveReplacableMethods || m.haveReplacableMethods
 }
 
 func (t *mixin) SourceReference() *Ref {
