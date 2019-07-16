@@ -27,7 +27,7 @@ var {{.Basic.Internal}}FromWasmTable = map[string]{{.Basic.Def}} {
 	{{range .Enum.Values}}"{{.Idl}}": {{$.Enum.Prefix}}{{.Def}}{{$.Enum.Suffix}},{{end}}
 }
 
-// JSValue is converting this enum into a java object
+// JSValue is converting this enum into a javascript object
 func (this * {{.Basic.Def}} ) JSValue() js.Value {
 	return js.ValueOf( this.Value() )
 }

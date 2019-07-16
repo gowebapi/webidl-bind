@@ -11,7 +11,7 @@ import (
 
 const interfaceTmplInput = `
 {{define "header"}}
-// interface: {{.Type.Idl}}
+// class: {{.Type.Idl}}
 type {{.Type.Def}} struct {
 	{{if .If.Inherits}}
 		{{.If.Inherits.Basic.Def}}
