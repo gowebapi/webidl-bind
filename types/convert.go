@@ -173,6 +173,9 @@ func (conv *Convert) processTypeLinks() {
 	for _, q := range conv.Interface {
 		q.link(conv, make(inuseLogic))
 	}
+	for _, q := range conv.Dictionary {
+		q.link(conv, make(inuseLogic))
+	}
 }
 
 func (conv *Convert) processPartialAndMixin() {
