@@ -25,6 +25,9 @@ type Transform struct {
 
 	// to track where javascript.* package ends up
 	promiseTemplate types.Type
+
+	// JsCrossRef is a javascript go type cross reference
+	JsCrossRef []*JsIndexRef
 }
 
 // ref is input source code reference
@@ -80,6 +83,7 @@ func (t *Transform) Execute(conv *types.Convert) error {
 	t.executeTypes(conv)
 	t.executePromises(conv)
 	t.checkAllSpecilizationAssignment(spec)
+	t.JsCrossRef = createJavascriptCrossRef(conv)
 	if t.errors > 0 {
 		return errStop
 	}

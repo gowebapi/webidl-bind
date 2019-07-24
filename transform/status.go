@@ -40,9 +40,20 @@ const statusTmplInput = `
 |----|---|---|
 {{range .}}{{if not .Included}}|[{{.Title}}]({{.Url}})|{{if .Included}}Yes{{else}}No{{end}}|{{.Comment}}|
 {{end}}{{end}}{{end}}
+
+{{define "js-cross-ref"}}## {{.Letter}}
+
+|JavaScript|Go |
+|-----|---|
+{{range .List}}| [{{.Js}}](https://developer.mozilla.org/en-US/search?q={{.Js}} "Search MDN") | [{{.OwnPkg}}.{{.Go}}](https://godoc.org/{{.Pkg}}#{{.Go}} "godoc.org for {{.Pkg}}")|
+{{end}}{{end}}
 `
 
 var statusTmpl = template.Must(template.New("status").Parse(statusTmplInput))
+
+var crossReferenceIgnoreTypes = map[string]struct{}{
+	"object": struct{}{},
+}
 
 func createStatusData(files []ref, faction []action, list []types.Type, notify notifyMsg) []*SpecStatus {
 	// create structures
@@ -127,32 +138,120 @@ func (s *SpecStatus) verify(notify notifyMsg) {
 
 func (t *Transform) WriteMarkdownStatus(filename string) error {
 	fmt.Println("saving spec status", filename)
-	var err error
-	missing := t.executeStatusTmpl("missing", &err)
-	working := t.executeStatusTmpl("working", &err)
-	if err != nil {
-		return err
+	md := markdownTmpl{}
+	md.contentTmpl("%MISSING%", "missing", t.Status)
+	md.contentTmpl("%WORKING%", "working", t.Status)
+	return md.save(filename, "%WORKING%")
+}
+
+type JsIndexRef struct {
+	Js, Go, Pkg, OwnPkg string
+}
+
+func (js *JsIndexRef) read(t types.Type) *JsIndexRef {
+	basic := t.Basic()
+	js.Js = basic.Idl
+	js.Go = basic.Def
+	js.Pkg = basic.Package
+	if idx := strings.LastIndex(basic.Package, "/"); idx != -1 {
+		js.OwnPkg = basic.Package[idx+1:]
 	}
-	// try using template
+	return js
+}
+
+func createJavascriptCrossRef(all *types.Convert) []*JsIndexRef {
+	out := make([]*JsIndexRef, 0)
+	for _, v := range all.Interface {
+		out = append(out, new(JsIndexRef).read(v))
+	}
+	// for _, v := range all.Dictionary {
+	// out = append(out, new(JsIndexRef).read(v))
+	// }
+	sort.Slice(out, func(i, j int) bool { return out[i].Js < out[j].Js })
+	return out
+}
+
+func (t *Transform) WriteCrossReference(filename string) error {
+	fmt.Println("saving cross reference file", filename)
+
+	sections := make(map[rune][]*JsIndexRef)
+	var letter rune
+	sorted := make([]rune, 0)
+	// var section []* JsIndexRef
+	for _, v := range t.JsCrossRef {
+		if _, found := crossReferenceIgnoreTypes[v.Js]; found {
+			continue
+		}
+		if rune(v.Js[0]) != letter {
+			// section = make([]*JsIndexRef, 0 )
+			letter = rune(v.Js[0])
+			sorted = append(sorted, letter)
+		}
+		sections[letter] = append(sections[letter], v)
+	}
+
+	md := markdownTmpl{}
+	var alphabet []byte
+	for _, v := range sorted {
+		data := struct {
+			Letter string
+			List   []*JsIndexRef
+		}{
+			Letter: string(v),
+			List:   sections[v],
+		}
+		key := fmt.Sprintf("%%CROSS-REF-%c%%", v)
+		md.contentTmpl(key, "js-cross-ref", data)
+		alphabet = append(alphabet, []byte(key)...)
+		alphabet = append(alphabet, []byte("\n\n")...)
+	}
+	md.add("%CROSS-REF%", bytes.TrimSpace(alphabet))
+	return md.save(filename, "%CROSS-REF%")
+}
+
+type markdownTmpl struct {
+	err   error
+	list  map[string][]byte
+	order []string
+}
+
+func (t *markdownTmpl) add(key string, content []byte) {
+	if t.list == nil {
+		t.list = make(map[string][]byte)
+	}
+	t.list[key] = content
+	t.order = append(t.order, key)
+}
+
+func (t *markdownTmpl) contentTmpl(key, name string, data interface{}) {
+	var dst bytes.Buffer
+	t.err = statusTmpl.ExecuteTemplate(&dst, name, data)
+	content := bytes.TrimSpace(dst.Bytes())
+	t.add(key, content)
+}
+
+func (t *markdownTmpl) save(filename, ifMissing string) error {
+	if t.err != nil {
+		return t.err
+	}
+	if _, found := t.list[ifMissing]; !found {
+		panic("unable to find ifMissing: " + ifMissing)
+	}
+
 	var content []byte
+	var err error
 	tname := filename + ".tmpl"
 	if content, err = ioutil.ReadFile(tname); err == nil {
 		fmt.Println("using template", tname)
-		content = bytes.Replace(content, []byte("%WORKING%"), working, 1)
-		content = bytes.Replace(content, []byte("%MISSING%"), missing, 1)
+		sort.Strings(t.order)
+		for _, k := range t.order {
+			v := t.list[k]
+			content = bytes.Replace(content, []byte(k), v, 1)
+		}
 	} else if !os.IsNotExist(err) {
 		return err
 	} else {
-		content = working
+		content = t.list[ifMissing]
 	}
 	return ioutil.WriteFile(filename, content, 0664)
-}
-
-func (t *Transform) executeStatusTmpl(name string, err *error) []byte {
-	if *err != nil {
-		return []byte{}
-	}
-	var dst bytes.Buffer
-	*err = statusTmpl.ExecuteTemplate(&dst, name, t.Status)
-	return bytes.TrimSpace(dst.Bytes())
 }

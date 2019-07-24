@@ -25,6 +25,7 @@ var args struct {
 	goBuild    string
 	goTest     string
 	statusFile string
+	crossRef   string
 }
 
 var errStop = errors.New("too many errors")
@@ -107,16 +108,21 @@ func run() error {
 			return err
 		}
 	}
+	if args.statusFile != "" {
+		if err := trans.WriteMarkdownStatus(args.statusFile); err != nil {
+			return err
+		}
+	}
+	if args.crossRef != "" {
+		if err := trans.WriteCrossReference(args.crossRef); err != nil {
+			return err
+		}
+	}
 	if err := tryCompileResult(folders); err != nil {
 		return err
 	}
 	if err := tryTestResult(folders); err != nil {
 		return err
-	}
-	if args.statusFile != "" {
-		if err := trans.WriteMarkdownStatus(args.statusFile); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -252,6 +258,7 @@ func parseArgs() string {
 	flag.StringVar(&args.goBuild, "go-build", "", "execute go build in output folders")
 	flag.StringVar(&args.goTest, "go-test", "", "execute go test in output folders")
 	flag.StringVar(&args.statusFile, "spec-status", "", "write a markdown spec status file")
+	flag.StringVar(&args.crossRef, "cross-ref", "", "write a javascript go type cross reference file")
 	license := flag.Bool("license", false, "print license information")
 	flag.Parse()
 	if *license {
