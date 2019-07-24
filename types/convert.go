@@ -32,6 +32,8 @@ type Type interface {
 	TypeRef
 	GetRef
 
+	AllSourceReferences() []*Ref
+
 	// key to use in Convert.Types
 	key() string
 
@@ -291,7 +293,7 @@ func (t *Convert) innerSort() {
 		return t.partialIf[i].ref.sourceLessThan(t.partialIf[j].ref)
 	})
 	sort.Slice(t.partialMixin, func(i, j int) bool {
-		return t.partialMixin[i].ref.sourceLessThan(t.partialMixin[j].ref)
+		return t.partialMixin[i].refs[0].sourceLessThan(t.partialMixin[j].refs[0])
 	})
 	sort.Slice(t.includes, func(i, j int) bool {
 		return t.includes[i].ref.sourceLessThan(t.includes[j].ref)

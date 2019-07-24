@@ -67,10 +67,12 @@ func createStatusData(files []ref, faction []action, list []types.Type, notify n
 	// summurize what expected group names we have
 	idls := make(map[string]types.Type)
 	for _, t := range list {
-		group := calculateGroupNameFromFilename(t.SourceReference().Filename)
-		idls[group] = t
-		if s, ok := specs[group]; ok {
-			s.Included = true
+		for _, typeRef := range t.AllSourceReferences() {
+			group := calculateGroupNameFromFilename(typeRef.Filename)
+			idls[group] = t
+			if s, ok := specs[group]; ok {
+				s.Included = true
+			}
 		}
 	}
 
@@ -152,5 +154,5 @@ func (t *Transform) executeStatusTmpl(name string, err *error) []byte {
 	}
 	var dst bytes.Buffer
 	*err = statusTmpl.ExecuteTemplate(&dst, name, t.Status)
-	return dst.Bytes()
+	return bytes.TrimSpace(dst.Bytes())
 }

@@ -118,6 +118,7 @@ func (t *Dictionary) link(conv *Convert, inuse inuseLogic) TypeRef {
 func (t *Dictionary) merge(partial *Dictionary, conv *Convert) {
 	conv.assertTrue(partial.inheritsName == "", partial, "unsupported dictionary inherites on partial")
 	// TODO member elemination logic with duplicate is detected
+	t.standardType.mergeExtraRefs(partial.AllSourceReferences())
 	t.Members = append(t.Members, partial.Members...)
 }
 

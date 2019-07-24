@@ -8,7 +8,7 @@ import (
 
 type mixin struct {
 	Name string
-	ref  *Ref
+	refs []*Ref
 
 	Consts         []*IfConst
 	Vars           []*IfVar
@@ -32,12 +32,13 @@ type includes struct {
 }
 
 func (t *extractTypes) convertMixin(in *ast.Mixin) (*mixin, bool) {
+	ref := createRef(in, t)
 	ret := &mixin{
 		Name: in.Name,
-		ref:  createRef(in, t),
+		refs: []*Ref{ref},
 	}
 	if len(in.Patterns) != 0 {
-		t.failing(ret.ref, "mixin doesn't have support for iterable, maplike or setlike.")
+		t.failing(ref, "mixin doesn't have support for iterable, maplike or setlike.")
 	}
 	for _, raw := range in.Members {
 		mi, ok := raw.(*ast.Member)
@@ -90,6 +91,7 @@ func (t *extractTypes) convertIncludes(in *ast.Includes) *includes {
 }
 
 func (t *mixin) merge(m *mixin, conv *Convert) {
+	t.refs = append(t.refs, m.refs...)
 	t.Consts = mergeConstants(t.Consts, m.Consts)
 	t.Vars = mergeVariables(t.Vars, m.Vars)
 	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
@@ -108,6 +110,7 @@ func (t *mixin) mergeIf(m *Interface, conv *Convert) {
 	if m.Constructor != nil {
 		conv.failing(m, "partial interface to mixin doesn't support constructor")
 	}
+	t.refs = append(t.refs, m.AllSourceReferences()...)
 	t.Consts = mergeConstants(t.Consts, m.Consts)
 	t.Vars = mergeVariables(t.Vars, m.Vars)
 	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
@@ -118,7 +121,7 @@ func (t *mixin) mergeIf(m *Interface, conv *Convert) {
 }
 
 func (t *mixin) SourceReference() *Ref {
-	return t.ref
+	return t.refs[0]
 }
 
 func (t *includes) SourceReference() *Ref {

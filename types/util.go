@@ -100,6 +100,7 @@ type GetRef interface {
 
 type standardType struct {
 	ref         *Ref
+	extraRefs   []*Ref
 	needRelease bool
 	inuse       bool
 }
@@ -318,6 +319,26 @@ func (t *Ref) SourceReference() *Ref {
 
 func (t *Ref) String() string {
 	return fmt.Sprintf("%s:%d", t.Filename, t.Line)
+}
+
+func (t *standardType) AllSourceReferences() []*Ref {
+	if t.extraRefs == nil {
+		return []*Ref{t.ref}
+	}
+	return t.extraRefs
+}
+
+func (t *standardType) mergeExtraRef(b *Ref) {
+	if t.extraRefs == nil {
+		t.extraRefs = []*Ref{t.ref}
+	}
+	t.extraRefs = append(t.extraRefs, b)
+}
+
+func (t *standardType) mergeExtraRefs(list []*Ref) {
+	for _, r := range list {
+		t.mergeExtraRef(r)
+	}
 }
 
 func (t *standardType) NeedRelease() bool {

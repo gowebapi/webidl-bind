@@ -417,6 +417,7 @@ func (t *Interface) SetBasic(value BasicInfo) {
 }
 
 func (t *Interface) merge(m *Interface, conv *Convert) {
+	t.mergeExtraRefs(m.AllSourceReferences())
 	t.Consts = mergeConstants(t.Consts, m.Consts)
 	t.Vars = mergeVariables(t.Vars, m.Vars)
 	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
@@ -427,6 +428,7 @@ func (t *Interface) merge(m *Interface, conv *Convert) {
 }
 
 func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
+	t.mergeExtraRefs(m.refs)
 	t.Consts = mergeConstants(t.Consts, m.Consts)
 	t.Vars = mergeVariables(t.Vars, m.Vars)
 	t.StaticVars = mergeVariables(t.StaticVars, m.StaticVars)
