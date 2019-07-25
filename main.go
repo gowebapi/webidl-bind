@@ -5,9 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/pprof"
 	"sort"
 	"strings"
 
@@ -26,6 +28,7 @@ var args struct {
 	goTest     string
 	statusFile string
 	crossRef   string
+	cpuProfile string
 }
 
 var errStop = errors.New("too many errors")
@@ -34,6 +37,17 @@ func main() {
 	if msg := parseArgs(); msg != "" {
 		fmt.Fprintln(os.Stderr, "command line error:", msg)
 		os.Exit(1)
+	}
+	if args.cpuProfile != "" {
+		f, err := os.Create(args.cpuProfile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
 	}
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -259,6 +273,7 @@ func parseArgs() string {
 	flag.StringVar(&args.goTest, "go-test", "", "execute go test in output folders")
 	flag.StringVar(&args.statusFile, "spec-status", "", "write a markdown spec status file")
 	flag.StringVar(&args.crossRef, "cross-ref", "", "write a javascript go type cross reference file")
+	flag.StringVar(&args.cpuProfile, "cpuprofile", "", "write cpu profile to `file`")
 	license := flag.Bool("license", false, "print license information")
 	flag.Parse()
 	if *license {
