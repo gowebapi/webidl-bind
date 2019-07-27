@@ -96,8 +96,8 @@ func lexCommandOn(l *lexer) stateFn {
 	}
 
 	// consume regular expression
-	if state := tryConsumeString(l); state != nil {
-		return state
+	if requireString(l, nil); l.fail {
+		return nil
 	}
 
 	// white spaces before ':'
@@ -134,8 +134,9 @@ func lexCommandChangeType(l *lexer) stateFn {
 	l.emit(itemIdent)
 
 	// space in between
-	next := emitNewLineGotoLineStart
-	next = requireWhitespace(l, next)
+	if requireWhitespace(l, nil); l.fail {
+		return nil
+	}
 
 	if l.acceptWord("rawjs") {
 		l.emit(itemKeyword)
@@ -163,9 +164,9 @@ func lexCommandReplace(l *lexer) stateFn {
 	tryConsumeIdent(l)
 	next := emitNewLineGotoLineStart
 	next = requireWhitespace(l, next)
-	tryConsumeString(l)
+	next = requireString(l, next)
 	next = requireWhitespace(l, next)
-	tryConsumeString(l)
+	next = requireString(l, next)
 	l.acceptWith(isWhitespace)
 	return next
 }
@@ -251,20 +252,32 @@ func emitNewLineGotoLineStart(l *lexer) stateFn {
 	return lexLineStart
 }
 
-func tryConsumeIdent(l *lexer) {
+func tryConsumeIdent(l *lexer) bool {
 	ch := l.next()
 	if !isIdentFirst(ch) {
 		l.backup()
-		return
+		return false
 	}
 	l.acceptWith(isIdentAny)
 	l.emit(itemIdent)
+	return true
 }
 
-func tryConsumeString(l *lexer) stateFn {
+func requireString(l *lexer, next stateFn) stateFn {
+	consumed, failed := tryConsumeString(l)
+	if failed {
+		return nil
+	} else if !consumed {
+		return l.errorf("expected a string inside \"...\"")
+	}
+	return next
+}
+
+func tryConsumeString(l *lexer) (consumed bool, failed bool) {
 	ch := l.next()
 	if ch != '"' {
-		return l.errorf("expected a string inside \"...\"")
+		l.backup()
+		return false, false
 	}
 	l.ignore()
 	escape := false
@@ -272,7 +285,8 @@ main:
 	for {
 		ch = l.next()
 		if isNewLine(ch) {
-			return l.errorf("unexpected end of string, missing '\"'")
+			l.errorf("unexpected end of string, missing '\"'")
+			return false, true
 		}
 		if !escape {
 			switch ch {
@@ -289,7 +303,7 @@ main:
 	l.emit(itemString)
 	l.next()
 	l.ignore()
-	return nil
+	return true, false
 }
 
 /*

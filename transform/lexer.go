@@ -64,6 +64,7 @@ type lexer struct {
 	wasNL bool      // if last rune was a new line (used by backup())
 	items chan item // channel of scanned items.
 	state stateFn
+	fail  bool // indicate that an error have been sent into the items channel
 }
 
 func newLex(name, input string) *lexer {
@@ -150,6 +151,7 @@ func (l *lexer) errorf(format string, args ...interface{}) stateFn {
 		fmt.Sprintf(format, args...),
 		l.line,
 	}
+	l.fail = true
 	return nil
 }
 
