@@ -187,9 +187,11 @@ func (lw *lexWrap) newTypeHeader(name string) *onType {
 
 func (lw *lexWrap) newChangeType(method, typ string) action {
 	ret := changeType{
+		abstractAction: abstractAction{
+			Ref: lw.ref(),
+		},
 		Name:  method,
 		RawJS: typ,
-		Ref:   lw.ref(),
 	}
 	return &ret
 }
@@ -201,10 +203,12 @@ func (lw *lexWrap) newOn(match matchType, expr string, with action) action {
 		return nil
 	}
 	return &globalRegExp{
+		abstractAction: abstractAction{
+			Ref: lw.ref(),
+		},
 		Match: reg,
 		What:  with,
 		Type:  match,
-		Ref:   lw.ref(),
 	}
 }
 
@@ -219,26 +223,32 @@ func (lw *lexWrap) newProperty(name, value string) action {
 
 func (lw *lexWrap) newRename(name, value string) action {
 	ret := &rename{
+		abstractAction: abstractAction{
+			Ref: lw.ref(),
+		},
 		Name:  name,
 		Value: value,
-		Ref:   lw.ref(),
 	}
 	return ret
 }
 
 func (lw *lexWrap) newPatchIdlConst() action {
 	ret := idlconst{
-		Ref: lw.ref(),
+		abstractAction: abstractAction{
+			Ref: lw.ref(),
+		},
 	}
 	return &ret
 }
 
 func (lw *lexWrap) newReplace(property, from, to string) action {
 	return &replace{
+		abstractAction: abstractAction{
+			Ref: lw.ref(),
+		},
 		Property: property,
 		From:     from,
 		To:       to,
-		Ref:      lw.ref(),
 	}
 }
 

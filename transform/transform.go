@@ -155,7 +155,7 @@ func (t *Transform) processCallback(instance *types.Callback, change *onType) {
 	// execution
 	for _, a := range change.Actions {
 		if t.evalIfProcess(instance, a, matchCallback) {
-			a.ExecuteCallback(instance, t)
+			a.ExecuteCallback(instance, &actionData{notify: t})
 		}
 	}
 }
@@ -167,7 +167,7 @@ func (t *Transform) processDictionary(instance *types.Dictionary, change *onType
 	}
 	for _, a := range change.Actions {
 		if t.evalIfProcess(instance, a, matchDictionary) {
-			a.ExecuteDictionary(instance, values, t)
+			a.ExecuteDictionary(instance, &actionData{targets: values, notify: t})
 		}
 	}
 }
@@ -183,7 +183,7 @@ func (t *Transform) processEnum(instance *types.Enum, change *onType) {
 	// execution
 	for _, a := range change.Actions {
 		if t.evalIfProcess(instance, a, matchEnum) {
-			a.ExecuteEnum(instance, values, t)
+			a.ExecuteEnum(instance, &actionData{targets: values, notify: t})
 		}
 	}
 }
@@ -210,7 +210,7 @@ func (t *Transform) processInterface(instance *types.Interface, change *onType) 
 	// execution
 	for _, a := range change.Actions {
 		if t.evalIfProcess(instance, a, matchInterface) {
-			a.ExecuteInterface(instance, values, t)
+			a.ExecuteInterface(instance, &actionData{targets: values, notify: t})
 		}
 	}
 }

@@ -72,7 +72,7 @@ func createStatusData(files []ref, faction []action, list []types.Type, notify n
 	for _, a := range faction {
 		group := calculateGroupNameFromFilename(a.Reference().Filename)
 		s := specs[group]
-		a.ExecuteStatus(s, notify)
+		a.ExecuteStatus(s, &actionData{notify: notify})
 	}
 
 	// summurize what expected group names we have
