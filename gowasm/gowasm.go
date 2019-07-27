@@ -113,6 +113,7 @@ func WriteSource(conv *types.Convert) ([]*Source, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("formatting output source code")
 	ret := make([]*Source, 0)
 	for pkg, data := range target {
 		content := data.buf.Bytes()
@@ -188,7 +189,7 @@ func getTarget(value types.Type, target map[string]*packageData) (*packageData, 
 
 // sourceCodeRemoveEmptyLines will remove empty lines
 func sourceCodeRemoveEmptyLines(code []byte) []byte {
-	add := []string{"//", "func", "type", "const", "var"}
+	add := []string{"\\//", "func", "type", "const", "var"}
 	in := bytes.NewBuffer(code)
 	var out bytes.Buffer
 	ignore := false
@@ -200,7 +201,8 @@ func sourceCodeRemoveEmptyLines(code []byte) []byte {
 		if err == io.EOF {
 			break
 		}
-		if len(strings.TrimSpace(s)) == 0 {
+		trim := strings.TrimSpace(s)
+		if len(trim) == 0 {
 			continue
 		}
 		if strings.HasPrefix(s, "package") {
@@ -208,7 +210,9 @@ func sourceCodeRemoveEmptyLines(code []byte) []byte {
 		}
 		found := false
 		for _, prefix := range add {
-			if strings.HasPrefix(s, prefix) {
+			normal := prefix[0] != '\\' && strings.HasPrefix(s, prefix)
+			trimmed := prefix[0] == '\\' && strings.HasPrefix(trim, prefix[1:])
+			if normal || trimmed {
 				found = true
 				if !ignore {
 					out.WriteByte('\n')
