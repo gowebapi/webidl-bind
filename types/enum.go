@@ -96,6 +96,10 @@ func (t *EnumValue) Name() *MethodName {
 	return &t.MethodName
 }
 
+func (t *EnumValue) GetType() TypeRef {
+	panic("unsupported")
+}
+
 func (t *EnumValue) SetType(value TypeRef) string {
 	return "enum values can't change type"
 }

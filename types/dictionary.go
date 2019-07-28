@@ -178,6 +178,10 @@ func (t *DictMember) copy() *DictMember {
 	}
 }
 
+func (t *DictMember) GetType() TypeRef {
+	return t.Type
+}
+
 func (t *DictMember) SetType(value TypeRef) string {
 	t.Type = value
 	return ""

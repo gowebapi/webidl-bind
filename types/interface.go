@@ -533,6 +533,10 @@ func (t *IfConst) copy() *IfConst {
 	return &dup
 }
 
+func (t *IfConst) GetType() TypeRef {
+	panic("not supported")
+}
+
 func (t *IfConst) SetType(value TypeRef) string {
 	return "const can't change type"
 }
@@ -549,6 +553,10 @@ func (t *IfVar) copy() *IfVar {
 		Readonly:    t.Readonly,
 		Stringifier: t.Stringifier,
 	}
+}
+
+func (t *IfVar) GetType() TypeRef {
+	return t.Type
 }
 
 func (t *IfVar) SetType(value TypeRef) string {
@@ -621,6 +629,10 @@ func (t *IfMethod) identifySpecializationType(forWhat string) (SpecializationTyp
 	}
 	panic(forWhat)
 	// return SpecNone, ""
+}
+
+func (t *IfMethod) GetType() TypeRef {
+	panic("not supported")
 }
 
 func (t *IfMethod) SetType(value TypeRef) string {

@@ -351,17 +351,18 @@ func (t *PrimitiveType) Param(nullable, option, variadic bool) (info *TypeInfo, 
 // the raw underlying js.Value should be returned or inserted
 // instead
 type RawJSType struct {
+	IdlType string
 }
 
 var _ TypeRef = &RawJSType{}
 
-func NewRawJSType() *RawJSType {
-	return &RawJSType{}
+func NewRawJSType(idlType string) *RawJSType {
+	return &RawJSType{IdlType: idlType}
 }
 
 func (t *RawJSType) Basic() BasicInfo {
 	return BasicInfo{
-		Idl:      "<rawjs>",
+		Idl:      t.IdlType,
 		Def:      "js.Value",
 		Internal: "js.Value",
 		Package:  BuiltInPackage,

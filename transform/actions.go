@@ -149,6 +149,7 @@ type rename struct {
 
 type renameTarget interface {
 	Name() *types.MethodName
+	GetType() types.TypeRef
 	SetType(value types.TypeRef) string
 }
 
@@ -228,7 +229,8 @@ func (t *changeType) ExecuteDictionary(value *types.Dictionary, data *actionData
 		data.notify.messageError(t.Ref, "unknown reference")
 		return
 	}
-	raw := types.NewRawJSType()
+	idl := on.GetType().Basic().Idl
+	raw := types.NewRawJSType(idl)
 	if msg := on.SetType(raw); msg != "" {
 		data.notify.messageError(t.Ref, "type change error: %s", msg)
 	}
@@ -244,7 +246,8 @@ func (t *changeType) ExecuteInterface(value *types.Interface, data *actionData) 
 		data.notify.messageError(t.Ref, "unknown reference")
 		return
 	}
-	raw := types.NewRawJSType()
+	idl := on.GetType().Basic().Idl
+	raw := types.NewRawJSType(idl)
 	if msg := on.SetType(raw); msg != "" {
 		data.notify.messageError(t.Ref, "type change error: %s", msg)
 	}
