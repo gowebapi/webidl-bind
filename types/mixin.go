@@ -18,6 +18,12 @@ type mixin struct {
 	Specialization []*IfMethod
 
 	haveReplacableMethods bool
+
+	mergeList []MergeLink
+}
+
+type MergeLink interface {
+	MergeList() []MergeLink
 }
 
 // var _ Type = &Mixin{}
@@ -49,10 +55,10 @@ func (t *extractTypes) convertMixin(in *ast.Mixin) (*mixin, bool) {
 			mo := t.convertInterfaceConst(mi)
 			ret.Consts = append(ret.Consts, mo)
 		} else if mi.Attribute && mi.Static {
-			mo := t.convertInterfaceVar(mi)
+			mo := t.convertInterfaceVar(mi, ret.refs[0].Filename, ret.Name)
 			ret.StaticVars = append(ret.StaticVars, mo)
 		} else if mi.Attribute {
-			mo := t.convertInterfaceVar(mi)
+			mo := t.convertInterfaceVar(mi, ret.refs[0].Filename, ret.Name)
 			ret.Vars = append(ret.Vars, mo)
 		} else if mi.Static {
 			mo, spec := t.convertInterfaceMethod(mi)
@@ -91,6 +97,7 @@ func (t *extractTypes) convertIncludes(in *ast.Includes) *includes {
 }
 
 func (t *mixin) merge(m *mixin, conv *Convert) {
+	m.mergedTo(t)
 	t.refs = append(t.refs, m.refs...)
 	t.Consts = mergeConstants(t.Consts, m.Consts)
 	t.Vars = mergeVariables(t.Vars, m.Vars)
@@ -122,6 +129,14 @@ func (t *mixin) mergeIf(m *Interface, conv *Convert) {
 
 func (t *mixin) SourceReference() *Ref {
 	return t.refs[0]
+}
+
+func (t *mixin) mergedTo(dest MergeLink) {
+	t.mergeList = append(t.mergeList, dest)
+}
+
+func (t *mixin) MergeList() []MergeLink {
+	return t.mergeList
 }
 
 func (t *includes) SourceReference() *Ref {

@@ -84,7 +84,11 @@ func convertType(in ast.Type, exrType *extractTypes) TypeRef {
 		for _, e := range in.Elems {
 			elems = append(elems, convertType(e, exrType))
 		}
+		// if in.Name = "Promise" && len(elems) == 1 {
+		// 	ret =  newPromiseType(in, elems  , ref )
+		// } else {
 		ret = newParametrizedType(in, in.Name, elems, ref)
+		// }
 	case *ast.UnionType:
 		ret = newUnionType(in, exrType)
 	case *ast.NullableType:

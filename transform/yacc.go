@@ -16,6 +16,7 @@ type transformSymType struct {
 	action  action
 	what    matchType
 	section []action
+	args    []arg
 }
 
 const t_newline = 57346
@@ -29,12 +30,16 @@ const t_cmd_change_type = 57353
 const t_cmd_on = 57354
 const t_cmd_patch = 57355
 const t_cmd_replace = 57356
-const t_interface = 57357
-const t_enum = 57358
-const t_callback = 57359
-const t_dictionary = 57360
-const t_idlconst = 57361
-const t_rawjs = 57362
+const t_cmd_event = 57357
+const t_cmd_eventprop = 57358
+const t_cmd_addevent = 57359
+const t_cmd_notevent = 57360
+const t_interface = 57361
+const t_enum = 57362
+const t_callback = 57363
+const t_dictionary = 57364
+const t_idlconst = 57365
+const t_rawjs = 57366
 
 var transformToknames = [...]string{
 	"$end",
@@ -51,6 +56,10 @@ var transformToknames = [...]string{
 	"t_cmd_on",
 	"t_cmd_patch",
 	"t_cmd_replace",
+	"t_cmd_event",
+	"t_cmd_eventprop",
+	"t_cmd_addevent",
+	"t_cmd_notevent",
 	"t_interface",
 	"t_enum",
 	"t_callback",
@@ -77,63 +86,77 @@ var transformExca = [...]int{
 
 const transformPrivate = 57344
 
-const transformLast = 63
+const transformLast = 86
 
 var transformAct = [...]int{
 
-	20, 10, 13, 15, 45, 54, 7, 28, 50, 28,
-	21, 22, 29, 30, 29, 30, 43, 38, 39, 40,
-	41, 58, 44, 27, 48, 27, 11, 12, 56, 49,
-	4, 6, 52, 7, 46, 47, 42, 36, 33, 35,
-	34, 9, 8, 16, 14, 51, 5, 2, 1, 53,
-	37, 26, 55, 25, 24, 57, 23, 19, 18, 17,
-	32, 3, 31,
+	20, 10, 52, 73, 13, 15, 74, 59, 7, 36,
+	72, 66, 25, 26, 37, 38, 31, 32, 33, 34,
+	36, 65, 68, 57, 62, 37, 38, 58, 81, 35,
+	46, 47, 48, 49, 11, 12, 79, 63, 53, 51,
+	35, 4, 6, 76, 7, 14, 70, 67, 64, 61,
+	56, 55, 54, 50, 44, 41, 60, 43, 42, 69,
+	9, 8, 2, 16, 1, 71, 5, 45, 75, 24,
+	78, 77, 23, 80, 22, 21, 30, 29, 28, 27,
+	19, 18, 17, 40, 3, 39,
 }
 var transformPact = [...]int{
 
-	-1000, -1000, 26, 38, -1000, 37, 17, -1000, -1000, -1000,
-	-1000, -1000, -1000, -1, 32, -1000, 36, 35, -1000, -1000,
-	-1000, 29, 2, -1000, -1000, -1000, -1000, 28, -5, 3,
-	-20, 30, -1000, 27, -1000, -1000, 4, 19, -1000, -1000,
-	-1000, -1000, -13, 17, -1000, 24, -1000, -1000, -1000, -18,
-	17, -1000, 18, -1, 1, -1000, 11, -1000, -1000,
+	-1000, -1000, 37, 57, -1000, 56, 25, -1000, -1000, -1000,
+	-1000, -1000, -1000, 1, 49, -1000, 54, 53, -1000, -1000,
+	-1000, -1000, -1000, -1000, -1000, 46, 11, -1000, -1000, -1000,
+	-1000, 45, 30, 44, 43, 42, -2, 4, -21, 52,
+	-1000, 41, -1000, -1000, 0, 27, -1000, -1000, -1000, -1000,
+	40, -5, -1000, -16, 39, -1000, -3, 25, -1000, 38,
+	-1000, -1000, -1000, -17, 30, 30, 35, 30, 25, -1000,
+	26, 1, 12, -1000, -5, -1000, -1000, -1000, -1000, 18,
+	-1000, -1000,
 }
 var transformPgo = [...]int{
 
-	0, 43, 1, 62, 61, 60, 59, 58, 57, 0,
-	56, 54, 53, 51, 50, 2, 48, 47, 44,
+	0, 63, 1, 85, 84, 83, 82, 81, 80, 0,
+	79, 78, 77, 76, 75, 74, 72, 69, 67, 4,
+	3, 6, 2, 64, 62, 45,
 }
 var transformR1 = [...]int{
 
-	0, 16, 17, 17, 17, 18, 18, 15, 15, 15,
-	15, 3, 6, 6, 6, 9, 9, 9, 9, 1,
-	4, 5, 7, 8, 14, 14, 14, 14, 14, 10,
-	11, 12, 13, 2, 2,
+	0, 23, 24, 24, 24, 25, 25, 19, 19, 19,
+	19, 3, 6, 6, 6, 6, 6, 6, 6, 9,
+	9, 9, 9, 1, 4, 5, 7, 8, 14, 15,
+	16, 17, 20, 20, 21, 21, 22, 18, 18, 18,
+	18, 18, 10, 11, 12, 13, 2, 2,
 }
 var transformR2 = [...]int{
 
 	0, 5, 0, 2, 3, 0, 4, 0, 2, 3,
 	3, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	2, 2, 3, 5, 0, 1, 1, 1, 1, 4,
-	3, 2, 5, 1, 1,
+	1, 1, 1, 1, 2, 2, 3, 5, 4, 2,
+	4, 2, 0, 1, 1, 3, 3, 0, 1, 1,
+	1, 1, 4, 3, 2, 5, 1, 1,
 }
 var transformChk = [...]int{
 
-	-1000, -16, -17, -4, 4, -1, 5, 7, 4, 4,
-	-2, 9, 10, -15, -18, 4, -1, -6, -7, -8,
-	-9, 11, 12, -10, -11, -12, -13, 24, 8, 13,
-	14, -3, -5, 6, 4, 4, 8, -14, 15, 16,
-	17, 18, 8, 21, 19, 24, 4, 8, 20, 10,
-	21, -2, 8, -15, 23, -2, 10, -9, 10,
+	-1000, -23, -24, -4, 4, -1, 5, 7, 4, 4,
+	-2, 9, 10, -19, -25, 4, -1, -6, -7, -8,
+	-9, -14, -15, -16, -17, 11, 12, -10, -11, -12,
+	-13, 15, 16, 17, 18, 28, 8, 13, 14, -3,
+	-5, 6, 4, 4, 8, -18, 19, 20, 21, 22,
+	8, -21, -22, 8, 8, 8, 8, 25, 23, 28,
+	4, 8, 24, 10, 8, 26, 27, 8, 25, -2,
+	8, -19, 27, -20, -21, -22, 8, -20, -2, 10,
+	-9, 10,
 }
 var transformDef = [...]int{
 
-	2, -2, 0, 0, 3, 0, 0, 19, 7, 4,
-	20, 33, 34, 5, 1, 8, 0, 0, 12, 13,
-	14, 0, 24, 15, 16, 17, 18, 0, 0, 0,
-	0, 0, 11, 0, 9, 10, 0, 0, 25, 26,
-	27, 28, 0, 0, 31, 0, 7, 21, 22, 0,
-	0, 30, 0, 6, 0, 29, 0, 23, 32,
+	2, -2, 0, 0, 3, 0, 0, 23, 7, 4,
+	24, 46, 47, 5, 1, 8, 0, 0, 12, 13,
+	14, 15, 16, 17, 18, 0, 37, 19, 20, 21,
+	22, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	11, 0, 9, 10, 0, 0, 38, 39, 40, 41,
+	0, 29, 34, 0, 0, 31, 0, 0, 44, 0,
+	7, 25, 26, 0, 32, 0, 0, 32, 0, 43,
+	0, 6, 0, 28, 33, 35, 36, 30, 42, 0,
+	27, 45,
 }
 var transformTok1 = [...]int{
 
@@ -141,14 +164,15 @@ var transformTok1 = [...]int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 22, 3, 24, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 23, 3,
-	3, 21,
+	3, 3, 3, 3, 26, 3, 28, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 27, 3,
+	3, 25,
 }
 var transformTok2 = [...]int{
 
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-	12, 13, 14, 15, 16, 17, 18, 19, 20,
+	12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+	22, 23, 24,
 }
 var transformTok3 = [...]int{
 	0,
@@ -493,181 +517,259 @@ transformdefault:
 
 	case 1:
 		transformDollar = transformS[transformpt-5 : transformpt+1]
-//line yacc.y:42
+//line yacc.y:46
 		{
 			presult(transformlex).AddFile(transformDollar[2].ontype, transformDollar[4].section)
 		}
 	case 6:
 		transformDollar = transformS[transformpt-4 : transformpt+1]
-//line yacc.y:54
+//line yacc.y:58
 		{
 			presult(transformlex).AddType(transformDollar[2].ontype, transformDollar[4].section)
 		}
 	case 7:
 		transformDollar = transformS[transformpt-0 : transformpt+1]
-//line yacc.y:59
+//line yacc.y:63
 		{
 			transformVAL.section = nil
 		}
 	case 8:
 		transformDollar = transformS[transformpt-2 : transformpt+1]
-//line yacc.y:60
+//line yacc.y:64
 		{
 			transformVAL.section = transformDollar[1].section
 		}
 	case 9:
 		transformDollar = transformS[transformpt-3 : transformpt+1]
-//line yacc.y:61
+//line yacc.y:65
 		{
 			transformVAL.section = transformDollar[1].section
 		}
 	case 10:
 		transformDollar = transformS[transformpt-3 : transformpt+1]
-//line yacc.y:62
+//line yacc.y:66
 		{
 			transformVAL.section = append(transformVAL.section, transformDollar[2].action)
 		}
 	case 11:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:65
+//line yacc.y:69
 		{
 			transformVAL.ontype = transformDollar[1].ontype
 		}
 	case 12:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:68
+//line yacc.y:72
 		{
 			transformVAL.action = transformDollar[1].action
 		}
 	case 13:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:69
+//line yacc.y:73
 		{
 			transformVAL.action = transformDollar[1].action
 		}
 	case 14:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:70
+//line yacc.y:74
 		{
 			transformVAL.action = transformDollar[1].action
 		}
 	case 15:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:73
+//line yacc.y:75
 		{
 			transformVAL.action = transformDollar[1].action
 		}
 	case 16:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:74
+//line yacc.y:76
 		{
 			transformVAL.action = transformDollar[1].action
 		}
 	case 17:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:75
+//line yacc.y:77
 		{
 			transformVAL.action = transformDollar[1].action
 		}
 	case 18:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:76
+//line yacc.y:78
 		{
 			transformVAL.action = transformDollar[1].action
 		}
 	case 19:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:79
+//line yacc.y:81
+		{
+			transformVAL.action = transformDollar[1].action
+		}
+	case 20:
+		transformDollar = transformS[transformpt-1 : transformpt+1]
+//line yacc.y:82
+		{
+			transformVAL.action = transformDollar[1].action
+		}
+	case 21:
+		transformDollar = transformS[transformpt-1 : transformpt+1]
+//line yacc.y:83
+		{
+			transformVAL.action = transformDollar[1].action
+		}
+	case 22:
+		transformDollar = transformS[transformpt-1 : transformpt+1]
+//line yacc.y:84
+		{
+			transformVAL.action = transformDollar[1].action
+		}
+	case 23:
+		transformDollar = transformS[transformpt-1 : transformpt+1]
+//line yacc.y:87
 		{
 			transformVAL.val = transformDollar[1].val
 		}
-	case 20:
+	case 24:
 		transformDollar = transformS[transformpt-2 : transformpt+1]
-//line yacc.y:83
+//line yacc.y:91
 		{
 			transformVAL.ontype = presult(transformlex).newFileHeader()
 		}
-	case 21:
+	case 25:
 		transformDollar = transformS[transformpt-2 : transformpt+1]
-//line yacc.y:90
+//line yacc.y:98
 		{
 			transformVAL.ontype = presult(transformlex).newTypeHeader(transformDollar[2].val)
 		}
-	case 22:
+	case 26:
 		transformDollar = transformS[transformpt-3 : transformpt+1]
-//line yacc.y:97
+//line yacc.y:105
 		{
 			transformVAL.action = presult(transformlex).newChangeType(transformDollar[2].val, transformDollar[3].val)
 		}
-	case 23:
+	case 27:
 		transformDollar = transformS[transformpt-5 : transformpt+1]
-//line yacc.y:103
+//line yacc.y:111
 		{
 			transformVAL.action = presult(transformlex).newOn(transformDollar[2].what, transformDollar[3].val, transformDollar[5].action)
 		}
-	case 24:
-		transformDollar = transformS[transformpt-0 : transformpt+1]
-//line yacc.y:108
-		{
-			transformVAL.what = matchAll
-		}
-	case 25:
-		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:109
-		{
-			transformVAL.what = matchInterface
-		}
-	case 26:
-		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:110
-		{
-			transformVAL.what = matchEnum
-		}
-	case 27:
-		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:111
-		{
-			transformVAL.what = matchCallback
-		}
 	case 28:
-		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:112
+		transformDollar = transformS[transformpt-4 : transformpt+1]
+//line yacc.y:117
 		{
-			transformVAL.what = matchDictionary
+			transformVAL.action = presult(transformlex).newEvent(transformDollar[2].val, transformDollar[3].val, transformDollar[4].args)
 		}
 	case 29:
-		transformDollar = transformS[transformpt-4 : transformpt+1]
-//line yacc.y:116
+		transformDollar = transformS[transformpt-2 : transformpt+1]
+//line yacc.y:123
 		{
-			transformVAL.action = presult(transformlex).newProperty(transformDollar[2].val, transformDollar[4].val)
+			transformVAL.action = presult(transformlex).setEventProp(transformDollar[2].args)
 		}
 	case 30:
-		transformDollar = transformS[transformpt-3 : transformpt+1]
-//line yacc.y:122
+		transformDollar = transformS[transformpt-4 : transformpt+1]
+//line yacc.y:129
 		{
-			transformVAL.action = presult(transformlex).newRename(transformDollar[1].val, transformDollar[3].val)
+			transformVAL.action = presult(transformlex).addEvent(transformDollar[2].val, transformDollar[3].val, transformDollar[4].args)
 		}
 	case 31:
 		transformDollar = transformS[transformpt-2 : transformpt+1]
-//line yacc.y:128
+//line yacc.y:135
 		{
-			transformVAL.action = presult(transformlex).newPatchIdlConst()
+			transformVAL.action = presult(transformlex).notEvent(transformDollar[2].val)
 		}
 	case 32:
-		transformDollar = transformS[transformpt-5 : transformpt+1]
-//line yacc.y:134
+		transformDollar = transformS[transformpt-0 : transformpt+1]
+//line yacc.y:140
 		{
-			transformVAL.action = presult(transformlex).newReplace(transformDollar[3].val, transformDollar[4].val, transformDollar[5].val)
+			transformVAL.args = nil
 		}
 	case 33:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:139
+//line yacc.y:141
 		{
-			transformVAL.val = transformDollar[1].val
+			transformVAL.args = transformDollar[1].args
 		}
 	case 34:
 		transformDollar = transformS[transformpt-1 : transformpt+1]
-//line yacc.y:140
+//line yacc.y:144
+		{
+			transformVAL.args = transformDollar[1].args
+		}
+	case 35:
+		transformDollar = transformS[transformpt-3 : transformpt+1]
+//line yacc.y:145
+		{
+			transformVAL.args = append(transformDollar[1].args, transformDollar[3].args...)
+		}
+	case 36:
+		transformDollar = transformS[transformpt-3 : transformpt+1]
+//line yacc.y:149
+		{
+			transformVAL.args = presult(transformlex).newArgumentIdent(transformDollar[1].val, transformDollar[3].val)
+		}
+	case 37:
+		transformDollar = transformS[transformpt-0 : transformpt+1]
+//line yacc.y:154
+		{
+			transformVAL.what = matchAll
+		}
+	case 38:
+		transformDollar = transformS[transformpt-1 : transformpt+1]
+//line yacc.y:155
+		{
+			transformVAL.what = matchInterface
+		}
+	case 39:
+		transformDollar = transformS[transformpt-1 : transformpt+1]
+//line yacc.y:156
+		{
+			transformVAL.what = matchEnum
+		}
+	case 40:
+		transformDollar = transformS[transformpt-1 : transformpt+1]
+//line yacc.y:157
+		{
+			transformVAL.what = matchCallback
+		}
+	case 41:
+		transformDollar = transformS[transformpt-1 : transformpt+1]
+//line yacc.y:158
+		{
+			transformVAL.what = matchDictionary
+		}
+	case 42:
+		transformDollar = transformS[transformpt-4 : transformpt+1]
+//line yacc.y:162
+		{
+			transformVAL.action = presult(transformlex).newProperty(transformDollar[2].val, transformDollar[4].val)
+		}
+	case 43:
+		transformDollar = transformS[transformpt-3 : transformpt+1]
+//line yacc.y:168
+		{
+			transformVAL.action = presult(transformlex).newRename(transformDollar[1].val, transformDollar[3].val)
+		}
+	case 44:
+		transformDollar = transformS[transformpt-2 : transformpt+1]
+//line yacc.y:174
+		{
+			transformVAL.action = presult(transformlex).newPatchIdlConst()
+		}
+	case 45:
+		transformDollar = transformS[transformpt-5 : transformpt+1]
+//line yacc.y:180
+		{
+			transformVAL.action = presult(transformlex).newReplace(transformDollar[3].val, transformDollar[4].val, transformDollar[5].val)
+		}
+	case 46:
+		transformDollar = transformS[transformpt-1 : transformpt+1]
+//line yacc.y:185
+		{
+			transformVAL.val = transformDollar[1].val
+		}
+	case 47:
+		transformDollar = transformS[transformpt-1 : transformpt+1]
+//line yacc.y:186
 		{
 			transformVAL.val = transformDollar[1].val
 		}

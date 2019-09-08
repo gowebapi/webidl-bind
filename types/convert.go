@@ -56,6 +56,7 @@ type Convert struct {
 	partialDict  []*Dictionary
 	Interface    []*Interface
 	partialIf    []*Interface
+	Merge        map[string]MergeLink
 	mixin        map[string]*mixin
 	partialMixin []*mixin
 	includes     []*includes
@@ -92,6 +93,7 @@ func NewConvert() *Convert {
 		Types: make(map[string]Type),
 		Enums: []*Enum{},
 		mixin: make(map[string]*mixin),
+		Merge: make(map[string]MergeLink),
 	}
 }
 
@@ -251,6 +253,7 @@ func (t *Convert) addMixin(m *mixin) {
 	}
 	t.registerTypeName(m, m.Name)
 	t.mixin[m.Name] = m
+	t.Merge[m.Name] = m
 }
 
 func (t *Convert) registerTypeName(ref GetRef, name string) {

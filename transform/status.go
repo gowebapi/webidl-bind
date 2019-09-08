@@ -31,6 +31,9 @@ type SpecStatus struct {
 }
 
 const statusTmplInput = `
+{{define "header"}}<!-- Generated file, DO NOT EDIT -->
+{{end}}
+
 {{define "working"}}|Spec|Included|Comment|
 |----|---|---|
 {{range .}}{{if .Included}}|[{{.Title}}]({{.Url}})|{{if .Included}}Yes{{else}}No{{end}}|{{.Comment}}|
@@ -139,6 +142,7 @@ func (s *SpecStatus) verify(notify notifyMsg) {
 func (t *Transform) WriteMarkdownStatus(filename string) error {
 	fmt.Println("saving spec status", filename)
 	md := markdownTmpl{}
+	md.contentTmpl("%HEADER%", "header", nil)
 	md.contentTmpl("%MISSING%", "missing", t.Status)
 	md.contentTmpl("%WORKING%", "working", t.Status)
 	return md.save(filename, "%WORKING%")
@@ -191,6 +195,7 @@ func (t *Transform) WriteCrossReference(filename string) error {
 	}
 
 	md := markdownTmpl{}
+	md.contentTmpl("%HEADER%", "header", nil)
 	var alphabet []byte
 	for _, v := range sorted {
 		data := struct {

@@ -2,6 +2,7 @@ package transform
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -80,10 +81,12 @@ func (t *Transform) Execute(conv *types.Convert) error {
 	if t.errors > 0 {
 		return errStop
 	}
-	t.executeTypes(conv)
+	eventMap := t.executeTypes(conv)
 	t.executePromises(conv)
 	t.checkAllSpecilizationAssignment(spec)
 	t.JsCrossRef = createJavascriptCrossRef(conv)
+	t.checkOnEventUsage(eventMap, conv)
+	t.mergeEventTypesFromParentTypes(conv)
 	if t.errors > 0 {
 		return errStop
 	}
@@ -98,6 +101,10 @@ func (t *Transform) executeFiles(conv *types.Convert) []*types.Interface {
 		return nil
 	}
 	spec := make([]*types.Interface, 0)
+	data := &actionData{
+		conv:   conv,
+		notify: t,
+	}
 	for _, item := range conv.All {
 		if !item.InUse() {
 			continue
@@ -107,7 +114,7 @@ func (t *Transform) executeFiles(conv *types.Convert) []*types.Interface {
 			t.assignDefaultSpecilizationNames(inf)
 		}
 		if change, f := all[item.Basic().Package]; f {
-			t.executeOnType(item, change, "<file>")
+			t.executeOnType(item, change, "<file>", data)
 		}
 	}
 	t.Status = createStatusData(files, faction, conv.All, t)
@@ -115,80 +122,106 @@ func (t *Transform) executeFiles(conv *types.Convert) []*types.Interface {
 }
 
 // executeTypes is execute the changes on singlar type
-func (t *Transform) executeTypes(conv *types.Convert) {
+func (t *Transform) executeTypes(conv *types.Convert) map[string]struct{} {
+	data := &actionData{
+		notify:   t,
+		conv:     conv,
+		eventMap: make(map[string]struct{}),
+	}
 	for name, change := range t.All {
 		value, ok := conv.Types[name]
-		if !ok || !value.TypeID().IsPublic() {
+		if ok && value.TypeID().IsPublic() {
+			// interface, enum, dictionary etc
+			t.checkTypeGroup(change, value)
+			t.executeOnType(value, change, name, data)
+		} else if merge, ok := conv.Merge[name]; ok {
+			// e.g. mixin types
+			t.processMergeList(merge, change, name, data)
+		} else {
 			t.messageError(change.Ref, "reference to unknown type '%s'", name)
-			continue
 		}
-		cg := groupName(change.Ref.Filename)
-		sg := groupName(value.SourceReference().Filename)
-		if cg != sg {
-			t.messageError(change.Ref, "is changing output side of group. %s vs %s. type defined in %s",
-				cg, sg, value.SourceReference())
-		}
-
-		t.executeOnType(value, change, name)
 		if t.errors > 10 {
 			break
 		}
 	}
+	return data.eventMap
 }
 
-func (t *Transform) executeOnType(value types.Type, change *onType, name string) {
+func (t *Transform) processMergeList(link types.MergeLink, change *onType, name string, data *actionData) {
+	for _, v := range link.MergeList() {
+		if inf, ok := v.(*types.Interface); ok {
+			t.executeOnType(inf, change, name, data)
+		} else {
+			t.processMergeList(v, change, name, data)
+		}
+	}
+}
+
+func (t *Transform) checkTypeGroup(change *onType, value types.Type) {
+	cg := groupName(change.Ref.Filename)
+	sg := groupName(value.SourceReference().Filename)
+	if cg != sg {
+		t.messageError(change.Ref, "is changing output side of group. %s vs %s. type defined in %s",
+			cg, sg, value.SourceReference())
+	}
+}
+
+func (t *Transform) executeOnType(value types.Type, change *onType, name string, data *actionData) {
+	data.nextType(value)
 	switch value := value.(type) {
 	case *types.Interface:
-		t.processInterface(value, change)
+		t.processInterface(value, change, data)
 	case *types.Callback:
-		t.processCallback(value, change)
+		t.processCallback(value, change, data)
 	case *types.Dictionary:
-		t.processDictionary(value, change)
+		t.processDictionary(value, change, data)
 	case *types.Enum:
-		t.processEnum(value, change)
+		t.processEnum(value, change, data)
 	default:
 		panic(fmt.Sprintf("%s is unknown type %T", name, value))
 	}
 }
 
-func (t *Transform) processCallback(instance *types.Callback, change *onType) {
+func (t *Transform) processCallback(instance *types.Callback, change *onType, data *actionData) {
 	// execution
 	for _, a := range change.Actions {
 		if t.evalIfProcess(instance, a, matchCallback) {
-			a.ExecuteCallback(instance, &actionData{notify: t})
+			a.ExecuteCallback(instance, data)
 		}
 	}
 }
 
-func (t *Transform) processDictionary(instance *types.Dictionary, change *onType) {
+func (t *Transform) processDictionary(instance *types.Dictionary, change *onType, data *actionData) {
 	values := make(map[string]renameTarget)
 	for _, v := range instance.Members {
 		values[v.Name().Idl] = v
 	}
+	data.targets = values
 	for _, a := range change.Actions {
 		if t.evalIfProcess(instance, a, matchDictionary) {
-			a.ExecuteDictionary(instance, &actionData{targets: values, notify: t})
+			a.ExecuteDictionary(instance, data)
 		}
 	}
 }
 
-func (t *Transform) processEnum(instance *types.Enum, change *onType) {
+func (t *Transform) processEnum(instance *types.Enum, change *onType, data *actionData) {
 	// preparation
 	values := make(map[string]renameTarget)
 	for i := range instance.Values {
 		ref := &instance.Values[i]
 		values[ref.Idl] = ref
 	}
+	data.targets = values
 
 	// execution
 	for _, a := range change.Actions {
 		if t.evalIfProcess(instance, a, matchEnum) {
-			a.ExecuteEnum(instance, &actionData{targets: values, notify: t})
+			a.ExecuteEnum(instance, data)
 		}
 	}
 }
 
-func (t *Transform) processInterface(instance *types.Interface, change *onType) {
+func (t *Transform) processInterface(instance *types.Interface, change *onType, data *actionData) {
 	// preparation
 	values := make(map[string]renameTarget)
 	for _, v := range instance.Consts {
@@ -208,9 +241,10 @@ func (t *Transform) processInterface(instance *types.Interface, change *onType) 
 	}
 
 	// execution
+	data.targets = values
 	for _, a := range change.Actions {
 		if t.evalIfProcess(instance, a, matchInterface) {
-			a.ExecuteInterface(instance, &actionData{targets: values, notify: t})
+			a.ExecuteInterface(instance, data)
 		}
 	}
 }
@@ -290,6 +324,87 @@ func (t *Transform) checkAllSpecilizationAssignment(list []*types.Interface) {
 		}
 		add = append(add, inf.Method...)
 		inf.Method = add
+	}
+}
+
+// checkOnEventUsage will test if all interfaces got there event
+func (t *Transform) checkOnEventUsage(eventMap map[string]struct{}, conv *types.Convert) {
+	if t.errors > 0 {
+		return
+	}
+	count := 0
+	lines := make([]string, 0, 200)
+	for _, inf := range conv.Interface {
+		name := inf.Basic().Idl + "."
+		inc := 0
+		for _, attr := range inf.Vars {
+			if !strings.HasPrefix(attr.Name().Idl, "on") {
+				continue
+			}
+			key := name + attr.Name().Idl
+			if _, found := eventMap[key]; found {
+				continue
+			}
+			lines = append(lines, fmt.Sprintf(
+				"warning: unable to find event data for '%s' - type in %s - defined %s",
+				key, filepath.Base(inf.SourceReference().Filename), attr.Source,
+			))
+			inc = 1
+		}
+		count += inc
+	}
+	if len(lines) > 0 {
+		sort.Strings(lines)
+		for _, msg := range lines {
+			fmt.Println(msg)
+		}
+		fmt.Printf("warning: missing event data for %d types and total %d attributes\n", count, len(lines))
+	}
+}
+
+func (t *Transform) mergeEventTypesFromParentTypes(conv *types.Convert) {
+	if t.errors > 0 {
+		return
+	}
+	done := make(map[string]struct{})
+	for _, inf := range conv.Interface {
+		mergeSingleEventTypeFromParent(inf, done)
+	}
+}
+
+func mergeSingleEventTypeFromParent(inf *types.Interface, done map[string]struct{}) {
+	key := inf.Basic().Idl
+	if _, found := done[key]; found {
+		return
+	}
+	done[key] = struct{}{}
+
+	// the following lines will merge parent type with current.
+	// it would provice a nicer API, but the code is exploding.
+	// keeping it here to decide what to do with it...
+	//
+	// if inf.Events != nil {
+	// 	sort.Slice(inf.Events, func(i, j int) bool { return inf.Events[i].Name().Idl < inf.Events[j].Name().Idl })
+	// }
+	// if inf.Inherits != nil {
+	// mergeSingleEventTypeFromParent(inf.Inherits, done)
+	// for _, ev := range inf.Inherits.Events {
+	// 	inf.Events = append(inf.Events, ev.Copy())
+	// }
+	// }
+
+	if inf.Events == nil {
+		return
+	}
+	sort.Slice(inf.Events, func(i, j int) bool { return inf.Events[i].Name().Idl < inf.Events[j].Name().Idl })
+	first := make(map[string]bool)
+	for _, ev := range inf.Events {
+		// TODO: add bubbles and cancelable
+		key = fmt.Sprintf("%s - %v %v", ev.Type.Basic().Idl, false, false)
+		if _, found := first[key]; !found {
+			ev.PrimaryEv = true
+			first[key] = true
+		}
 	}
 }
 

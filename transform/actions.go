@@ -2,6 +2,8 @@ package transform
 
 import (
 	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/gowebapi/webidl-bind/types"
@@ -18,8 +20,20 @@ type action interface {
 }
 
 type actionData struct {
-	notify  notifyMsg
-	targets map[string]renameTarget
+	notify    notifyMsg
+	targets   map[string]renameTarget
+	conv      *types.Convert
+	eventMap  map[string]struct{}
+	eventAttr []arg
+	lastGroup string
+}
+
+func (ad *actionData) nextType(value types.Type) {
+	group := groupName(value.SourceReference().Filename)
+	if group != ad.lastGroup {
+		ad.eventAttr = nil
+	}
+	ad.targets = nil
 }
 
 type notifyMsg interface {
@@ -349,3 +363,148 @@ func (t *replace) ExecuteInterface(instance *types.Interface, data *actionData) 
 	}
 }
 
+type commonEventData struct {
+	abstractAction
+	Method     string
+	EventType  string
+	EventName  string
+	Cancelable bool
+	Bubbles    bool
+}
+
+func (ce *commonEventData) set(method, eventType string) {
+	ce.Method = method
+	ce.EventType = eventType
+	ce.EventName = strings.ToLower(method)
+}
+
+func (ce *commonEventData) addEventToInterface(inf *types.Interface, ev *types.IfVar, data *actionData) {
+	// find type
+	typ, ok := data.conv.Types[ce.EventType]
+	if !ok {
+		data.notify.messageError(ce.Ref, "unable to find type '%s'", ce.EventType)
+		return
+	}
+
+	// create new instance
+	ev.Name().Def = "On" + ce.Method
+	ev.ShortName = ce.Method
+	ev.EventName = ce.EventName
+	ev.Type = typ
+	inf.Events = append(inf.Events, ev)
+}
+
+func (ce *commonEventData) processArgs(args []arg, fail func(format string, args ...interface{})) {
+	var err error
+	for _, a := range args {
+		switch a.Name {
+		case "bubbles":
+			if ce.Bubbles, err = strconv.ParseBool(a.Value); err != nil {
+				fail("bubbles have faulty boolean value: %s", err)
+			}
+		case "cancelable":
+			if ce.Cancelable, err = strconv.ParseBool(a.Value); err != nil {
+				fail("cancelable have faulty boolean value: %s", err)
+			}
+		case "maybe":
+		default:
+			fail("unknown property '%s'. valid are 'bubbles,cancelable'", a.Name)
+		}
+	}
+}
+
+type event struct {
+	commonEventData
+}
+
+func (t *event) OperateOn() scopeMode {
+	return scopeType
+}
+
+func (t *event) ExecuteInterface(instance *types.Interface, data *actionData) {
+	searchFor := "on" + strings.ToLower(t.Method)
+	for _, attr := range instance.Vars {
+		if attr.Name().Idl == searchFor {
+			t.eventFuncModify(instance, attr, data)
+			key := instance.Basic().Idl + "." + attr.Name().Idl
+			data.eventMap[key] = struct{}{}
+			return
+		}
+	}
+	data.notify.messageError(t.Ref, "unable to find event '%s' with 'on' attribute '%s'", t.Method, searchFor)
+}
+
+func (t *event) eventFuncModify(inf *types.Interface, attr *types.IfVar, data *actionData) {
+	// is we a callback attribute?
+	_, inner := attr.Type.DefaultParam()
+	_, ok := inner.(*types.Callback)
+	if !ok {
+		data.notify.messageError(t.Ref, "expected a callback function as value")
+		return
+	}
+
+	t.addEventToInterface(inf, attr.Copy(), data)
+
+	// modify current
+	attr.Name().Def = "On" + t.Method
+	attr.Readonly = true
+}
+
+type addevent struct {
+	abstractAction
+	commonEventData
+}
+
+func (t *addevent) OperateOn() scopeMode {
+	return scopeType
+}
+
+func (t *addevent) ExecuteInterface(instance *types.Interface, data *actionData) {
+	searchFor := "on" + strings.ToLower(t.Method)
+	for _, attr := range instance.Vars {
+		if attr.Name().Idl == searchFor {
+			t.addEventToInterface(instance, attr.Copy(), data)
+			return
+		}
+	}
+	data.notify.messageError(t.Ref, "unable to find event '%s' with 'on' attribute '%s'", t.Method, searchFor)
+}
+
+type notEvent struct {
+	abstractAction
+	AttributeName string
+}
+
+func (t *notEvent) OperateOn() scopeMode {
+	return scopeType
+}
+
+func (t *notEvent) ExecuteInterface(instance *types.Interface, data *actionData) {
+	// searchFor := strings.ToLower(t.AttributeName)
+	searchFor := t.AttributeName
+	names := []string{}
+	for _, attr := range instance.Vars {
+		if attr.Name().Idl == searchFor {
+			key := instance.Basic().Idl + "." + attr.Name().Idl
+			data.eventMap[key] = struct{}{}
+			return
+		}
+		names = append(names, attr.Name().Idl)
+	}
+	sort.Strings(names)
+	data.notify.messageError(t.Ref, "unable to find attribute '%s'. valid are %s",
+		t.AttributeName, strings.Join(names, ", "))
+}
+
+type setEventProp struct {
+	abstractAction
+	Args []arg
+}
+
+func (t *setEventProp) OperateOn() scopeMode {
+	return scopeType
+}
+
+func (t *setEventProp) ExecuteInterface(instance *types.Interface, data *actionData) {
+	data.eventAttr = append(data.eventAttr, t.Args...)
+}

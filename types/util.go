@@ -42,6 +42,9 @@ func (a *BasicInfo) lessThan(b *BasicInfo) bool {
 type TypeInfo struct {
 	BasicInfo
 
+	// GoTagText is a name syntax correct version of BasicInfo.Def
+	GoTagText string
+
 	// Input is method parameter type
 	Input string
 
@@ -200,6 +203,7 @@ func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePt
 	}
 	t := &TypeInfo{
 		BasicInfo:   basic,
+		GoTagText:   strings.Replace(basic.Def, ".", "_", -1),
 		Input:       basic.Def,
 		Output:      basic.Def,
 		VarIn:       basic.Def,

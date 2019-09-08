@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"strings"
 	"unicode"
 )
 
@@ -17,6 +18,10 @@ func init() {
 		lexCommandItem{"patch", lexCommandPatch},
 		lexCommandItem{"changetype", lexCommandChangeType},
 		lexCommandItem{"replace", lexCommandReplace},
+		lexCommandItem{"eventprop", lexCommandEvent},
+		lexCommandItem{"event", lexCommandEvent},
+		lexCommandItem{"addevent", lexCommandEvent},
+		lexCommandItem{"notevent", lexCommandEvent},
 	}
 }
 
@@ -169,6 +174,41 @@ func lexCommandReplace(l *lexer) stateFn {
 	next = requireString(l, next)
 	l.acceptWith(isWhitespace)
 	return next
+}
+
+func lexCommandEvent(l *lexer) stateFn {
+	reqSplit := false
+	for {
+		reqSplitNow := reqSplit
+		ch := l.next()
+		if isWhitespace(ch) {
+			l.ignore()
+			reqSplit = false
+			continue
+		} else if isNewLine(ch) {
+			l.emit(itemNewLine)
+			return lexLineStart
+		} else if ch == ':' || ch == ',' {
+			l.emit(itemSpecial)
+			reqSplit = false
+			continue
+		} else if reqSplitNow {
+			return l.errorf("expectd split char (space or \":,\"), found '%c'", ch)
+		}
+		reqSplit = true
+		//not a split char that we consumed
+		l.backup()
+		if tryConsumeIdent(l) {
+			continue
+		} else if consumed, failed := tryConsumeString(l); failed {
+			return nil
+		} else if consumed {
+			continue
+		}
+		// unable to find anything at all
+		ch = l.next()
+		return l.errorf("unable to make sence of line, stopping at char '%c'", ch)
+	}
 }
 
 func lexPropertyStart(l *lexer) stateFn {
@@ -334,7 +374,9 @@ func ignoreWhitespaces(l *lexer) {
 
 func requireWhitespace(l *lexer, onSucess stateFn) stateFn {
 	if !l.acceptWith(isWhitespace) {
-		return l.errorf("invalid command or syntax, expecting white space")
+		end := l.peekWord(20)
+		end = strings.SplitN(end, "\n", 2)[0]
+		return l.errorf("invalid command or syntax, expecting white space. found '%s'", end)
 	}
 	l.ignore()
 	return onSucess

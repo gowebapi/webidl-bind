@@ -73,7 +73,7 @@ func newLex(name, input string) *lexer {
 		input: input,
 		line:  1,
 		state: lexLineStart,
-		items: make(chan item, 10),
+		items: make(chan item, 100),
 	}
 	return l
 }
@@ -124,6 +124,18 @@ func (l *lexer) peek() rune {
 	ch := l.next()
 	l.backup()
 	return ch
+}
+
+func (l *lexer) peekWord(length int) string {
+	var ret string
+	pos := l.pos
+	for length > 0 && pos < len(l.input) {
+		ch, width := utf8.DecodeRuneInString(l.input[pos:])
+		pos += width
+		length--
+		ret += string(ch)
+	}
+	return ret
 }
 
 // next returns the next rune in the input.

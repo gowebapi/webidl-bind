@@ -16,20 +16,24 @@ import (
     action  action
     what    matchType
     section []action 
+    args    []arg
 }
 
 %token t_newline
 %token t_heading_file t_heading_type t_comment
 %token t_ident t_value t_string
 %token t_cmd_change_type t_cmd_on t_cmd_patch t_cmd_replace
+%token t_cmd_event t_cmd_eventprop t_cmd_addevent t_cmd_notevent
 %token t_interface t_enum t_callback t_dictionary t_idlconst t_rawjs
 
 %type <val> t_ident comment t_comment t_heading_file t_string value t_value
 %type <val> t_idlconst t_rawjs
 %type <ontype> newType fileHeader typeHeader
 %type <action> line changeType onType command property rename patch replace
+%type <action> event eventprop addevent notevent
 %type <what> onWhat
 %type <section> section
+%type <args> arguments argumentList argumentValue
 
 %left '='
 %left ','
@@ -68,6 +72,10 @@ newType: typeHeader       { $$ = $1 }
 line: changeType       { $$ = $1 }
     | onType           { $$ = $1 }
     | command          { $$ = $1 }
+    | event            { $$ = $1 }
+    | eventprop        { $$ = $1 }
+    | addevent         { $$ = $1 }
+    | notevent         { $$ = $1 }
     ;
 
 command: property      { $$ = $1 }
@@ -102,6 +110,44 @@ changeType: t_cmd_change_type t_ident t_rawjs
 onType: t_cmd_on onWhat t_string ':' command
     {
         $$ = presult(transformlex).newOn($2, $3, $5)
+    }
+    ;
+
+event: t_cmd_event t_ident t_ident arguments
+    {
+        $$ = presult(transformlex).newEvent($2, $3, $4)
+    }
+    ;
+
+eventprop: t_cmd_eventprop argumentList
+    {
+        $$ = presult(transformlex).setEventProp($2)
+    }
+    ;
+
+addevent: t_cmd_addevent t_ident t_ident arguments
+    {
+        $$ = presult(transformlex).addEvent($2, $3, $4)
+    }
+    ;
+
+notevent: t_cmd_notevent t_ident
+    {
+        $$ = presult(transformlex).notEvent($2)
+    }
+    ;
+
+arguments: /* empty */  { $$ = nil }
+    | argumentList      { $$ = $1 }
+    ;
+
+argumentList: argumentValue             { $$ = $1 }
+    | argumentList ',' argumentValue    { $$ = append($1, $3...)}
+    ;
+
+argumentValue: t_ident ':' t_ident
+    {
+        $$ = presult(transformlex).newArgumentIdent($1, $3)
     }
     ;
 

@@ -110,6 +110,41 @@ func (_this * {{.If.Basic.Def}} ) Set{{.Name.Def}} ( value {{.Type.Input}} ) {{.
 }
 {{end}}
 
+{{define "set-event-attribute"}}
+{{if .Var.PrimaryEv}}
+// event attribute: {{.Type.Def}}
+func eventFunc{{.If.Basic.Def}}_{{.Type.GoTagText}} (listener func (event {{.Type.Input}}, target * {{.If.Basic.Def}} )) js.Func {
+	fn := func(this js.Value, args []js.Value) interface{} {
+		var ret {{.Type.Output}}
+		value := args[0]
+		incoming := value.Get("target")
+		{{.From}}
+		src := {{.If.Basic.Def}}FromJS(incoming)
+		listener(ret, src)
+		return js.Undefined
+	}
+	return js.FuncOf(fn)
+}
+{{end}}
+
+// Add{{.Var.ShortName}} is adding doing AddEventListener for '{{.Var.ShortName}}' on target.
+// This method is returning allocated javascript function that need to be released.
+func (_this * {{.If.Basic.Def}} ) AddEvent{{.Var.ShortName}} (listener func (event {{.Type.Input}}, currentTarget * {{.If.Basic.Def}} ) ) js.Func {
+	cb := eventFunc{{.If.Basic.Def}}_{{.Type.GoTagText}} (listener)
+	_this.Value_JS.Call("addEventListener", "{{.Var.EventName}}", cb)
+	return cb
+}
+
+// Set{{.Name.Def}} is assigning a function to '{{.Var.Name.Idl}}'. This
+// This method is returning allocated javascript function that need to be released.
+func (_this * {{.If.Basic.Def}} ) Set{{.Name.Def}} (listener func (event {{.Type.Input}}, currentTarget * {{.If.Basic.Def}} ) ) js.Func {
+	cb := eventFunc{{.If.Basic.Def}}_{{.Type.GoTagText}} (listener)
+	_this.Value_JS.Set("{{.Var.Name.Idl}}", cb)
+	return cb
+}
+
+{{end}}
+
 
 {{define "static-method-start"}}
 func {{.Name.Def}}({{.To.Params}}) ({{.ReturnList}}) {
@@ -389,6 +424,12 @@ func writeInterface(dst io.Writer, input types.Type) error {
 	if err := writeInterfaceVars(value.Vars, value, "get-object-attribute", "set-object-attribute", dst); err != nil {
 		return err
 	}
+	// if err := writeInterfaceVars(value.Events, value, "get-object-attribute", "set-event-attribute", dst); err != nil {
+	// 	return err
+	// }
+	if err := writeInterfaceVars(value.Events, value, "set-event-attribute", "", dst); err != nil {
+		return err
+	}
 	if err := writeInterfaceMethods(value.Method, value, "object-method", useIn, dst); err != nil {
 		return err
 	}
@@ -502,7 +543,7 @@ func writeInterfaceVars(vars []*types.IfVar, main *types.Interface, get, set str
 		if err := interfaceTmpl.ExecuteTemplate(dst, get, in); err != nil {
 			return err
 		}
-		if !a.Readonly {
+		if !a.Readonly && set != "" {
 			if err := interfaceTmpl.ExecuteTemplate(dst, set, in); err != nil {
 				return err
 			}

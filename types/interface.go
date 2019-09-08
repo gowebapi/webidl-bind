@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/gowebapi/webidlparser/ast"
 )
@@ -40,6 +41,7 @@ type Interface struct {
 	Method         []*IfMethod
 	StaticMethod   []*IfMethod
 	Specialization []*IfMethod
+	Events         []*IfVar
 
 	// indicate that this interface have replacable methods
 	haveReplacableMethods bool
@@ -64,6 +66,12 @@ type IfVar struct {
 	Static      bool
 	Readonly    bool
 	Stringifier bool
+	Source      string
+
+	// part of event handling
+	ShortName string
+	EventName string
+	PrimaryEv bool
 }
 
 type IfMethod struct {
@@ -136,10 +144,10 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			mo := t.convertInterfaceConst(mi)
 			ret.Consts = append(ret.Consts, mo)
 		} else if mi.Attribute && mi.Static {
-			mo := t.convertInterfaceVar(mi)
+			mo := t.convertInterfaceVar(mi, ret.ref.Filename, ret.basic.Idl)
 			ret.StaticVars = append(ret.StaticVars, mo)
 		} else if mi.Attribute {
-			mo := t.convertInterfaceVar(mi)
+			mo := t.convertInterfaceVar(mi, ret.ref.Filename, ret.basic.Idl)
 			ret.Vars = append(ret.Vars, mo)
 		} else if mi.Static {
 			mo, spec := t.convertInterfaceMethod(mi)
@@ -240,7 +248,7 @@ func (conv *extractTypes) convertInterfaceConst(in *ast.Member) *IfConst {
 	}
 }
 
-func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
+func (conv *extractTypes) convertInterfaceVar(in *ast.Member, file, src string) *IfVar {
 	ref := createRef(in, conv)
 	for _, a := range in.Annotations {
 		if _, f := ignoredVarAnnotations[a.Name]; f {
@@ -273,6 +281,7 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member) *IfVar {
 		Static:      in.Static,
 		Readonly:    in.Readonly,
 		Stringifier: in.Specialization == "stringifier",
+		Source:      filepath.Base(file) + ":" + src,
 	}
 }
 
@@ -428,6 +437,7 @@ func (t *Interface) merge(m *Interface, conv *Convert) {
 }
 
 func (t *Interface) mergeMixin(m *mixin, conv *Convert) {
+	m.mergedTo(t)
 	t.mergeExtraRefs(m.refs)
 	t.Consts = mergeConstants(t.Consts, m.Consts)
 	t.Vars = mergeVariables(t.Vars, m.Vars)
@@ -466,10 +476,10 @@ func (t *Interface) TemplateCopy(targetInfo BasicInfo) *Interface {
 		dst.Consts = append(dst.Consts, in.copy())
 	}
 	for _, in := range src.Vars {
-		dst.Vars = append(dst.Vars, in.copy())
+		dst.Vars = append(dst.Vars, in.Copy())
 	}
 	for _, in := range src.StaticVars {
-		dst.StaticVars = append(dst.StaticVars, in.copy())
+		dst.StaticVars = append(dst.StaticVars, in.Copy())
 	}
 	for _, in := range src.Method {
 		dst.Method = append(dst.Method, in.Copy())
@@ -528,6 +538,10 @@ func cleanupReplaceMethods(list []*IfMethod) []*IfMethod {
 	return out
 }
 
+func (t *Interface) MergeList() []MergeLink {
+	return []MergeLink{}
+}
+
 func (t *IfConst) copy() *IfConst {
 	dup := *t
 	return &dup
@@ -541,7 +555,7 @@ func (t *IfConst) SetType(value TypeRef) string {
 	return "const can't change type"
 }
 
-func (t *IfVar) copy() *IfVar {
+func (t *IfVar) Copy() *IfVar {
 	r := *t.ref
 	return &IfVar{
 		nameAndLink: nameAndLink{
@@ -552,6 +566,10 @@ func (t *IfVar) copy() *IfVar {
 		Static:      t.Static,
 		Readonly:    t.Readonly,
 		Stringifier: t.Stringifier,
+		ShortName:   t.ShortName,
+		EventName:   t.EventName,
+		PrimaryEv:   t.PrimaryEv,
+		Source:      t.Source,
 	}
 }
 
@@ -648,7 +666,7 @@ func mergeConstants(dst, src []*IfConst) []*IfConst {
 
 func mergeVariables(dst, src []*IfVar) []*IfVar {
 	for _, v := range src {
-		dst = append(dst, v.copy())
+		dst = append(dst, v.Copy())
 	}
 	return dst
 }

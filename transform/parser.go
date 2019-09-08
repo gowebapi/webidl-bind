@@ -33,6 +33,16 @@ type parseResult interface {
 	newRename(name, value string) action
 	newPatchIdlConst() action
 	newReplace(property, from, to string) action
+	addEvent(method, eventType string, args []arg) action
+	newEvent(method, eventType string, args []arg) action
+	notEvent(attributeName string) action
+	setEventProp(args []arg) action
+	newArgumentIdent(name, value string) []arg
+}
+
+type arg struct {
+	Name  string
+	Value string
 }
 
 var commandToken = map[string]int{
@@ -40,7 +50,12 @@ var commandToken = map[string]int{
 	"changetype": t_cmd_change_type,
 	"patch":      t_cmd_patch,
 	"replace":    t_cmd_replace,
+	"event":      t_cmd_event,
+	"eventprop":  t_cmd_eventprop,
+	"addevent":   t_cmd_addevent,
+	"notevent":   t_cmd_notevent,
 }
+
 var keywordToken = map[string]int{
 	"interface":  t_interface,
 	"enum":       t_enum,
@@ -250,6 +265,57 @@ func (lw *lexWrap) newReplace(property, from, to string) action {
 		From:     from,
 		To:       to,
 	}
+}
+
+func (lw *lexWrap) addEvent(method, eventType string, args []arg) action {
+	ev := &addevent{
+		commonEventData: commonEventData{
+			abstractAction: abstractAction{
+				Ref: lw.ref(),
+			},
+		},
+	}
+	ev.set(method, eventType)
+	ev.processArgs(args, lw.messageError)
+	return ev
+}
+
+func (lw *lexWrap) newEvent(method, eventType string, args []arg) action {
+	ev := &event{
+		commonEventData: commonEventData{
+			abstractAction: abstractAction{
+				Ref: lw.ref(),
+			},
+		},
+	}
+	ev.set(method, eventType)
+	ev.processArgs(args, lw.messageError)
+	return ev
+}
+
+func (lw *lexWrap) notEvent(attributeName string) action {
+	return &notEvent{
+		abstractAction: abstractAction{
+			Ref: lw.ref(),
+		},
+		AttributeName: attributeName,
+	}
+}
+
+func (lw *lexWrap) setEventProp(args []arg) action {
+	return &setEventProp{
+		abstractAction: abstractAction{
+			Ref: lw.ref(),
+		},
+		Args: args,
+	}
+}
+
+func (lw *lexWrap) newArgumentIdent(name, value string) []arg {
+	return []arg{arg{
+		Name:  name,
+		Value: value,
+	}}
 }
 
 func (lw *lexWrap) messageError(format string, args ...interface{}) {
