@@ -31,7 +31,7 @@ func (_this *{{.Type.Def}}) JSValue() js.Value {
 func {{.Type.Def}}FromJS(value js.Wrapper) {{.Type.Output}} {
 	input := value.JSValue()
 	{{if .Type.Pointer}}
-	if input.Type() == js.TypeNull {
+	if typ := input.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
 		return nil
 	}
 	{{end}}
