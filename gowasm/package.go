@@ -105,7 +105,7 @@ func (t *packageFile) get(name string) *packageImport {
 	return imp
 }
 
-func (file *packageFile) importLines(valid map[string]struct{}, remove bool) string {
+func (file *packageFile) importLines(valid map[string]struct{}, extra map[string]struct{}, remove bool) string {
 	lines := make([]string, 0)
 	for _, imp := range file.imports {
 		if _, found := valid[imp.shortName]; !found && remove {
@@ -116,6 +116,9 @@ func (file *packageFile) importLines(valid map[string]struct{}, remove bool) str
 			prefix = imp.shortName
 		}
 		lines = append(lines, fmt.Sprintf("%s \"%s\"", prefix, imp.fullName))
+	}
+	for k := range extra {
+		lines = append(lines, "\""+k+"\"")
 	}
 	if len(lines) == 0 {
 		return "\n"

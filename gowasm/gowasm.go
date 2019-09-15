@@ -81,6 +81,10 @@ var reservedGoKeywords = map[string]bool{
 	"iota":   true,
 }
 
+var specialImportLines = map[string]string{
+	"jsarray": "github.com/gowebapi/webapi/core/jsarray",
+}
+
 // WriteSource is create source code files.
 // returns map["path/filename"]"file content"
 func WriteSource(conv *types.Convert) ([]*Source, error) {
@@ -252,12 +256,16 @@ func insertImportLines(pkg string, content []byte) ([]byte, error) {
 	// what imports are really used and just include those.
 	removeImports := true
 	names := make(map[string]struct{})
+	extra := make(map[string]struct{})
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "", content, parser.DeclarationErrors)
 	if err == nil {
 		for _, unres := range f.Unresolved {
 			if _, f := reservedGoKeywords[unres.Name]; !f {
 				names[unres.Name] = struct{}{}
+			}
+			if real, f := specialImportLines[unres.Name]; f {
+				extra[real] = struct{}{}
 			}
 		}
 	} else {
@@ -266,7 +274,7 @@ func insertImportLines(pkg string, content []byte) ([]byte, error) {
 
 	// then we are writing the import lines
 	file := pkgMgr.packages[pkg]
-	lines := file.importLines(names, removeImports)
+	lines := file.importLines(names, extra, removeImports)
 	lines = lines + "\n" + file.importInfo()
 	content = bytes.Replace(content, []byte("// @IMPORT@"), []byte(lines), 1)
 	return content, err

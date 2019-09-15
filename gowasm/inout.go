@@ -50,7 +50,7 @@ const inoutToTmplInput = `
 {{define "type-enum"}}      {{.Out}} := {{.In}}.JSValue() {{end}}
 {{define "type-union"}}	{{.Out}} := {{.In}}.JSValue() {{end}}
 {{define "type-any"}}    {{.Out}} := {{.In}} {{end}}
-{{define "type-typedarray"}} {{.Out}} := {{.In}} {{end}}
+{{define "type-typedarray"}} {{.Out}} := jsarray.{{.GoFunc}}ToJS( {{.In}} ) {{end}}
 {{define "type-parametrized"}}	{{.Out}} := {{.In}}.JSValue() {{end}}
 {{define "type-rawjs"}}    {{.Out}} := {{.In}} {{end}}
 
@@ -111,7 +111,7 @@ const inoutFromTmplInput = `
 {{define "type-interface"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-union"}}  {{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-any"}}    {{.Out}} = {{.In}} {{end}}
-{{define "type-typedarray"}} {{.Out}} = {{.In}} {{end}}
+{{define "type-typedarray"}} {{.Out}} =  jsarray.{{.GoFunc}}ToGo ( {{.In}} ) {{end}}
 {{define "type-parametrized"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-dictionary"}}	{{.Out}} = {{.Info.Def}}FromJS( {{.In}} ) {{end}}
 {{define "type-rawjs"}}    {{.Out}} = {{.In}} {{end}}
@@ -331,6 +331,7 @@ func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, i
 		Info    *types.TypeInfo
 		Idx     int
 		Inner   string
+		GoFunc  string
 
 		InnerInfo *types.TypeInfo
 		InnerType types.TypeRef
@@ -345,6 +346,7 @@ func inoutGetToFromWasm(t types.TypeRef, info *types.TypeInfo, out, in string, i
 		Idx:      idx,
 		Var:      info.VarOut,
 		VarInner: info.VarOutInner,
+		GoFunc:   fixGoFuncName(t),
 	}
 
 	if use == useIn {
@@ -448,4 +450,13 @@ func inoutDictionaryVariableStart(dict *dictionaryData, from useInOut, tmpl *tem
 		data.ParamList = append(data.ParamList, v)
 	}
 	return executeTemplateToString("start", data, true, tmpl)
+}
+
+func fixGoFuncName(t types.TypeRef) string {
+	if array, ok := t.(*types.TypedArrayType); ok {
+		name := array.Elem.Lang
+		name = strings.ToUpper(name[0:1]) + name[1:]
+		return name
+	}
+	return ""
 }

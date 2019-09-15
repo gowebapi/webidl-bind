@@ -491,7 +491,7 @@ func newTypedArrayType(primitive *PrimitiveType) *TypedArrayType {
 		basic: BasicInfo{
 			Idl:      "typed-array",
 			Package:  BuiltInPackage,
-			Def:      "js.Value",
+			Def:      "[]" + primitive.Lang,
 			Internal: "typed-array",
 			Template: "typedarray",
 		},
