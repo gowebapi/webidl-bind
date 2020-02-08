@@ -34,7 +34,18 @@ const inoutToTmplInput = `
 	{{end}}
 {{end}}
 
-{{define "type-primitive"}}		{{.Out}} := {{.In}} {{end}}
+{{define "type-primitive"}}
+	{{if .Info.Pointer}}
+		var {{.Out}} interface{}
+		if {{.In}} != nil {
+			{{.Out}} = *( {{.In}} )
+		} else {
+			{{.Out}} = nil
+		}
+	{{else}}
+		{{.Out}} := {{.In}}
+	{{end}}
+{{end}}
 {{define "type-dictionary"}}	{{.Out}} := {{.In}}.JSValue() {{end}}
 {{define "type-interface"}}		{{.Out}} := {{.In}}.JSValue() {{end}}
 
