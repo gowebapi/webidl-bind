@@ -121,7 +121,7 @@ func eventFunc{{.If.Basic.Def}}_{{.Type.GoTagText}} (listener func (event {{.Typ
 		{{.From}}
 		src := {{.If.Basic.Def}}FromJS(incoming)
 		listener(ret, src)
-		return js.Undefined
+		return js.Undefined()
 	}
 	return js.FuncOf(fn)
 }
