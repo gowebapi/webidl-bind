@@ -27,7 +27,7 @@ func (_this *{{.Type.Def}}) JSValue() js.Value {
 }
 {{end}}
 
-// {{.Type.Def}}FromJS is casting a core.Wrapper into {{.Type.Def}}.
+// {{.Type.Def}}FromJS is casting a js.Value into {{.Type.Def}}.
 func {{.Type.Def}}FromJS(value js.Value) {{.Type.Output}} {
 	{{if .Type.Pointer}}
 	if typ := value.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
@@ -37,6 +37,11 @@ func {{.Type.Def}}FromJS(value js.Value) {{.Type.Output}} {
 	ret := {{if .Type.Pointer}}&{{end}} {{.Type.Def}} { }
 	ret.Value_JS = value
 	return ret
+}
+
+// {{.Type.Def}}FromJS is casting from something that holds a js.Value into {{.Type.Def}}.
+func {{.Type.Def}}FromWrapper(input core.Wrapper) {{.Type.Output}} {
+    return {{.Type.Def}}FromJS(input.JSValue())
 }
 
 {{end}}
@@ -285,6 +290,10 @@ func {{.Type.Def}}FromJS(value js.Value) * {{.Type.Def}}Value {
 		// note: have no support for functions, method count: {{len .Methods}}
 	{{end}}
 	panic("unsupported type")
+}
+
+func {{.Type.Def}}FromWrapper(input core.Wrapper) * {{.Type.Def}}Value {
+	return {{.Type.Def}}FromJS(input.JSValue())
 }
 
 {{end}}
