@@ -6,6 +6,10 @@ package dict
 
 import js "github.com/gowebapi/webapi/core/js"
 
+import (
+	"github.com/gowebapi/webapi/core"
+)
+
 // using following types:
 
 // source idl files:
@@ -13,20 +17,6 @@ import js "github.com/gowebapi/webapi/core/js"
 
 // transform files:
 //
-
-// ReleasableApiResource is used to release underlaying
-// allocated resources.
-type ReleasableApiResource interface {
-	Release()
-}
-
-type releasableApiResourceList []ReleasableApiResource
-
-func (a releasableApiResourceList) Release() {
-	for _, v := range a {
-		v.Release()
-	}
-}
 
 // workaround for compiler error
 func unused(value interface{}) {
@@ -54,7 +44,7 @@ type Test1 struct {
 	E [][]int
 }
 
-// JSValue is allocating a new javasript object and copy
+// JSValue is allocating a new javascript object and copy
 // all values
 func (_this *Test1) JSValue() js.Value {
 	out := js.Global().Get("Object").New()
@@ -88,10 +78,8 @@ func (_this *Test1) JSValue() js.Value {
 }
 
 // Test1FromJS is allocating a new
-// Test1 object and copy all values from
-// input javascript object
-func Test1FromJS(value js.Wrapper) *Test1 {
-	input := value.JSValue()
+// Test1 object and copy all values in the value javascript object.
+func Test1FromJS(value js.Value) *Test1 {
 	var out Test1
 	var (
 		value0 int        // javascript: long {a A a}
@@ -100,35 +88,35 @@ func Test1FromJS(value js.Wrapper) *Test1 {
 		value3 []js.Value // javascript: sequence<any> {d D d}
 		value4 [][]int    // javascript: sequence<sequence<long>> {e E e}
 	)
-	value0 = (input.Get("a")).Int()
+	value0 = (value.Get("a")).Int()
 	out.A = value0
-	value1 = input.Get("b")
+	value1 = value.Get("b")
 	out.B = value1
-	__length2 := input.Get("c").Length()
+	__length2 := value.Get("c").Length()
 	__array2 := make([]int, __length2, __length2)
 	for __idx2 := 0; __idx2 < __length2; __idx2++ {
 		var __seq_out2 int
-		__seq_in2 := input.Get("c").Index(__idx2)
+		__seq_in2 := value.Get("c").Index(__idx2)
 		__seq_out2 = (__seq_in2).Int()
 		__array2[__idx2] = __seq_out2
 	}
 	value2 = __array2
 	out.C = value2
-	__length3 := input.Get("d").Length()
+	__length3 := value.Get("d").Length()
 	__array3 := make([]js.Value, __length3, __length3)
 	for __idx3 := 0; __idx3 < __length3; __idx3++ {
 		var __seq_out3 js.Value
-		__seq_in3 := input.Get("d").Index(__idx3)
+		__seq_in3 := value.Get("d").Index(__idx3)
 		__seq_out3 = __seq_in3
 		__array3[__idx3] = __seq_out3
 	}
 	value3 = __array3
 	out.D = value3
-	__length4 := input.Get("e").Length()
+	__length4 := value.Get("e").Length()
 	__array4 := make([][]int, __length4, __length4)
 	for __idx4 := 0; __idx4 < __length4; __idx4++ {
 		var __seq_out4 []int
-		__seq_in4 := input.Get("e").Index(__idx4)
+		__seq_in4 := value.Get("e").Index(__idx4)
 		__length5 := __seq_in4.Length()
 		__array5 := make([]int, __length5, __length5)
 		for __idx5 := 0; __idx5 < __length5; __idx5++ {
@@ -150,7 +138,7 @@ type Test2 struct {
 	E [][]int
 }
 
-// JSValue is allocating a new javasript object and copy
+// JSValue is allocating a new javascript object and copy
 // all values
 func (_this *Test2) JSValue() js.Value {
 	out := js.Global().Get("Object").New()
@@ -168,19 +156,17 @@ func (_this *Test2) JSValue() js.Value {
 }
 
 // Test2FromJS is allocating a new
-// Test2 object and copy all values from
-// input javascript object
-func Test2FromJS(value js.Wrapper) *Test2 {
-	input := value.JSValue()
+// Test2 object and copy all values in the value javascript object.
+func Test2FromJS(value js.Value) *Test2 {
 	var out Test2
 	var (
 		value0 [][]int // javascript: sequence<sequence<long>> {e E e}
 	)
-	__length0 := input.Get("e").Length()
+	__length0 := value.Get("e").Length()
 	__array0 := make([][]int, __length0, __length0)
 	for __idx0 := 0; __idx0 < __length0; __idx0++ {
 		var __seq_out0 []int
-		__seq_in0 := input.Get("e").Index(__idx0)
+		__seq_in0 := value.Get("e").Index(__idx0)
 		__length1 := __seq_in0.Length()
 		__array1 := make([]int, __length1, __length1)
 		for __idx1 := 0; __idx1 < __length1; __idx1++ {
@@ -201,7 +187,7 @@ func Test2FromJS(value js.Wrapper) *Test2 {
 type Empty struct {
 }
 
-// JSValue is allocating a new javasript object and copy
+// JSValue is allocating a new javascript object and copy
 // all values
 func (_this *Empty) JSValue() js.Value {
 	out := js.Global().Get("Object").New()
@@ -209,9 +195,8 @@ func (_this *Empty) JSValue() js.Value {
 }
 
 // EmptyFromJS is allocating a new
-// Empty object and copy all values from
-// input javascript object
-func EmptyFromJS(value js.Wrapper) *Empty {
+// Empty object and copy all values in the value javascript object.
+func EmptyFromJS(value js.Value) *Empty {
 	var out Empty
 	var ()
 	return &out
@@ -222,7 +207,7 @@ type Super struct {
 	A int
 }
 
-// JSValue is allocating a new javasript object and copy
+// JSValue is allocating a new javascript object and copy
 // all values
 func (_this *Super) JSValue() js.Value {
 	out := js.Global().Get("Object").New()
@@ -232,15 +217,13 @@ func (_this *Super) JSValue() js.Value {
 }
 
 // SuperFromJS is allocating a new
-// Super object and copy all values from
-// input javascript object
-func SuperFromJS(value js.Wrapper) *Super {
-	input := value.JSValue()
+// Super object and copy all values in the value javascript object.
+func SuperFromJS(value js.Value) *Super {
 	var out Super
 	var (
 		value0 int // javascript: long {a A a}
 	)
-	value0 = (input.Get("a")).Int()
+	value0 = (value.Get("a")).Int()
 	out.A = value0
 	return &out
 }
@@ -250,7 +233,7 @@ type Inherit struct {
 	A int
 }
 
-// JSValue is allocating a new javasript object and copy
+// JSValue is allocating a new javascript object and copy
 // all values
 func (_this *Inherit) JSValue() js.Value {
 	out := js.Global().Get("Object").New()
@@ -260,20 +243,18 @@ func (_this *Inherit) JSValue() js.Value {
 }
 
 // InheritFromJS is allocating a new
-// Inherit object and copy all values from
-// input javascript object
-func InheritFromJS(value js.Wrapper) *Inherit {
-	input := value.JSValue()
+// Inherit object and copy all values in the value javascript object.
+func InheritFromJS(value js.Value) *Inherit {
 	var out Inherit
 	var (
 		value0 int // javascript: long {a A a}
 	)
-	value0 = (input.Get("a")).Int()
+	value0 = (value.Get("a")).Int()
 	out.A = value0
 	return &out
 }
 
-// interface: Foo
+// class: Foo
 type Foo struct {
 	// Value_JS holds a reference to a javascript value
 	Value_JS js.Value
@@ -283,15 +264,19 @@ func (_this *Foo) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// FooFromJS is casting a js.Wrapper into Foo.
-func FooFromJS(value js.Wrapper) *Foo {
-	input := value.JSValue()
-	if input.Type() == js.TypeNull {
+// FooFromJS is casting a js.Value into Foo.
+func FooFromJS(value js.Value) *Foo {
+	if typ := value.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
 		return nil
 	}
 	ret := &Foo{}
-	ret.Value_JS = input
+	ret.Value_JS = value
 	return ret
+}
+
+// FooFromJS is casting from something that holds a js.Value into Foo.
+func FooFromWrapper(input core.Wrapper) *Foo {
+	return FooFromJS(input.JSValue())
 }
 
 // Test1 returning attribute 'test1' with
