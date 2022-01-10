@@ -27,16 +27,15 @@ func (_this *{{.Type.Def}}) JSValue() js.Value {
 }
 {{end}}
 
-// {{.Type.Def}}FromJS is casting a js.Wrapper into {{.Type.Def}}.
-func {{.Type.Def}}FromJS(value js.Wrapper) {{.Type.Output}} {
-	input := value.JSValue()
+// {{.Type.Def}}FromJS is casting a core.Wrapper into {{.Type.Def}}.
+func {{.Type.Def}}FromJS(value js.Value) {{.Type.Output}} {
 	{{if .Type.Pointer}}
-	if typ := input.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
+	if typ := value.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
 		return nil
 	}
 	{{end}}
 	ret := {{if .Type.Pointer}}&{{end}} {{.Type.Def}} { }
-	ret.Value_JS = input
+	ret.Value_JS = value
 	return ret
 }
 
@@ -208,7 +207,7 @@ type {{.Type.Def}} interface {
 }
 
 // {{.Type.Def}}Value is javascript reference value for callback interface {{.Type.Def}}.
-// This is holding the underlaying javascript object.
+// This is holding the underlying javascript object.
 type {{.Type.Def}}Value struct {
 	// Value is the underlying javascript object{{if .If.FunctionCB}} or function{{end}}.
 	Value     js.Value
@@ -274,14 +273,13 @@ func New{{.Type.Def}}Func( f func( {{(index .Methods 0).To.Params}} ) ( {{(index
 // {{.Type.Def}}FromJS is taking an javascript object that reference to a 
 // callback interface and return a corresponding interface that can be used
 // to invoke on that element.
-func {{.Type.Def}}FromJS(value js.Wrapper) * {{.Type.Def}}Value {
-	input := value.JSValue()
-	if input.Type() == js.TypeObject {
-		return &{{.Type.Def}}Value { Value: input }
+func {{.Type.Def}}FromJS(value js.Value) * {{.Type.Def}}Value {
+	if value.Type() == js.TypeObject {
+		return &{{.Type.Def}}Value { Value: value }
 	}
 	{{if eq (len .Methods) 1}}
-	if input.Type() == js.TypeFunction {
-		return &{{.Type.Def}}Value { Value: input, useInvoke: true }
+	if value.Type() == js.TypeFunction {
+		return &{{.Type.Def}}Value { Value: value, useInvoke: true }
 	}
 	{{else}}
 		// note: have no support for functions, method count: {{len .Methods}}
@@ -441,8 +439,8 @@ func writeCallbackInterface(value *types.Interface, dst io.Writer) error {
 	if err := writeInterfaceConst(value.Consts, value, dst); err != nil {
 		return err
 	}
-	// first we setup method information
-	methods := []*interfaceMethod{}
+	// first we set up the method information
+	var methods []*interfaceMethod
 	for _, m := range value.Method {
 		to := setupInOutWasmData(m.Params, "args[%d]", "_p%d", useOut)
 		retLang, retList, isVoid := calculateMethodReturn(m.Return, to.ReleaseHdl)
@@ -622,7 +620,7 @@ func calculateMethodReturn(t types.TypeRef, releaseHdl bool) (lang, list string,
 	lang = info.Output
 	isVoid = types.IsVoid(t)
 
-	candidate := []string{}
+	var candidate []string
 	if !isVoid {
 		candidate = append(candidate, "_result "+lang)
 	}

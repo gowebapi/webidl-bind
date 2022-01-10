@@ -1,3 +1,7 @@
 tmp/
 .DS_Store
 y.output
+
+# Developer local files.
+.idea/
+go.work

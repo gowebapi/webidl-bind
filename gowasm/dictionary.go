@@ -18,7 +18,7 @@ type {{.Dict.Basic.Def}} struct {
 {{end}}
 }
 
-// JSValue is allocating a new javasript object and copy
+// JSValue is allocating a new javascript object and copy
 // all values
 func (_this * {{.Dict.Basic.Def}} ) JSValue() js.Value {
 	out := js.Global().Get("Object").New()
@@ -27,12 +27,8 @@ func (_this * {{.Dict.Basic.Def}} ) JSValue() js.Value {
 }
 
 // {{.Dict.Basic.Def}}FromJS is allocating a new 
-// {{.Dict.Basic.Def}} object and copy all values from
-// input javascript object
-func {{.Dict.Basic.Def}}FromJS(value js.Wrapper) {{.Type.Output}} {
-	{{if gt (len .Dict.Members) 0}}
-		input := value.JSValue()
-	{{end}}
+// {{.Dict.Basic.Def}} object and copy all values in the value javascript object.
+func {{.Dict.Basic.Def}}FromJS(value js.Value) {{.Type.Output}} {
 	var out {{.Dict.Basic.Def}}
 	{{.From}}
 	return {{if .Type.Pointer}}&{{end}} out
@@ -70,7 +66,7 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 	}
 	data.Type, _ = dict.DefaultParam()
 	var to, from bytes.Buffer
-	reqParam := []string{}
+	var reqParam []string
 	for idx, mi := range dict.Members {
 		mo := &dictionaryMember{
 			Name: *mi.Name(),
@@ -82,7 +78,7 @@ func writeDictionary(dst io.Writer, value types.Type) error {
 			reqParam = append(reqParam, fmt.Sprint(mi.Name().Internal, " ", mo.Type.Input))
 			data.Required = append(data.Required, mo)
 		}
-		mo.fromIn, mo.fromOut = setupVarName("input.Get(\"@name@\")", idx, mo.Name.Idl, false), setupVarName("value%d", idx, mo.Name.Def, false)
+		mo.fromIn, mo.fromOut = setupVarName("value.Get(\"@name@\")", idx, mo.Name.Idl, false), setupVarName("value%d", idx, mo.Name.Def, false)
 		mo.toIn, mo.toOut = setupVarName("_this.@name@", idx, mo.Name.Def, false), setupVarName("value%d", idx, mo.Name.Def, false)
 		from.WriteString(inoutParamStart(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, useOut, inoutFromTmpl))
 		from.WriteString(inoutGetToFromWasm(mo.Ref, mo.Type, mo.fromOut, mo.fromIn, idx, useOut, inoutFromTmpl))

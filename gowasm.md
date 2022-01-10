@@ -8,6 +8,11 @@ The output should be considers as helping libraries to _syscall/js_ than a stand
 * Method/Enum rename - transformation support to get a better API.
 * Union support are missing as methods depending of this is unusable.
 
+### Go 1.18
+
+* js.Wrapper is moving away from syscall/js package for [performance reasons](https://github.com/golang/go/issues/44006). I couldn't find a way to preserve compatibility, so this will be a breaking change -- the fix for clients of the library should be easy though.
+* Added a `go.mod`.
+
 ### Go 1.12
 
 * Change from js.Value to js.Wrapper?
