@@ -1,6 +1,8 @@
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/gowebapi/webapi v0.0.0-20220111173747-55340d8985e9 h1:1yMeROaiaJzPaVmnrDYCLoIMHeDkyb2q+qsW9WaID2k=
+github.com/gowebapi/webapi v0.0.0-20220111173747-55340d8985e9/go.mod h1:VnFFpbgBz6cR+Qlrw3sXh4TX7O8QCABPaZLkExT5YVI=
 github.com/gowebapi/webidlparser v0.0.0-20190714100300-8be816faf6ec h1:fp0nM5jP6jODheHoX61TPosa+qsrj6a44tG2vISW4sg=
 github.com/gowebapi/webidlparser v0.0.0-20190714100300-8be816faf6ec/go.mod h1:NcX8WFnRoi5F3LHUWPGItC602aLfeDCC6UjiRf4pYcU=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=

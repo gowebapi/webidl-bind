@@ -1,6 +1,6 @@
 module github.com/gowebapi/webidl-bind
 
-go 1.18
+go 1.17
 
 require (
 	github.com/gowebapi/webidlparser v0.0.0-20190714100300-8be816faf6ec
@@ -9,6 +9,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.0 // indirect
+	github.com/gowebapi/webapi v0.0.0-20220111173747-55340d8985e9 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
