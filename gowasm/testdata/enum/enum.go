@@ -6,6 +6,10 @@ package enum
 
 import js "github.com/gowebapi/webapi/core/js"
 
+import (
+	"github.com/gowebapi/webapi/core"
+)
+
 // using following types:
 
 // source idl files:
@@ -13,20 +17,6 @@ import js "github.com/gowebapi/webapi/core/js"
 
 // transform files:
 //
-
-// ReleasableApiResource is used to release underlaying
-// allocated resources.
-type ReleasableApiResource interface {
-	Release()
-}
-
-type releasableApiResourceList []ReleasableApiResource
-
-func (a releasableApiResourceList) Release() {
-	for _, v := range a {
-		v.Release()
-	}
-}
 
 // workaround for compiler error
 func unused(value interface{}) {
@@ -61,7 +51,7 @@ var fooFromWasmTable = map[string]Foo{
 	"hello": HelloFoo, "world": WorldFoo,
 }
 
-// JSValue is converting this enum into a java object
+// JSValue is converting this enum into a javascript object
 func (this *Foo) JSValue() js.Value {
 	return js.ValueOf(this.Value())
 }
@@ -96,7 +86,7 @@ var barToWasmTable = []string{}
 
 var barFromWasmTable = map[string]Bar{}
 
-// JSValue is converting this enum into a java object
+// JSValue is converting this enum into a javascript object
 func (this *Bar) JSValue() js.Value {
 	return js.ValueOf(this.Value())
 }
@@ -122,7 +112,7 @@ func BarFromJS(value js.Value) Bar {
 	return conv
 }
 
-// interface: Test
+// class: Test
 type Test struct {
 	// Value_JS holds a reference to a javascript value
 	Value_JS js.Value
@@ -132,15 +122,19 @@ func (_this *Test) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// TestFromJS is casting a js.Wrapper into Test.
-func TestFromJS(value js.Wrapper) *Test {
-	input := value.JSValue()
-	if input.Type() == js.TypeNull {
+// TestFromJS is casting a js.Value into Test.
+func TestFromJS(value js.Value) *Test {
+	if typ := value.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
 		return nil
 	}
 	ret := &Test{}
-	ret.Value_JS = input
+	ret.Value_JS = value
 	return ret
+}
+
+// TestFromJS is casting from something that holds a js.Value into Test.
+func TestFromWrapper(input core.Wrapper) *Test {
+	return TestFromJS(input.JSValue())
 }
 
 // Hello1 returning attribute 'hello1' with

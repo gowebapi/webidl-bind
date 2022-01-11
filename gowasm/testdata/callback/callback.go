@@ -6,6 +6,10 @@ package callback
 
 import js "github.com/gowebapi/webapi/core/js"
 
+import (
+	"github.com/gowebapi/webapi/core"
+)
+
 // using following types:
 
 // source idl files:
@@ -13,20 +17,6 @@ import js "github.com/gowebapi/webapi/core/js"
 
 // transform files:
 //
-
-// ReleasableApiResource is used to release underlaying
-// allocated resources.
-type ReleasableApiResource interface {
-	Release()
-}
-
-type releasableApiResourceList []ReleasableApiResource
-
-func (a releasableApiResourceList) Release() {
-	for _, v := range a {
-		v.Release()
-	}
-}
 
 // workaround for compiler error
 func unused(value interface{}) {
@@ -61,7 +51,7 @@ var bazFromWasmTable = map[string]Baz{
 	"hello": HelloBaz, "world": WorldBaz,
 }
 
-// JSValue is converting this enum into a java object
+// JSValue is converting this enum into a javascript object
 func (this *Baz) JSValue() js.Value {
 	return js.ValueOf(this.Value())
 }
@@ -103,6 +93,7 @@ func Test1ToJS(callback Test1Func) *Test1 {
 	ret := Test1(js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		var ()
 		callback()
+
 		// returning no return value
 		return nil
 	}))
@@ -141,6 +132,7 @@ func Test2ToJS(callback Test2Func) *Test2 {
 		_p0 = (args[0]).Int()
 		_p1 = (args[1]).String()
 		callback(_p0, _p1)
+
 		// returning no return value
 		return nil
 	}))
@@ -335,6 +327,7 @@ func Test6ToJS(callback Test6Func) *Test6 {
 			_p0 = append(_p0, __out)
 		}
 		callback(_p0)
+
 		// returning no return value
 		return nil
 	}))
@@ -381,6 +374,7 @@ func Test7ToJS(callback Test7Func) *Test7 {
 			_p0 = append(_p0, __out)
 		}
 		callback(_p0)
+
 		// returning no return value
 		return nil
 	}))
@@ -905,7 +899,7 @@ type Bar struct {
 	B int
 }
 
-// JSValue is allocating a new javasript object and copy
+// JSValue is allocating a new javascript object and copy
 // all values
 func (_this *Bar) JSValue() js.Value {
 	out := js.Global().Get("Object").New()
@@ -917,23 +911,21 @@ func (_this *Bar) JSValue() js.Value {
 }
 
 // BarFromJS is allocating a new
-// Bar object and copy all values from
-// input javascript object
-func BarFromJS(value js.Wrapper) *Bar {
-	input := value.JSValue()
+// Bar object and copy all values in the value javascript object.
+func BarFromJS(value js.Value) *Bar {
 	var out Bar
 	var (
 		value0 int // javascript: long {a A a}
 		value1 int // javascript: long {b B b}
 	)
-	value0 = (input.Get("a")).Int()
+	value0 = (value.Get("a")).Int()
 	out.A = value0
-	value1 = (input.Get("b")).Int()
+	value1 = (value.Get("b")).Int()
 	out.B = value1
 	return &out
 }
 
-// interface: Foo
+// class: Foo
 type Foo struct {
 	// Value_JS holds a reference to a javascript value
 	Value_JS js.Value
@@ -943,15 +935,19 @@ func (_this *Foo) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// FooFromJS is casting a js.Wrapper into Foo.
-func FooFromJS(value js.Wrapper) *Foo {
-	input := value.JSValue()
-	if input.Type() == js.TypeNull {
+// FooFromJS is casting a js.Value into Foo.
+func FooFromJS(value js.Value) *Foo {
+	if typ := value.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
 		return nil
 	}
 	ret := &Foo{}
-	ret.Value_JS = input
+	ret.Value_JS = value
 	return ret
+}
+
+// FooFromJS is casting from something that holds a js.Value into Foo.
+func FooFromWrapper(input core.Wrapper) *Foo {
+	return FooFromJS(input.JSValue())
 }
 
 // Test1 returning attribute 'test1' with

@@ -83,6 +83,7 @@ var reservedGoKeywords = map[string]bool{
 
 var specialImportLines = map[string]string{
 	"jsarray": "github.com/gowebapi/webapi/core/jsarray",
+	"core":    "github.com/gowebapi/webapi/core",
 }
 
 // WriteSource is create source code files.

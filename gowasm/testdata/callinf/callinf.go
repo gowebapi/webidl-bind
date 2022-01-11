@@ -6,6 +6,10 @@ package callinf
 
 import js "github.com/gowebapi/webapi/core/js"
 
+import (
+	"github.com/gowebapi/webapi/core"
+)
+
 // using following types:
 
 // source idl files:
@@ -13,20 +17,6 @@ import js "github.com/gowebapi/webapi/core/js"
 
 // transform files:
 //
-
-// ReleasableApiResource is used to release underlaying
-// allocated resources.
-type ReleasableApiResource interface {
-	Release()
-}
-
-type releasableApiResourceList []ReleasableApiResource
-
-func (a releasableApiResourceList) Release() {
-	for _, v := range a {
-		v.Release()
-	}
-}
 
 // workaround for compiler error
 func unused(value interface{}) {
@@ -56,12 +46,14 @@ type Foo1 interface {
 }
 
 // Foo1Value is javascript reference value for callback interface Foo1.
-// This is holding the underlaying javascript object.
+// This is holding the underlying javascript object.
 type Foo1Value struct {
 	// Value is the underlying javascript object or function.
 	Value js.Value
+
 	// Functions is the underlying function objects that is allocated for the interface callback
 	Functions [1]js.Func
+
 	// Go interface to invoke
 	impl      Foo1
 	function  func(b int, c int)
@@ -106,15 +98,18 @@ func NewFoo1Func(f func(b int, c int)) *Foo1Value {
 // Foo1FromJS is taking an javascript object that reference to a
 // callback interface and return a corresponding interface that can be used
 // to invoke on that element.
-func Foo1FromJS(value js.Wrapper) *Foo1Value {
-	input := value.JSValue()
-	if input.Type() == js.TypeObject {
-		return &Foo1Value{Value: input}
+func Foo1FromJS(value js.Value) *Foo1Value {
+	if value.Type() == js.TypeObject {
+		return &Foo1Value{Value: value}
 	}
-	if input.Type() == js.TypeFunction {
-		return &Foo1Value{Value: input, useInvoke: true}
+	if value.Type() == js.TypeFunction {
+		return &Foo1Value{Value: value, useInvoke: true}
 	}
 	panic("unsupported type")
+}
+
+func Foo1FromWrapper(input core.Wrapper) *Foo1Value {
+	return Foo1FromJS(input.JSValue())
 }
 
 func (t *Foo1Value) allocateTest2() js.Func {
@@ -130,6 +125,7 @@ func (t *Foo1Value) allocateTest2() js.Func {
 		} else {
 			t.impl.Test2(_p0, _p1)
 		}
+
 		// returning no return value
 		return nil
 	})
@@ -153,6 +149,7 @@ func (_this *Foo1Value) Test2(b int, c int) {
 	_args[1] = _p1
 	_end++
 	if _this.useInvoke {
+
 		// invoke a javascript function
 		_this.Value.Invoke(_args[0:_end]...)
 	} else {
@@ -167,12 +164,14 @@ type Foo2 interface {
 }
 
 // Foo2Value is javascript reference value for callback interface Foo2.
-// This is holding the underlaying javascript object.
+// This is holding the underlying javascript object.
 type Foo2Value struct {
 	// Value is the underlying javascript object or function.
 	Value js.Value
+
 	// Functions is the underlying function objects that is allocated for the interface callback
 	Functions [1]js.Func
+
 	// Go interface to invoke
 	impl      Foo2
 	function  func(a string, b js.Value, c *Union, d int, e *A, f *B) (_result bool)
@@ -217,15 +216,18 @@ func NewFoo2Func(f func(a string, b js.Value, c *Union, d int, e *A, f *B) (_res
 // Foo2FromJS is taking an javascript object that reference to a
 // callback interface and return a corresponding interface that can be used
 // to invoke on that element.
-func Foo2FromJS(value js.Wrapper) *Foo2Value {
-	input := value.JSValue()
-	if input.Type() == js.TypeObject {
-		return &Foo2Value{Value: input}
+func Foo2FromJS(value js.Value) *Foo2Value {
+	if value.Type() == js.TypeObject {
+		return &Foo2Value{Value: value}
 	}
-	if input.Type() == js.TypeFunction {
-		return &Foo2Value{Value: input, useInvoke: true}
+	if value.Type() == js.TypeFunction {
+		return &Foo2Value{Value: value, useInvoke: true}
 	}
 	panic("unsupported type")
+}
+
+func Foo2FromWrapper(input core.Wrapper) *Foo2Value {
+	return Foo2FromJS(input.JSValue())
 }
 
 func (t *Foo2Value) allocateTest3() js.Func {
@@ -286,6 +288,7 @@ func (_this *Foo2Value) Test3(a string, b js.Value, c *Union, d int, e *A, f *B)
 	_end++
 	var _returned js.Value
 	if _this.useInvoke {
+
 		// invoke a javascript function
 		_returned = _this.Value.Invoke(_args[0:_end]...)
 	} else {
@@ -308,12 +311,14 @@ type Foo3 interface {
 }
 
 // Foo3Value is javascript reference value for callback interface Foo3.
-// This is holding the underlaying javascript object.
+// This is holding the underlying javascript object.
 type Foo3Value struct {
 	// Value is the underlying javascript object or function.
 	Value js.Value
+
 	// Functions is the underlying function objects that is allocated for the interface callback
 	Functions [4]js.Func
+
 	// Go interface to invoke
 	impl Foo3
 }
@@ -351,13 +356,17 @@ func NewFoo3(callback Foo3) *Foo3Value {
 // Foo3FromJS is taking an javascript object that reference to a
 // callback interface and return a corresponding interface that can be used
 // to invoke on that element.
-func Foo3FromJS(value js.Wrapper) *Foo3Value {
-	input := value.JSValue()
-	if input.Type() == js.TypeObject {
-		return &Foo3Value{Value: input}
+func Foo3FromJS(value js.Value) *Foo3Value {
+	if value.Type() == js.TypeObject {
+		return &Foo3Value{Value: value}
 	}
+
 	// note: have no support for functions, method count: 4
 	panic("unsupported type")
+}
+
+func Foo3FromWrapper(input core.Wrapper) *Foo3Value {
+	return Foo3FromJS(input.JSValue())
 }
 
 func (t *Foo3Value) allocateTest1() js.Func {
@@ -367,6 +376,7 @@ func (t *Foo3Value) allocateTest1() js.Func {
 		)
 		_p0 = (args[0]).String()
 		t.impl.Test1(_p0)
+
 		// returning no return value
 		return nil
 	})
@@ -489,7 +499,7 @@ func (_this *Foo3Value) Test4(d js.Value) (_result js.Value) {
 	return
 }
 
-// interface: A
+// class: A
 type A struct {
 	// Value_JS holds a reference to a javascript value
 	Value_JS js.Value
@@ -499,18 +509,22 @@ func (_this *A) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// AFromJS is casting a js.Wrapper into A.
-func AFromJS(value js.Wrapper) *A {
-	input := value.JSValue()
-	if input.Type() == js.TypeNull {
+// AFromJS is casting a js.Value into A.
+func AFromJS(value js.Value) *A {
+	if typ := value.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
 		return nil
 	}
 	ret := &A{}
-	ret.Value_JS = input
+	ret.Value_JS = value
 	return ret
 }
 
-// interface: B
+// AFromJS is casting from something that holds a js.Value into A.
+func AFromWrapper(input core.Wrapper) *A {
+	return AFromJS(input.JSValue())
+}
+
+// class: B
 type B struct {
 	// Value_JS holds a reference to a javascript value
 	Value_JS js.Value
@@ -520,13 +534,17 @@ func (_this *B) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// BFromJS is casting a js.Wrapper into B.
-func BFromJS(value js.Wrapper) *B {
-	input := value.JSValue()
-	if input.Type() == js.TypeNull {
+// BFromJS is casting a js.Value into B.
+func BFromJS(value js.Value) *B {
+	if typ := value.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
 		return nil
 	}
 	ret := &B{}
-	ret.Value_JS = input
+	ret.Value_JS = value
 	return ret
+}
+
+// BFromJS is casting from something that holds a js.Value into B.
+func BFromWrapper(input core.Wrapper) *B {
+	return BFromJS(input.JSValue())
 }

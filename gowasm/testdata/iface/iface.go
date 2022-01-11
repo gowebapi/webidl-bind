@@ -6,6 +6,10 @@ package iface
 
 import js "github.com/gowebapi/webapi/core/js"
 
+import (
+	"github.com/gowebapi/webapi/core"
+)
+
 // using following types:
 
 // source idl files:
@@ -13,20 +17,6 @@ import js "github.com/gowebapi/webapi/core/js"
 
 // transform files:
 //
-
-// ReleasableApiResource is used to release underlaying
-// allocated resources.
-type ReleasableApiResource interface {
-	Release()
-}
-
-type releasableApiResourceList []ReleasableApiResource
-
-func (a releasableApiResourceList) Release() {
-	for _, v := range a {
-		v.Release()
-	}
-}
 
 // workaround for compiler error
 func unused(value interface{}) {
@@ -45,7 +35,7 @@ func UnionFromJS(value js.Value) *Union {
 	return &Union{Value: value}
 }
 
-// interface: Foo
+// class: Foo
 type Foo struct {
 	// Value_JS holds a reference to a javascript value
 	Value_JS js.Value
@@ -55,15 +45,19 @@ func (_this *Foo) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// FooFromJS is casting a js.Wrapper into Foo.
-func FooFromJS(value js.Wrapper) *Foo {
-	input := value.JSValue()
-	if input.Type() == js.TypeNull {
+// FooFromJS is casting a js.Value into Foo.
+func FooFromJS(value js.Value) *Foo {
+	if typ := value.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
 		return nil
 	}
 	ret := &Foo{}
-	ret.Value_JS = input
+	ret.Value_JS = value
 	return ret
+}
+
+// FooFromJS is casting from something that holds a js.Value into Foo.
+func FooFromWrapper(input core.Wrapper) *Foo {
+	return FooFromJS(input.JSValue())
 }
 
 // Test4 returning attribute 'test4' with
@@ -146,7 +140,7 @@ func (_this *Foo) Test1(a interface{}, b ...interface{}) (_result js.Value) {
 	return
 }
 
-// interface: Foo2
+// class: Foo2
 type Foo2 struct {
 	// Value_JS holds a reference to a javascript value
 	Value_JS js.Value
@@ -156,15 +150,19 @@ func (_this *Foo2) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// Foo2FromJS is casting a js.Wrapper into Foo2.
-func Foo2FromJS(value js.Wrapper) *Foo2 {
-	input := value.JSValue()
-	if input.Type() == js.TypeNull {
+// Foo2FromJS is casting a js.Value into Foo2.
+func Foo2FromJS(value js.Value) *Foo2 {
+	if typ := value.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
 		return nil
 	}
 	ret := &Foo2{}
-	ret.Value_JS = input
+	ret.Value_JS = value
 	return ret
+}
+
+// Foo2FromJS is casting from something that holds a js.Value into Foo2.
+func Foo2FromWrapper(input core.Wrapper) *Foo2 {
+	return Foo2FromJS(input.JSValue())
 }
 
 // Test7 returning attribute 'test7' with
@@ -303,7 +301,7 @@ func (_this *Foo2) Test1(a []int, b ...[]int) (_result []int) {
 	return
 }
 
-// interface: Foo3
+// class: Foo3
 type Foo3 struct {
 	// Value_JS holds a reference to a javascript value
 	Value_JS js.Value
@@ -313,15 +311,19 @@ func (_this *Foo3) JSValue() js.Value {
 	return _this.Value_JS
 }
 
-// Foo3FromJS is casting a js.Wrapper into Foo3.
-func Foo3FromJS(value js.Wrapper) *Foo3 {
-	input := value.JSValue()
-	if input.Type() == js.TypeNull {
+// Foo3FromJS is casting a js.Value into Foo3.
+func Foo3FromJS(value js.Value) *Foo3 {
+	if typ := value.Type(); typ == js.TypeNull || typ == js.TypeUndefined {
 		return nil
 	}
 	ret := &Foo3{}
-	ret.Value_JS = input
+	ret.Value_JS = value
 	return ret
+}
+
+// Foo3FromJS is casting from something that holds a js.Value into Foo3.
+func Foo3FromWrapper(input core.Wrapper) *Foo3 {
+	return Foo3FromJS(input.JSValue())
 }
 
 // Test9 returning attribute 'test9' with

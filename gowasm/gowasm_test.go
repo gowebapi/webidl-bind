@@ -81,10 +81,10 @@ func loadFile(filename string, pkg string, t *testing.T) *types.Convert {
 }
 
 func compareResult(expectedFile string, actual []*Source, t *testing.T) {
-	expexted, err := ioutil.ReadFile(expectedFile + "_actual")
+	expected, err := ioutil.ReadFile(expectedFile + "_actual")
 	if err != nil {
 		t.Log(err)
-		expexted = []byte("")
+		expected = []byte("")
 	}
 	assert.Equal(t, 2, len(actual))
 	tested := 0
@@ -95,8 +95,8 @@ func compareResult(expectedFile string, actual []*Source, t *testing.T) {
 		}
 		tested++
 		assert.True(t, include)
-		assert.True(t, bytes.Equal(expexted, src.Content))
-		if !bytes.Equal(expexted, src.Content) {
+		assert.True(t, bytes.Equal(expected, src.Content))
+		if !bytes.Equal(expected, src.Content) {
 			t.Log("saving file", expectedFile)
 			if err := ioutil.WriteFile(expectedFile, src.Content, 0664); err != nil {
 				t.Log(err)
