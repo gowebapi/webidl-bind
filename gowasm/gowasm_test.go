@@ -108,7 +108,7 @@ func compareResult(expectedFile string, actual []*Source, t *testing.T) {
 
 func tryCompileResult(folder string, t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	p := exec.Command("go", "build", "-i")
+	p := exec.Command("go", "build")
 	p.Dir = folder
 	// p.Stdout = os.Stdout
 	// p.Stderr = os.Stderr

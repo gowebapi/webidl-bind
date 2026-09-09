@@ -165,9 +165,6 @@ func tryCompileResult(folders []string) error {
 
 		wasm := args.goBuild == "wasm"
 		args := []string{"build"}
-		if !wasm {
-			args = append(args, "-i")
-		}
 
 		p := exec.Command("go", args...)
 		p.Dir = folder

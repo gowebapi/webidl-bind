@@ -1,6 +1,6 @@
 module github.com/gowebapi/webidl-bind
 
-go 1.17
+go 1.27.1
 
 require (
 	github.com/gowebapi/webidlparser v0.0.0-20190714100300-8be816faf6ec
