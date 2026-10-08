@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/gowebapi/webidlparser/ast"
+	"github.com/gowebapi/webidl-bind/ast"
 )
 
 type typeDef struct {
@@ -17,13 +17,11 @@ var _ Type = &typeDef{}
 
 func (t *extractTypes) convertTypeDef(in *ast.Typedef) *typeDef {
 	ret := typeDef{
-		standardType: standardType{
-			ref:         createRef(in, t),
-			needRelease: false,
-		},
-		basic: fromIdlToTypeName("", in.Name, "typedef"),
-		Type:  convertType(in.Type, t),
-		name:  in.Name,
+		ref:         createRef(in, t),
+		needRelease: false,
+		basic:       fromIdlToTypeName("", in.Name, "typedef"),
+		Type:        convertType(in.Type, t),
+		name:        in.Name,
 	}
 	for _, a := range in.Annotations {
 		aref := createRef(a, t)

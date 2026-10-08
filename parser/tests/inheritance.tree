@@ -1,0 +1,28 @@
+&ast.File{
+    Base: ast.Base{
+        Start:    0,
+        End:      49,
+        Line:     0,
+        Comments: nil,
+        Errors:   nil,
+    },
+    Declarations: {
+        &ast.Interface{
+            Base: ast.Base{
+                Start:    0,
+                End:      49,
+                Line:     1,
+                Comments: nil,
+                Errors:   nil,
+            },
+            Partial:     false,
+            Callback:    false,
+            Name:        "SomeInterface",
+            Inherits:    "AnotherInterface",
+            Annotations: nil,
+            Members:     nil,
+            CustomOps:   nil,
+            Patterns:    nil,
+        },
+    },
+}

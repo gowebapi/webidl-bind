@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/gowebapi/webidlparser/ast"
+	"github.com/gowebapi/webidl-bind/ast"
 )
 
 // TypeName contains usage information about a type
@@ -140,7 +140,7 @@ func clipString(input string) string {
 // convertIntoValidVariableName will convert any non-variable
 // accepted chars will be turned into _ instead.
 func convertIntoValidVariableName(input string) string {
-	out := ""
+	var out strings.Builder
 	for _, c := range input {
 		switch {
 		case c >= '0' && c <= '9':
@@ -150,9 +150,9 @@ func convertIntoValidVariableName(input string) string {
 		default:
 			c = '_'
 		}
-		out += string(c)
+		out.WriteString(string(c))
 	}
-	return out
+	return out.String()
 }
 
 func fromIdlToTypeName(pkg string, name string, tmpl string) BasicInfo {
@@ -235,7 +235,7 @@ func newTypeInfo(basic BasicInfo, nullable, option, variadic, pointer, disablePt
 
 // toCamelCase is convert a constant into camel case
 func toCamelCase(in string, upper bool) string {
-	out := ""
+	var out strings.Builder
 	up := true
 	for i, c := range in {
 		if i == 0 && !upper {
@@ -246,10 +246,10 @@ func toCamelCase(in string, upper bool) string {
 			up = true
 			continue
 		}
-		out += string(c)
+		out.WriteString(string(c))
 		up = false
 	}
-	return out
+	return out.String()
 }
 
 // insertLineNumber is used to debug print internal type specification

@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/gowebapi/webidlparser/ast"
+	"github.com/gowebapi/webidl-bind/ast"
 )
 
 type Parameter struct {

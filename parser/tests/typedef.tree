@@ -1,0 +1,90 @@
+&ast.File{
+    Base: ast.Base{
+        Start:    0,
+        End:      86,
+        Line:     0,
+        Comments: nil,
+        Errors:   nil,
+    },
+    Declarations: {
+        &ast.Typedef{
+            Base: ast.Base{
+                Start:    0,
+                End:      86,
+                Line:     1,
+                Comments: nil,
+                Errors:   nil,
+            },
+            Annotations: nil,
+            Name:        "HeadersInit",
+            Type:        &ast.UnionType{
+                Base: ast.Base{
+                    Start:    8,
+                    End:      73,
+                    Line:     1,
+                    Comments: nil,
+                    Errors:   nil,
+                },
+                Types: {
+                    &ast.SequenceType{
+                        Base: ast.Base{
+                            Start:    9,
+                            End:      38,
+                            Line:     1,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Elem: &ast.SequenceType{
+                            Base: ast.Base{
+                                Start:    18,
+                                End:      37,
+                                Line:     1,
+                                Comments: nil,
+                                Errors:   nil,
+                            },
+                            Elem: &ast.TypeName{
+                                Base: ast.Base{
+                                    Start:    27,
+                                    End:      36,
+                                    Line:     1,
+                                    Comments: nil,
+                                    Errors:   nil,
+                                },
+                                Name: "ByteString",
+                            },
+                        },
+                    },
+                    &ast.RecordType{
+                        Base: ast.Base{
+                            Start:    43,
+                            End:      72,
+                            Line:     1,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Key: &ast.TypeName{
+                            Base: ast.Base{
+                                Start:    50,
+                                End:      59,
+                                Line:     1,
+                                Comments: nil,
+                                Errors:   nil,
+                            },
+                            Name: "ByteString",
+                        },
+                        Elem: &ast.TypeName{
+                            Base: ast.Base{
+                                Start:    62,
+                                End:      71,
+                                Line:     1,
+                                Comments: nil,
+                                Errors:   nil,
+                            },
+                            Name: "ByteString",
+                        },
+                    },
+                },
+            },
+        },
+    },
+}

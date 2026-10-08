@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/gowebapi/webidlparser/ast"
+	"github.com/gowebapi/webidl-bind/ast"
 )
 
 type Callback struct {
@@ -17,13 +17,11 @@ var _ Type = &Callback{}
 func (t *extractTypes) convertCallback(in *ast.Callback) *Callback {
 	params := t.convertParams(in.Parameters)
 	ret := &Callback{
-		standardType: standardType{
-			ref:         createRef(in, t),
-			needRelease: false,
-		},
-		basic:      fromIdlToTypeName(t.main.setup.Package, in.Name, "callback"),
-		Return:     convertType(in.Return, t),
-		Parameters: params,
+		ref:         createRef(in, t),
+		needRelease: false,
+		basic:       fromIdlToTypeName(t.main.setup.Package, in.Name, "callback"),
+		Return:      convertType(in.Return, t),
+		Parameters:  params,
 	}
 	return ret
 }
@@ -78,13 +76,11 @@ func (t *Callback) TemplateCopy(targetInfo BasicInfo) *Callback {
 	src := t
 	ref := *src.standardType.ref
 	dst := &Callback{
-		standardType: standardType{
-			inuse:       true,
-			needRelease: src.standardType.needRelease,
-			ref:         &ref,
-		},
-		basic:  targetInfo,
-		Return: src.Return,
+		inuse:       true,
+		needRelease: src.standardType.needRelease,
+		ref:         &ref,
+		basic:       targetInfo,
+		Return:      src.Return,
 	}
 	dst.basic.Template = src.basic.Template
 	for _, pin := range t.Parameters {

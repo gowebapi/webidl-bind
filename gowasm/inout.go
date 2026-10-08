@@ -420,7 +420,7 @@ func inoutParamEnd(info *types.TypeInfo, assign string, tmpl *template.Template)
 	return executeTemplateToString("param-end", data, true, tmpl)
 }
 
-func executeTemplateToString(name string, data interface{}, newLine bool, tmpl *template.Template) string {
+func executeTemplateToString(name string, data any, newLine bool, tmpl *template.Template) string {
 	var buf bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&buf, name, data); err != nil {
 		panic(err)

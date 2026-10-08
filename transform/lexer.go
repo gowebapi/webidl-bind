@@ -127,15 +127,15 @@ func (l *lexer) peek() rune {
 }
 
 func (l *lexer) peekWord(length int) string {
-	var ret string
+	var ret strings.Builder
 	pos := l.pos
 	for length > 0 && pos < len(l.input) {
 		ch, width := utf8.DecodeRuneInString(l.input[pos:])
 		pos += width
 		length--
-		ret += string(ch)
+		ret.WriteString(string(ch))
 	}
-	return ret
+	return ret.String()
 }
 
 // next returns the next rune in the input.
@@ -157,7 +157,7 @@ func (l *lexer) next() (ch rune) {
 // error returns an error token and terminates the scan
 // by passing back a nil pointer that will be the next
 // state, terminating l.run.
-func (l *lexer) errorf(format string, args ...interface{}) stateFn {
+func (l *lexer) errorf(format string, args ...any) stateFn {
 	l.items <- item{
 		itemError,
 		fmt.Sprintf(format, args...),

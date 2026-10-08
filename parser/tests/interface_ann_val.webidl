@@ -1,0 +1,2 @@
+[CoolAnnotation=SomeName]
+interface SomeInterface {};

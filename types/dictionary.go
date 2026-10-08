@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/gowebapi/webidlparser/ast"
+	"github.com/gowebapi/webidl-bind/ast"
 )
 
 type Dictionary struct {
@@ -27,10 +27,8 @@ func (t *extractTypes) convertDictionary(in *ast.Dictionary) (*Dictionary, bool)
 	t.warningTrue(len(in.Annotations) == 0, ref, "unsupported annotations")
 	// t.assertTrue(in.Inherits == "", ref , "unsupported dictionary inherites of %s", in.Inherits)
 	ret := &Dictionary{
-		standardType: standardType{
-			ref:         ref,
-			needRelease: false,
-		},
+		ref:          ref,
+		needRelease:  false,
 		basic:        fromIdlToTypeName(t.main.setup.Package, in.Name, "dictionary"),
 		inheritsName: in.Inherits,
 	}
@@ -59,10 +57,8 @@ func (conv *extractTypes) convertDictMember(in *ast.Member) *DictMember {
 		// parser.Dump(os.Stdout, in)
 	}
 	return &DictMember{
-		nameAndLink: nameAndLink{
-			ref:  createRef(in, conv),
-			name: fromIdlToMethodName(in.Name),
-		},
+		ref:      createRef(in, conv),
+		name:     fromIdlToMethodName(in.Name),
 		Type:     convertType(in.Type, conv),
 		Required: in.Required,
 	}
@@ -146,12 +142,10 @@ func (t *Dictionary) templateCopy(targetInfo BasicInfo) *Dictionary {
 	src := t
 	ref := *src.standardType.ref
 	dst := &Dictionary{
-		standardType: standardType{
-			inuse:       true,
-			needRelease: src.standardType.needRelease,
-			ref:         &ref,
-		},
-		basic: targetInfo,
+		inuse:       true,
+		needRelease: src.standardType.needRelease,
+		ref:         &ref,
+		basic:       targetInfo,
 
 		Inherits:     src.Inherits,
 		inheritsName: src.inheritsName,

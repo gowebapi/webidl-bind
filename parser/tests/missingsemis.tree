@@ -1,0 +1,192 @@
+&ast.File{
+    Base: ast.Base{
+        Start:    0,
+        End:      91,
+        Line:     0,
+        Comments: nil,
+        Errors:   nil,
+    },
+    Declarations: {
+        &ast.Interface{
+            Base: ast.Base{
+                Start:    0,
+                End:      51,
+                Line:     1,
+                Comments: nil,
+                Errors:   {
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    51,
+                            End:      49,
+                            Line:     3,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected one of: [Semicolon], found: inp:3:51 - RightBrace(})",
+                    },
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    51,
+                            End:      49,
+                            Line:     3,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected semicolon, got: inp:3:51 - RightBrace(})",
+                    },
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    54,
+                            End:      51,
+                            Line:     5,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected one of: [Semicolon], found: inp:5:54 - Keyword(interface)",
+                    },
+                },
+            },
+            Partial:     false,
+            Callback:    false,
+            Name:        "foo",
+            Inherits:    "",
+            Annotations: nil,
+            Members:     {
+                &ast.Member{
+                    Base: ast.Base{
+                        Start:    17,
+                        End:      49,
+                        Line:     2,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Name: "baz",
+                    Type: &ast.TypeName{
+                        Base: ast.Base{
+                            Start:    24,
+                            End:      31,
+                            Line:     2,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Name: "someType",
+                    },
+                    Init:           nil,
+                    Attribute:      false,
+                    Static:         true,
+                    Const:          false,
+                    Readonly:       false,
+                    Required:       false,
+                    Specialization: "",
+                    Parameters:     {
+                        &ast.Parameter{
+                            Base: ast.Base{
+                                Start:    37,
+                                End:      48,
+                                Line:     2,
+                                Comments: nil,
+                                Errors:   nil,
+                            },
+                            Type: &ast.TypeName{
+                                Base: ast.Base{
+                                    Start:    37,
+                                    End:      42,
+                                    Line:     2,
+                                    Comments: nil,
+                                    Errors:   nil,
+                                },
+                                Name: "string",
+                            },
+                            Optional:    false,
+                            Variadic:    false,
+                            Name:        "param",
+                            Init:        nil,
+                            Annotations: nil,
+                        },
+                    },
+                    Annotations: nil,
+                },
+            },
+            CustomOps: nil,
+            Patterns:  nil,
+        },
+        &ast.Interface{
+            Base: ast.Base{
+                Start:    54,
+                End:      91,
+                Line:     5,
+                Comments: nil,
+                Errors:   {
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    91,
+                            End:      89,
+                            Line:     7,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected one of: [Semicolon], found: inp:7:91 - RightBrace(})",
+                    },
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    91,
+                            End:      89,
+                            Line:     7,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected semicolon, got: inp:7:91 - RightBrace(})",
+                    },
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    94,
+                            End:      91,
+                            Line:     9,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected one of: [Semicolon], found: inp:9:94 - EOF()",
+                    },
+                },
+            },
+            Partial:     false,
+            Callback:    false,
+            Name:        "someType",
+            Inherits:    "",
+            Annotations: nil,
+            Members:     {
+                &ast.Member{
+                    Base: ast.Base{
+                        Start:    76,
+                        End:      89,
+                        Line:     6,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Name: "getBool",
+                    Type: &ast.TypeName{
+                        Base: ast.Base{
+                            Start:    76,
+                            End:      79,
+                            Line:     6,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Name: "bool",
+                    },
+                    Init:           nil,
+                    Attribute:      false,
+                    Static:         false,
+                    Const:          false,
+                    Readonly:       false,
+                    Required:       false,
+                    Specialization: "",
+                    Parameters:     nil,
+                    Annotations:    nil,
+                },
+            },
+            CustomOps: nil,
+            Patterns:  nil,
+        },
+    },
+}

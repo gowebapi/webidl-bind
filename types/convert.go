@@ -8,8 +8,8 @@ import (
 	"os"
 	"sort"
 
-	"github.com/gowebapi/webidlparser/ast"
-	"github.com/gowebapi/webidlparser/parser"
+	"github.com/gowebapi/webidl-bind/ast"
+	"github.com/gowebapi/webidl-bind/parser"
 )
 
 var (
@@ -66,7 +66,7 @@ type Convert struct {
 	setup     *Setup
 }
 
-type UserMsgFn func(ref GetRef, format string, args ...interface{})
+type UserMsgFn func(ref GetRef, format string, args ...any)
 
 type Setup struct {
 	Package        string
@@ -303,22 +303,22 @@ func (t *Convert) innerSort() {
 	})
 }
 
-func (t *Convert) failing(ref GetRef, format string, args ...interface{}) {
+func (t *Convert) failing(ref GetRef, format string, args ...any) {
 	t.setup.Error(ref, format, args...)
 	t.HaveError = true
 }
 
-func (t *Convert) warning(ref GetRef, format string, args ...interface{}) {
+func (t *Convert) warning(ref GetRef, format string, args ...any) {
 	t.setup.Warning(ref, format, args...)
 }
 
-func (t *Convert) assertTrue(test bool, ref GetRef, format string, args ...interface{}) {
+func (t *Convert) assertTrue(test bool, ref GetRef, format string, args ...any) {
 	if !test {
 		t.failing(ref, format, args...)
 	}
 }
 
-func (t *Convert) warningTrue(test bool, ref GetRef, format string, args ...interface{}) {
+func (t *Convert) warningTrue(test bool, ref GetRef, format string, args ...any) {
 	if !test {
 		t.warning(ref, format, args...)
 	}
@@ -411,18 +411,18 @@ func (t *extractTypes) Typedef(value *ast.Typedef) bool {
 	return false
 }
 
-func (t *extractTypes) failing(ref GetRef, format string, args ...interface{}) {
+func (t *extractTypes) failing(ref GetRef, format string, args ...any) {
 	t.main.failing(ref, format, args...)
 }
 
-func (t *extractTypes) warning(ref GetRef, format string, args ...interface{}) {
+func (t *extractTypes) warning(ref GetRef, format string, args ...any) {
 	t.main.warning(ref, format, args...)
 }
 
-func (t *extractTypes) assertTrue(test bool, ref GetRef, format string, args ...interface{}) {
+func (t *extractTypes) assertTrue(test bool, ref GetRef, format string, args ...any) {
 	t.main.assertTrue(test, ref, format, args...)
 }
 
-func (t *extractTypes) warningTrue(test bool, ref GetRef, format string, args ...interface{}) {
+func (t *extractTypes) warningTrue(test bool, ref GetRef, format string, args ...any) {
 	t.main.warningTrue(test, ref, format, args...)
 }

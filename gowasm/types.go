@@ -10,7 +10,7 @@ import (
 	"github.com/gowebapi/webidl-bind/types"
 )
 
-func convertType(value types.TypeRef, data interface{}, tmpl *template.Template) string {
+func convertType(value types.TypeRef, data any, tmpl *template.Template) string {
 	t := findTypeTemplate(value, tmpl)
 	var buf bytes.Buffer
 	if err := t.Execute(&buf, data); err != nil {

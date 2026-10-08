@@ -37,7 +37,7 @@ func (ad *actionData) nextType(value types.Type) {
 }
 
 type notifyMsg interface {
-	messageError(ref ref, format string, args ...interface{})
+	messageError(ref ref, format string, args ...any)
 }
 
 type scopeMode int
@@ -86,7 +86,7 @@ type property struct {
 func (t *property) ExecuteCallback(instance *types.Callback, data *actionData) {
 	if f, ok := callbackProperties[t.Name]; ok {
 		if msg := f.Set(instance, t.Value); msg != "" {
-			data.notify.messageError(t.Ref, msg)
+			data.notify.messageError(t.Ref, "%s", msg)
 		}
 	} else {
 		data.notify.messageError(t.Ref, "unknown property '%s', valid are: %s",
@@ -97,7 +97,7 @@ func (t *property) ExecuteCallback(instance *types.Callback, data *actionData) {
 func (t *property) ExecuteDictionary(instance *types.Dictionary, data *actionData) {
 	if f, ok := dictionaryProperties[t.Name]; ok {
 		if msg := f.Set(instance, t.Value); msg != "" {
-			data.notify.messageError(t.Ref, msg)
+			data.notify.messageError(t.Ref, "%s", msg)
 		}
 	} else {
 		data.notify.messageError(t.Ref, "unknown property '%s', valid are: %s",
@@ -108,7 +108,7 @@ func (t *property) ExecuteDictionary(instance *types.Dictionary, data *actionDat
 func (t *property) ExecuteEnum(instance *types.Enum, data *actionData) {
 	if f, ok := enumProperties[t.Name]; ok {
 		if msg := f.Set(instance, t.Value); msg != "" {
-			data.notify.messageError(t.Ref, msg)
+			data.notify.messageError(t.Ref, "%s", msg)
 		}
 	} else {
 		data.notify.messageError(t.Ref, "unknown property '%s', valid are: %s",
@@ -119,7 +119,7 @@ func (t *property) ExecuteEnum(instance *types.Enum, data *actionData) {
 func (t *property) ExecuteInterface(instance *types.Interface, data *actionData) {
 	if f, ok := interfaceProperties[t.Name]; ok {
 		if msg := f.Set(instance, t.Value); msg != "" {
-			data.notify.messageError(t.Ref, msg)
+			data.notify.messageError(t.Ref, "%s", msg)
 		}
 	} else {
 		data.notify.messageError(t.Ref, "unknown property '%s', valid are: %s",
@@ -130,7 +130,7 @@ func (t *property) ExecuteInterface(instance *types.Interface, data *actionData)
 func (t *property) ExecuteStatus(instance *SpecStatus, data *actionData) {
 	if f, ok := fileProperties[t.Name]; ok {
 		if msg := f.Set(instance, t.Value); msg != "" {
-			data.notify.messageError(t.Ref, msg)
+			data.notify.messageError(t.Ref, "%s", msg)
 		}
 	} else {
 		data.notify.messageError(t.Ref, "unknown property '%s', valid are: %s",
@@ -316,7 +316,7 @@ func (t *replace) ExecuteCallback(instance *types.Callback, data *actionData) {
 		value := p.Get(instance)
 		value = t.exec(value)
 		if msg := p.Set(instance, value); msg != "" {
-			data.notify.messageError(t.Ref, msg)
+			data.notify.messageError(t.Ref, "%s", msg)
 		}
 	} else {
 		data.notify.messageError(t.Ref, "%s: unknown property '%s', valid are: %s",
@@ -329,7 +329,7 @@ func (t *replace) ExecuteDictionary(instance *types.Dictionary, data *actionData
 		value := p.Get(instance)
 		value = t.exec(value)
 		if msg := p.Set(instance, value); msg != "" {
-			data.notify.messageError(t.Ref, msg)
+			data.notify.messageError(t.Ref, "%s", msg)
 		}
 	} else {
 		data.notify.messageError(t.Ref, "%s: unknown property '%s', valid are: %s",
@@ -342,7 +342,7 @@ func (t *replace) ExecuteEnum(instance *types.Enum, data *actionData) {
 		value := p.Get(instance)
 		value = t.exec(value)
 		if msg := p.Set(instance, value); msg != "" {
-			data.notify.messageError(t.Ref, msg)
+			data.notify.messageError(t.Ref, "%s", msg)
 		}
 	} else {
 		data.notify.messageError(t.Ref, "%s: unknown property '%s', valid are: %s",
@@ -355,7 +355,7 @@ func (t *replace) ExecuteInterface(instance *types.Interface, data *actionData) 
 		value := p.Get(instance)
 		value = t.exec(value)
 		if msg := p.Set(instance, value); msg != "" {
-			data.notify.messageError(t.Ref, msg)
+			data.notify.messageError(t.Ref, "%s", msg)
 		}
 	} else {
 		data.notify.messageError(t.Ref, "%s: unknown property '%s', valid are: %s",
@@ -394,7 +394,7 @@ func (ce *commonEventData) addEventToInterface(inf *types.Interface, ev *types.I
 	inf.Events = append(inf.Events, ev)
 }
 
-func (ce *commonEventData) processArgs(args []arg, fail func(format string, args ...interface{})) {
+func (ce *commonEventData) processArgs(args []arg, fail func(format string, args ...any)) {
 	var err error
 	for _, a := range args {
 		switch a.Name {

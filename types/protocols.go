@@ -3,7 +3,7 @@ package types
 import (
 	"text/template"
 
-	"github.com/gowebapi/webidlparser/ast"
+	"github.com/gowebapi/webidl-bind/ast"
 )
 
 // this file contains different "protocol" that types can
@@ -167,9 +167,7 @@ func (et *extractTypes) protocolAddTemplate(tmpl, name string, readonly bool, re
 
 func (et *extractTypes) protocolAddTypeDef(name string, value ast.Type, ref *Ref) {
 	typedef := &ast.Typedef{
-		Base: ast.Base{
-			Line: ref.Line,
-		},
+		Line: ref.Line,
 		Name: name,
 		Type: value,
 	}

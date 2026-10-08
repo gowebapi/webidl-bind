@@ -58,11 +58,11 @@ func simpleTest(idl, pkg, actual string, t *testing.T) *types.Convert {
 func loadFile(filename string, pkg string, t *testing.T) *types.Convert {
 	conv := types.NewConvert()
 	setup := types.Setup{
-		Error: func(ref types.GetRef, format string, args ...interface{}) {
+		Error: func(ref types.GetRef, format string, args ...any) {
 			t.Error("parse error at", ref)
 			t.Errorf(format, args...)
 		},
-		Warning: func(ref types.GetRef, format string, args ...interface{}) {
+		Warning: func(ref types.GetRef, format string, args ...any) {
 			fmt.Print("warning:", ref, ":")
 			fmt.Printf(format, args...)
 		},
@@ -108,7 +108,7 @@ func compareResult(expectedFile string, actual []*Source, t *testing.T) {
 
 func tryCompileResult(folder string, t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	p := exec.Command("go", "build", "-i")
+	p := exec.Command("go", "build")
 	p.Dir = folder
 	// p.Stdout = os.Stdout
 	// p.Stderr = os.Stderr

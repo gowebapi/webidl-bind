@@ -1,0 +1,1 @@
+Foo implements Bar;

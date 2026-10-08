@@ -1,0 +1,90 @@
+&ast.File{
+    Base: ast.Base{
+        Start:    0,
+        End:      96,
+        Line:     0,
+        Comments: nil,
+        Errors:   nil,
+    },
+    Declarations: {
+        &ast.Callback{
+            Base: ast.Base{
+                Start:    0,
+                End:      96,
+                Line:     1,
+                Comments: nil,
+                Errors:   nil,
+            },
+            Name:   "MutationCallback",
+            Return: &ast.TypeName{
+                Base: ast.Base{
+                    Start:    28,
+                    End:      31,
+                    Line:     1,
+                    Comments: nil,
+                    Errors:   nil,
+                },
+                Name: "void",
+            },
+            Parameters: {
+                &ast.Parameter{
+                    Base: ast.Base{
+                        Start:    34,
+                        End:      67,
+                        Line:     1,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Type: &ast.SequenceType{
+                        Base: ast.Base{
+                            Start:    34,
+                            End:      57,
+                            Line:     1,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Elem: &ast.TypeName{
+                            Base: ast.Base{
+                                Start:    43,
+                                End:      56,
+                                Line:     1,
+                                Comments: nil,
+                                Errors:   nil,
+                            },
+                            Name: "MutationRecord",
+                        },
+                    },
+                    Optional:    false,
+                    Variadic:    false,
+                    Name:        "mutations",
+                    Init:        nil,
+                    Annotations: nil,
+                },
+                &ast.Parameter{
+                    Base: ast.Base{
+                        Start:    70,
+                        End:      94,
+                        Line:     1,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Type: &ast.TypeName{
+                        Base: ast.Base{
+                            Start:    70,
+                            End:      85,
+                            Line:     1,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Name: "MutationObserver",
+                    },
+                    Optional:    false,
+                    Variadic:    false,
+                    Name:        "observer",
+                    Init:        nil,
+                    Annotations: nil,
+                },
+            },
+        },
+    },
+}

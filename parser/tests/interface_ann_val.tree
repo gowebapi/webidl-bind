@@ -1,0 +1,42 @@
+&ast.File{
+    Base: ast.Base{
+        Start:    0,
+        End:      52,
+        Line:     0,
+        Comments: nil,
+        Errors:   nil,
+    },
+    Declarations: {
+        &ast.Interface{
+            Base: ast.Base{
+                Start:    0,
+                End:      52,
+                Line:     1,
+                Comments: nil,
+                Errors:   nil,
+            },
+            Partial:     false,
+            Callback:    false,
+            Name:        "SomeInterface",
+            Inherits:    "",
+            Annotations: {
+                &ast.Annotation{
+                    Base: ast.Base{
+                        Start:    1,
+                        End:      23,
+                        Line:     1,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Name:       "CoolAnnotation",
+                    Value:      "SomeName",
+                    Parameters: nil,
+                    Values:     nil,
+                },
+            },
+            Members:   nil,
+            CustomOps: nil,
+            Patterns:  nil,
+        },
+    },
+}
