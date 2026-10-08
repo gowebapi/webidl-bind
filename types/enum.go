@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/gowebapi/webidlparser/ast"
+	"github.com/gowebapi/webidl-bind/ast"
 )
 
 // Enum type
@@ -28,12 +28,10 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 	ref := createRef(in, t)
 	t.warningTrue(len(in.Annotations) == 0, ref, "unsupported annotation")
 	ret := &Enum{
-		standardType: standardType{
-			ref:         ref,
-			needRelease: false,
-		},
-		basic:  fromIdlToTypeName(t.main.setup.Package, in.Name, "enum"),
-		Values: []EnumValue{},
+		ref:         ref,
+		needRelease: false,
+		basic:       fromIdlToTypeName(t.main.setup.Package, in.Name, "enum"),
+		Values:      []EnumValue{},
 	}
 	ret.Suffix = ret.basic.Def
 
@@ -47,10 +45,8 @@ func (t *extractTypes) convertEnum(in *ast.Enum) *Enum {
 			}
 			lang = convertIntoValidVariableName(lang)
 			ret.Values = append(ret.Values, EnumValue{
-				MethodName: MethodName{
-					Idl: idl,
-					Def: fixLangName(toCamelCase(lang, true)),
-				},
+				Idl: idl,
+				Def: fixLangName(toCamelCase(lang, true)),
 			})
 		} else {
 			t.failing(ref, "unsupported literal: %T: %#V", v, v)

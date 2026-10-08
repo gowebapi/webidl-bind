@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/gowebapi/webidlparser/ast"
+	"github.com/gowebapi/webidl-bind/ast"
 )
 
 // TODO: A maplike interface and its inherited interfaces must
@@ -124,10 +124,8 @@ var ignoredVarAnnotations = map[string]bool{
 
 func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 	ret := &Interface{
-		standardType: standardType{
-			ref:         createRef(in, t),
-			needRelease: false,
-		},
+		ref:          createRef(in, t),
+		needRelease:  false,
 		basic:        fromIdlToTypeName(t.main.setup.Package, in.Name, "interface"),
 		inheritsName: in.Inherits,
 		Callback:     in.Callback,
@@ -175,10 +173,8 @@ func (t *extractTypes) convertInterface(in *ast.Interface) (*Interface, bool) {
 			t.assertTrue(len(a.Values) == 0, ref, "constructor shall have parameters, not A=(a,b,c)")
 			params := t.convertParams(a.Parameters)
 			ret.Constructor = &IfMethod{
-				nameAndLink: nameAndLink{
-					ref:  ref,
-					name: fromIdlToMethodName("New_" + ret.basic.Idl),
-				},
+				ref:    ref,
+				name:   fromIdlToMethodName("New_" + ret.basic.Idl),
 				Static: true,
 				Return: newInterfaceType(ret),
 				Params: params,
@@ -239,10 +235,8 @@ func (conv *extractTypes) convertInterfaceConst(in *ast.Member) *IfConst {
 		conv.failing(ref, "const: unsupported default value")
 	}
 	return &IfConst{
-		nameAndLink: nameAndLink{
-			ref:  ref,
-			name: fromIdlToMethodName(in.Name),
-		},
+		ref:   ref,
+		name:  fromIdlToMethodName(in.Name),
 		Type:  convertType(in.Type, conv),
 		Value: value,
 	}
@@ -273,10 +267,8 @@ func (conv *extractTypes) convertInterfaceVar(in *ast.Member, file, src string) 
 	// parser.Dump(os.Stdout, in)
 
 	return &IfVar{
-		nameAndLink: nameAndLink{
-			ref:  ref,
-			name: fromIdlToMethodName(in.Name),
-		},
+		ref:         ref,
+		name:        fromIdlToMethodName(in.Name),
 		Type:        convertType(in.Type, conv),
 		Static:      in.Static,
 		Readonly:    in.Readonly,
@@ -456,11 +448,9 @@ func (t *Interface) TemplateCopy(targetInfo BasicInfo) *Interface {
 	src := t
 	ref := *src.standardType.ref
 	dst := &Interface{
-		standardType: standardType{
-			inuse:       true,
-			needRelease: src.standardType.needRelease,
-			ref:         &ref,
-		},
+		inuse:        true,
+		needRelease:  src.standardType.needRelease,
+		ref:          &ref,
 		basic:        targetInfo,
 		Inherits:     src.Inherits,
 		inheritsName: src.inheritsName,
@@ -558,10 +548,8 @@ func (t *IfConst) SetType(value TypeRef) string {
 func (t *IfVar) Copy() *IfVar {
 	r := *t.ref
 	return &IfVar{
-		nameAndLink: nameAndLink{
-			name: t.nameAndLink.name,
-			ref:  &r,
-		},
+		name:        t.nameAndLink.name,
+		ref:         &r,
 		Type:        t.Type,
 		Static:      t.Static,
 		Readonly:    t.Readonly,
@@ -588,10 +576,8 @@ func (t *IfMethod) Copy() *IfMethod {
 	}
 	r := *t.ref
 	dst := &IfMethod{
-		nameAndLink: nameAndLink{
-			name: t.nameAndLink.name,
-			ref:  &r,
-		},
+		name:              t.nameAndLink.name,
+		ref:               &r,
 		Return:            t.Return,
 		Static:            t.Static,
 		replaceOnOverride: t.replaceOnOverride,

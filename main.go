@@ -234,7 +234,7 @@ func tryTestResult(folders []string) error {
 	return nil
 }
 
-func failing(ref types.GetRef, format string, args ...interface{}) {
+func failing(ref types.GetRef, format string, args ...any) {
 	source := ""
 	if ref != nil {
 		where := ref.SourceReference()
@@ -246,7 +246,7 @@ func failing(ref types.GetRef, format string, args ...interface{}) {
 	fmt.Fprint(dst, "\n")
 }
 
-func warning(ref types.GetRef, format string, values ...interface{}) {
+func warning(ref types.GetRef, format string, values ...any) {
 	if !args.warnings {
 		return
 	}

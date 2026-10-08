@@ -408,7 +408,7 @@ func mergeSingleEventTypeFromParent(inf *types.Interface, done map[string]struct
 	}
 }
 
-func (t *Transform) messageError(ref ref, format string, args ...interface{}) {
+func (t *Transform) messageError(ref ref, format string, args ...any) {
 	printMessageError(ref, format, args...)
 	t.errors++
 }

@@ -1,0 +1,44 @@
+&ast.File{
+    Base: ast.Base{
+        Start:    0,
+        End:      40,
+        Line:     0,
+        Comments: nil,
+        Errors:   nil,
+    },
+    Declarations: {
+        &ast.Enum{
+            Base: ast.Base{
+                Start:    0,
+                End:      40,
+                Line:     1,
+                Comments: nil,
+                Errors:   nil,
+            },
+            Annotations: nil,
+            Name:        "ShadowRootMode",
+            Values:      {
+                &ast.BasicLiteral{
+                    Base: ast.Base{
+                        Start:    22,
+                        End:      27,
+                        Line:     1,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Value: "\"open\"",
+                },
+                &ast.BasicLiteral{
+                    Base: ast.Base{
+                        Start:    30,
+                        End:      37,
+                        Line:     1,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Value: "\"closed\"",
+                },
+            },
+        },
+    },
+}

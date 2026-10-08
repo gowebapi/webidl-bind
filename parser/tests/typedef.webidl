@@ -1,0 +1,1 @@
+typedef (sequence<sequence<ByteString>> or record<ByteString, ByteString>) HeadersInit;

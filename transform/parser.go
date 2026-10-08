@@ -202,9 +202,7 @@ func (lw *lexWrap) newTypeHeader(name string) *onType {
 
 func (lw *lexWrap) newChangeType(method, typ string) action {
 	ret := changeType{
-		abstractAction: abstractAction{
-			Ref: lw.ref(),
-		},
+		Ref:   lw.ref(),
 		Name:  method,
 		RawJS: typ,
 	}
@@ -218,9 +216,7 @@ func (lw *lexWrap) newOn(match matchType, expr string, with action) action {
 		return nil
 	}
 	return &globalRegExp{
-		abstractAction: abstractAction{
-			Ref: lw.ref(),
-		},
+		Ref:   lw.ref(),
 		Match: reg,
 		What:  with,
 		Type:  match,
@@ -238,9 +234,7 @@ func (lw *lexWrap) newProperty(name, value string) action {
 
 func (lw *lexWrap) newRename(name, value string) action {
 	ret := &rename{
-		abstractAction: abstractAction{
-			Ref: lw.ref(),
-		},
+		Ref:   lw.ref(),
 		Name:  name,
 		Value: value,
 	}
@@ -249,18 +243,14 @@ func (lw *lexWrap) newRename(name, value string) action {
 
 func (lw *lexWrap) newPatchIdlConst() action {
 	ret := idlconst{
-		abstractAction: abstractAction{
-			Ref: lw.ref(),
-		},
+		Ref: lw.ref(),
 	}
 	return &ret
 }
 
 func (lw *lexWrap) newReplace(property, from, to string) action {
 	return &replace{
-		abstractAction: abstractAction{
-			Ref: lw.ref(),
-		},
+		Ref:      lw.ref(),
 		Property: property,
 		From:     from,
 		To:       to,
@@ -282,11 +272,7 @@ func (lw *lexWrap) addEvent(method, eventType string, args []arg) action {
 
 func (lw *lexWrap) newEvent(method, eventType string, args []arg) action {
 	ev := &event{
-		commonEventData: commonEventData{
-			abstractAction: abstractAction{
-				Ref: lw.ref(),
-			},
-		},
+		Ref: lw.ref(),
 	}
 	ev.set(method, eventType)
 	ev.processArgs(args, lw.messageError)
@@ -295,18 +281,14 @@ func (lw *lexWrap) newEvent(method, eventType string, args []arg) action {
 
 func (lw *lexWrap) notEvent(attributeName string) action {
 	return &notEvent{
-		abstractAction: abstractAction{
-			Ref: lw.ref(),
-		},
+		Ref:           lw.ref(),
 		AttributeName: attributeName,
 	}
 }
 
 func (lw *lexWrap) setEventProp(args []arg) action {
 	return &setEventProp{
-		abstractAction: abstractAction{
-			Ref: lw.ref(),
-		},
+		Ref:  lw.ref(),
 		Args: args,
 	}
 }
@@ -318,12 +300,12 @@ func (lw *lexWrap) newArgumentIdent(name, value string) []arg {
 	}}
 }
 
-func (lw *lexWrap) messageError(format string, args ...interface{}) {
+func (lw *lexWrap) messageError(format string, args ...any) {
 	printMessageError(lw.ref(), format, args...)
 	lw.out.errors++
 }
 
-func printMessageError(ref ref, format string, args ...interface{}) {
+func printMessageError(ref ref, format string, args ...any) {
 	text := fmt.Sprintf(format, args...)
 	fmt.Fprintf(os.Stderr, "error:%s:%d:%s\n", ref.Filename, ref.Line, text)
 }

@@ -37,7 +37,7 @@ func (ad *actionData) nextType(value types.Type) {
 }
 
 type notifyMsg interface {
-	messageError(ref ref, format string, args ...interface{})
+	messageError(ref ref, format string, args ...any)
 }
 
 type scopeMode int
@@ -394,7 +394,7 @@ func (ce *commonEventData) addEventToInterface(inf *types.Interface, ev *types.I
 	inf.Events = append(inf.Events, ev)
 }
 
-func (ce *commonEventData) processArgs(args []arg, fail func(format string, args ...interface{})) {
+func (ce *commonEventData) processArgs(args []arg, fail func(format string, args ...any)) {
 	var err error
 	for _, a := range args {
 		switch a.Name {

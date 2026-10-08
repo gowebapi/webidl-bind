@@ -118,11 +118,11 @@ func createStatusData(files []ref, faction []action, list []types.Type, notify n
 
 func calculateGroupNameFromFilename(in string) string {
 	in = filepath.Base(in)
-	idx := strings.Index(in, ".")
-	if idx == -1 {
+	before, _, ok := strings.Cut(in, ".")
+	if !ok {
 		return in
 	}
-	return in[:idx]
+	return before
 }
 
 func (s *SpecStatus) verify(notify notifyMsg) {
@@ -228,7 +228,7 @@ func (t *markdownTmpl) add(key string, content []byte) {
 	t.order = append(t.order, key)
 }
 
-func (t *markdownTmpl) contentTmpl(key, name string, data interface{}) {
+func (t *markdownTmpl) contentTmpl(key, name string, data any) {
 	var dst bytes.Buffer
 	t.err = statusTmpl.ExecuteTemplate(&dst, name, data)
 	content := bytes.TrimSpace(dst.Bytes())

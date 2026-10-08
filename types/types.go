@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gowebapi/webidlparser/ast"
+	"github.com/gowebapi/webidl-bind/ast"
 )
 
 type TypeRef interface {
@@ -118,9 +118,7 @@ var _ TypeRef = &AnyType{}
 
 func newAnyType() *AnyType {
 	return &AnyType{
-		basicType: basicType{
-			needRelease: false,
-		},
+		needRelease: false,
 	}
 }
 
@@ -177,10 +175,8 @@ var _ TypeRef = &interfaceType{}
 
 func newInterfaceType(link *Interface) *interfaceType {
 	return &interfaceType{
-		basicType: basicType{
-			needRelease: false,
-		},
-		If: link,
+		needRelease: false,
+		If:          link,
 	}
 }
 
@@ -317,9 +313,7 @@ var _ TypeRef = &PrimitiveType{}
 
 func newPrimitiveType(idl, lang, method string, cast, sta bool) *PrimitiveType {
 	return &PrimitiveType{
-		basicType: basicType{
-			needRelease: false,
-		},
+		needRelease:       false,
 		Idl:               idl,
 		Lang:              lang,
 		JsMethod:          method,
@@ -642,9 +636,7 @@ var _ TypeRef = &voidType{}
 
 func newVoidType(in *ast.TypeName) *voidType {
 	return &voidType{
-		basicType: basicType{
-			needRelease: false,
-		},
+		needRelease: false,
 	}
 }
 

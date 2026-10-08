@@ -2,6 +2,7 @@ package transform
 
 import (
 	"fmt"
+	"maps"
 	"sort"
 
 	"github.com/gowebapi/webidl-bind/types"
@@ -24,9 +25,7 @@ func innerRenameOverrideMethods(inf *types.Interface, done map[*types.Interface]
 	methods := make(map[string]int)
 	if inf.Inherits != nil {
 		parent := innerRenameOverrideMethods(inf.Inherits, done)
-		for k, v := range parent {
-			methods[k] = v
-		}
+		maps.Copy(methods, parent)
 	}
 	for _, m := range inf.Method {
 		innerMethodRenameLogic(m, methods)
